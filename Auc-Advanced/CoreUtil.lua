@@ -96,7 +96,7 @@ local Babylonian = lib.Libraries.Babylonian
 if Babylonian then
 	local babylonian = Babylonian(AuctioneerLocalizations)
 	function lib.localizations(stringKey)
-		local locale = lib.Settings.GetSetting("SelectedLocale")--locales are user choose-able
+		local locale = (lib.Settings and lib.Settings.GetSetting and lib.Settings.GetSetting("SelectedLocale")) or GetLocale()
 		-- translated key or english Key or Raw Key
 		return babylonian(locale, stringKey) or babylonian[stringKey] or stringKey
 	end
