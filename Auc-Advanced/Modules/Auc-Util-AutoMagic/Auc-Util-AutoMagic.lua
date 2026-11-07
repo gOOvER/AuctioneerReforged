@@ -159,7 +159,7 @@ function lib.SetupConfigGui(gui)
 		gui:AddControl(id, "Checkbox",		0, 4, "util.automagic.autostopafter12", _TRANS('AAMU_Interface_AutoStop12')) --"Pause after selling 12 items."
 		gui:AddTip(id, _TRANS('AAMU_HelpTooltip_AutoStop12')) --'This allows you to buy back an accidental sale, since the server saves the last 12 sales to the vendor'
 
-		gui:AddControl(id, "Subhead",     0,   "Which categories will be vendored?")
+		gui:AddControl(id, "Subhead",     0,   _TRANS('AAMU_Interface_WhichCategoriesVendored')) --"Which categories will be vendored?"
 
 		gui:AddControl(id, "Checkbox",		0, 4, 	"util.automagic.autosellgrey", _TRANS('AAMU_Interface_AutoSellGrey')) --"Auto-sell grey items quality items"
 		gui:AddTip(id, _TRANS('AAMU_HelpTooltip_AutoSellGrey')) --'Auto-sell grey level items at the vendor.'
@@ -307,9 +307,9 @@ function lib.slidebar()
 					})
 
 			function private.LDBButton:OnTooltipShow()
-				self:AddLine("AutoMagic: Auto-Sell Config",  1,1,0.5, 1)
-				self:AddLine("|cff1fb3ff".."Left-Click|r to open the 'Auto-Sell' list.",  1,1,0.5, 1)
-				self:AddLine("|cff1fb3ff".."Right-Click|r to edit the configuration.",  1,1,0.5, 1)
+				self:AddLine(_TRANS('AAMU_Interface_AutoSellTitle'),  1,1,0.5, 1)
+				self:AddLine(_TRANS('AAMU_HelpTooltip_LDBLeftClick'),  1,1,0.5, 1)
+				self:AddLine(_TRANS('AAMU_HelpTooltip_LDBRightClick'),  1,1,0.5, 1)
 			end
 			--we use a slight hack to LDB to animate our icon on Enter as well as tooltip display. The Tooltip will be hidden by slidebar but will show for other addons
 			function private.LDBButton:OnEnter()
@@ -381,7 +381,7 @@ function autosellframe.additemtolist()
 end
 
 function autosellframe.ClearIcon()
-	autosellframe.workingname:SetText("Item Name")
+	autosellframe.workingname:SetText(_TRANS('AAMU_Interface_ItemName'))
 	autosellframe.slot:SetNormalTexture("")
 end
 
@@ -567,64 +567,69 @@ function lib.makeautosellgui()
 	autosellframe.DragBottom:SetScript("OnMouseDown", function() autosellframe:StartMoving() end)
 	autosellframe.DragBottom:SetScript("OnMouseUp", function() autosellframe:StopMovingOrSizing() end)
 
-	local	autoselltitle = autosellframe:CreateFontString(asuftitle, "OVERLAY", "GameFontNormalLarge")
-	autoselltitle:SetText("AutoMagic: Auto Sell Config")
+	local autoselltitle = autosellframe:CreateFontString(asuftitle, "OVERLAY", "GameFontNormalLarge")
+	autoselltitle:SetText(_TRANS('AAMU_Interface_AutoSellTitle'))
 	autoselltitle:SetTextColor(1, 0.85, 0.25)
-	autoselltitle:SetJustifyH("CENTER")
-	autoselltitle:SetWidth(300)
-	autoselltitle:SetHeight(10)
-	autoselltitle:SetPoint("TOPLEFT",  autosellframe, "TOPLEFT", 0, -17)
-	autosellframe.autoselltitle = aautoselltitle
+	autoselltitle:SetJustifyH("LEFT")
+	autoselltitle:SetWidth(240)
+	autoselltitle:SetPoint("TOPLEFT", autosellframe, "TOPLEFT", 16, -16)
+	autosellframe.autoselltitle = autoselltitle
 
 	--Close Button
 	autosellframe.closeButton = CreateFrame("Button", nil, autosellframe, "UIPanelButtonTemplate")
-	autosellframe.closeButton:SetPoint("BOTTOMRIGHT", autosellframe, "BOTTOMRIGHT", -530, 10)
-	autosellframe.closeButton:SetText(("Close"))
-	autosellframe.closeButton:SetScript("OnClick",  lib.closeAutoSellGUI)
+	autosellframe.closeButton:SetSize(110, 22)
+	autosellframe.closeButton:SetPoint("BOTTOMLEFT", autosellframe, "BOTTOMLEFT", 16, 12)
+	autosellframe.closeButton:SetText(_TRANS('AAMU_Interface_Close'))
+	autosellframe.closeButton:SetScript("OnClick", lib.closeAutoSellGUI)
 
 	local SelectBox = LibStub:GetLibrary("SelectBox")
 	local ScrollSheet = LibStub:GetLibrary("ScrollSheet")
 
 
 	autosellframe.slot = CreateFrame("Button", "AutoSellFrameSlot", autosellframe, "UIPanelButtonTemplate")
-	autosellframe.slot:SetPoint("TOPLEFT", autosellframe, "TOPLEFT", 23, -50)
-	autosellframe.slot:SetWidth(38)
-	autosellframe.slot:SetHeight(38)
+	autosellframe.slot:SetPoint("TOPLEFT", autosellframe, "TOPLEFT", 16, -48)
+	autosellframe.slot:SetSize(42, 42)
 	autosellframe.slot:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square.blp")
 	autosellframe.slot:SetScript("OnClick", lib.autoSellIconDrag)
 	autosellframe.slot:SetScript("OnReceiveDrag", lib.autoSellIconDrag)
 
 	autosellframe.slot.help = autosellframe:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	autosellframe.slot.help:SetPoint("LEFT", autosellframe.slot, "RIGHT", 2, 7)
-	autosellframe.slot.help:SetText(("Drop item into box")) --"Drop item into box to search."
-	autosellframe.slot.help:SetWidth(100)
+	autosellframe.slot.help:SetPoint("LEFT", autosellframe.slot, "RIGHT", 10, 0)
+	autosellframe.slot.help:SetJustifyH("LEFT")
+	autosellframe.slot.help:SetText(_TRANS('AAMU_Interface_DropItemBox'))
+	autosellframe.slot.help:SetWidth(180)
 
-	autosellframe.workingname = autosellframe:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	autosellframe.workingname:SetPoint("TOPLEFT", autosellframe, "TOPLEFT", 15, -100)
-	autosellframe.workingname:SetText((""))
-	autosellframe.workingname:SetWidth(90)
+	autosellframe.workingname = autosellframe:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+	autosellframe.workingname:SetPoint("TOPLEFT", autosellframe, "TOPLEFT", 16, -100)
+	autosellframe.workingname:SetJustifyH("LEFT")
+	autosellframe.workingname:SetText("")
+	autosellframe.workingname:SetWidth(230)
 
 	--Add Item to list button
 	autosellframe.additem = CreateFrame("Button", nil, autosellframe, "UIPanelButtonTemplate")
-	autosellframe.additem:SetPoint("TOPLEFT", autosellframe, "TOPLEFT", 10, -150)
-	autosellframe.additem:SetText(('Add Item'))
+	autosellframe.additem:SetSize(110, 22)
+	autosellframe.additem:SetPoint("TOPLEFT", autosellframe, "TOPLEFT", 16, -135)
+	autosellframe.additem:SetText(_TRANS('AAMU_Interface_AddItem'))
 	autosellframe.additem:SetScript("OnClick", autosellframe.additemtolist)
 
-	autosellframe.additem.help = autosellframe:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	autosellframe.additem.help:SetPoint("TOPLEFT", autosellframe.additem, "TOPRIGHT", 1, 1)
-	autosellframe.additem.help:SetText(("(to Auto Sell list)"))
-	autosellframe.additem.help:SetWidth(90)
+	autosellframe.additem.help = autosellframe:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+	autosellframe.additem.help:SetPoint("LEFT", autosellframe.additem, "RIGHT", 8, 0)
+	autosellframe.additem.help:SetJustifyH("LEFT")
+	autosellframe.additem.help:SetText(_TRANS('AAMU_Interface_ToAutoSellList'))
+	autosellframe.additem.help:SetWidth(115)
 
 	--Remove Item from list button
 	autosellframe.removeitem = CreateFrame("Button", nil, autosellframe, "UIPanelButtonTemplate")
-	autosellframe.removeitem:SetPoint("TOPLEFT", autosellframe.additem, "BOTTOMLEFT", 0, -20)
-	autosellframe.removeitem:SetText(('Remove Item'))
+	autosellframe.removeitem:SetSize(110, 22)
+	autosellframe.removeitem:SetPoint("TOPLEFT", autosellframe.additem, "BOTTOMLEFT", 0, -14)
+	autosellframe.removeitem:SetText(_TRANS('AAMU_Interface_RemoveItem'))
 	autosellframe.removeitem:SetScript("OnClick", autosellframe.removeitemfromlist)
 
-	autosellframe.removeitem.help = autosellframe:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	autosellframe.removeitem.help:SetPoint("TOPLEFT", autosellframe.removeitem, "TOPRIGHT", 1, 1)
-	autosellframe.removeitem.help:SetText(("(from Auto Sell list)"))
-	autosellframe.removeitem.help:SetWidth(90)
+	autosellframe.removeitem.help = autosellframe:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+	autosellframe.removeitem.help:SetPoint("LEFT", autosellframe.removeitem, "RIGHT", 8, 0)
+	autosellframe.removeitem.help:SetJustifyH("LEFT")
+	autosellframe.removeitem.help:SetText(_TRANS('AAMU_Interface_FromAutoSellList'))
+	autosellframe.removeitem.help:SetWidth(115)
 
 	--Create the autosell list results frame
 	autosellframe.resultlist = CreateFrame("Frame", nil, autosellframe, BackdropTemplateMixin and "BackdropTemplate")
@@ -637,14 +642,14 @@ function lib.makeautosellgui()
 		})
 		autosellframe.resultlist:SetBackdropColor(0, 0, 0.0, 0.5)
 	end
-	autosellframe.resultlist:SetPoint("TOPLEFT", autosellframe, "BOTTOMLEFT", 270, 250)
-	autosellframe.resultlist:SetPoint("TOPRIGHT", autosellframe, "TOPLEFT",630, 0)
-	autosellframe.resultlist:SetPoint("BOTTOM", autosellframe, "BOTTOM", 0, 10)
+	autosellframe.resultlist:SetPoint("TOPLEFT", autosellframe, "TOPLEFT", 260, -232)
+	autosellframe.resultlist:SetPoint("TOPRIGHT", autosellframe, "TOPRIGHT", -10, -232)
+	autosellframe.resultlist:SetPoint("BOTTOM", autosellframe, "BOTTOM", 0, 12)
 
 	autosellframe.resultlist.sheet = ScrollSheet:Create(autosellframe.resultlist, {
-		{ ('Auto Selling:'), "TOOLTIP", 170 },
-		{ "Vendor", "COIN", 70 },
-		{ "Appraiser", "COIN", 70 },
+		{ _TRANS('AAMU_Interface_AutoSelling'), "TOOLTIP", 170 },
+		{ _TRANS('AAMU_Interface_Vendor'), "COIN", 70 },
+		{ _TRANS('AAMU_Interface_Appraiser'), "COIN", 70 },
 	}, autosell.OnEnter, autosell.OnLeave, autosell.OnClickAutoSellSheet)
 	--use our custom sort method not scrollsheets
 	autosellframe.resultlist.sheet.CustomSort = lib.CustomSort
@@ -660,23 +665,25 @@ function lib.makeautosellgui()
 		autosellframe.baglist:SetBackdropColor(0, 0, 0.0, 0.5)
 	end
 
-	autosellframe.baglist:SetPoint("TOPLEFT", autosellframe, "BOTTOMLEFT", 270, 445)
-	autosellframe.baglist:SetPoint("TOPRIGHT", autosellframe, "TOPLEFT", 630, 0)
-	autosellframe.baglist:SetPoint("BOTTOM", autosellframe, "BOTTOM", 0, 250)
+	autosellframe.baglist:SetPoint("TOPLEFT", autosellframe, "TOPLEFT", 260, -14)
+	autosellframe.baglist:SetPoint("TOPRIGHT", autosellframe, "TOPRIGHT", -10, -14)
+	autosellframe.baglist:SetPoint("BOTTOM", autosellframe, "BOTTOM", 0, 226)
 
 	autosellframe.bagList = CreateFrame("Button", nil, autosellframe, "UIPanelButtonTemplate")
-	autosellframe.bagList:SetPoint("TOPRIGHT", autosellframe.baglist, "BOTTOMRIGHT", -530, -50)
-	autosellframe.bagList:SetText(("Re-Scan Bags"))
+	autosellframe.bagList:SetSize(160, 22)
+	autosellframe.bagList:SetPoint("TOPLEFT", autosellframe.removeitem, "BOTTOMLEFT", 0, -24)
+	autosellframe.bagList:SetText(_TRANS('AAMU_Interface_RescanBags'))
 	autosellframe.bagList:SetScript("OnClick", lib.populateDataSheet)
 
 	autosellframe.baglist.sheet = ScrollSheet:Create(autosellframe.baglist, {
-		{ ('Bag Contents:'), "TOOLTIP", 170 },
-		{ ('BTM Rule'), "TEXT", 70 },
-		{ "Appraiser", "COIN", 70 },
+		{ _TRANS('AAMU_Interface_BagContents'), "TOOLTIP", 170 },
+		{ _TRANS('AAMU_Interface_BTMRule'), "TEXT", 70 },
+		{ _TRANS('AAMU_Interface_Appraiser'), "COIN", 70 },
 	}, autosell.OnBagListEnter, autosell.OnLeave, autosell.OnClickBagSheet)
 	--use our custom sort method not scrollsheets
 	autosellframe.baglist.sheet.CustomSort = lib.CustomSort
 	if UIStyle then
+		UIStyle.StyleItemSlot(autosellframe.slot, 42)
 		UIStyle.StyleButton(autosellframe.closeButton, "default")
 		UIStyle.StyleButton(autosellframe.additem, "primary")
 		UIStyle.StyleButton(autosellframe.removeitem, "default")

@@ -31,7 +31,7 @@ if not AucAdvanced then return end
 
 local lib = AucAdvanced.Modules.Util.AutoMagic
 if not lib then return end
-local print,decode,_,_,replicate,empty,get,set,default,debugPrint,fill = AucAdvanced.GetModuleLocals()
+local print,decode,_,_,replicate,empty,get,set,default,debugPrint,fill,_TRANS = AucAdvanced.GetModuleLocals()
 local AppraiserValue, DisenchantValue, ProspectValue, VendorValue, bestmethod, bestvalue, runstop, _
 
 ---------------------------------------------------------
@@ -51,8 +51,8 @@ function lib.makeMailGUI()
 	local UIStyle = Configator and Configator.UIStyle
 
 	lib.ammailgui:SetFrameStrata("DIALOG")
-	lib.ammailgui:SetHeight(75)
-	lib.ammailgui:SetWidth(320)
+	lib.ammailgui:SetHeight(88)
+	lib.ammailgui:SetWidth(360)
 	if UIStyle then
 		UIStyle.StyleWindow(lib.ammailgui, true)
 	else
@@ -76,17 +76,16 @@ function lib.makeMailGUI()
 	lib.ammailgui.Drag:SetHighlightTexture("Interface\\FriendsFrame\\UI-FriendsFrame-HighlightBar")
 	lib.ammailgui.Drag:SetScript("OnMouseDown", function() lib.ammailgui:StartMoving() end)
 	lib.ammailgui.Drag:SetScript("OnMouseUp", function() lib.ammailgui:StopMovingOrSizing() end)
-	lib.ammailgui.Drag:SetScript("OnEnter", function() lib.buttonTooltips( lib.ammailgui.Drag, "Click and drag to reposition window.") end)
+	lib.ammailgui.Drag:SetScript("OnEnter", function() lib.buttonTooltips( lib.ammailgui.Drag, _TRANS('AAMU_HelpTooltip_DragReposition')) end)
 	lib.ammailgui.Drag:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
 	-- Text Header
 	lib.mguiheader = lib.ammailgui:CreateFontString(one, "OVERLAY", "NumberFontNormalYellow")
-	lib.mguiheader:SetText("AutoMagic: Mail Loader")
+	lib.mguiheader:SetText(_TRANS('AAMU_Interface_MailLoaderTitle'))
 	lib.mguiheader:SetJustifyH("CENTER")
-	lib.mguiheader:SetWidth(200)
-	lib.mguiheader:SetHeight(10)
-	lib.mguiheader:SetPoint("TOPLEFT",  lib.ammailgui, "TOPLEFT", 0, 0)
-	lib.mguiheader:SetPoint("TOPRIGHT", lib.ammailgui, "TOPRIGHT", 0, 0)
+	lib.mguiheader:SetHeight(14)
+	lib.mguiheader:SetPoint("TOPLEFT",  lib.ammailgui, "TOPLEFT", 26, -6)
+	lib.mguiheader:SetPoint("TOPRIGHT", lib.ammailgui, "TOPRIGHT", -26, -6)
 	lib.ammailgui.mguiheader = lib.mguiheader
 
 
@@ -99,30 +98,29 @@ function lib.makeMailGUI()
 
 
 	lib.mguibtmrules = lib.ammailgui:CreateFontString(two, "OVERLAY", "NumberFontNormalYellow")
-	lib.mguibtmrules:SetText("SUI/IS Rule:")
+	lib.mguibtmrules:SetText(_TRANS('AAMU_Interface_MailRuleLabel'))
 	lib.mguibtmrules:SetJustifyH("LEFT")
-	lib.mguibtmrules:SetWidth(101)
-	lib.mguibtmrules:SetHeight(10)
-	lib.mguibtmrules:SetPoint("TOPLEFT",  lib.ammailgui, "TOPLEFT", 18, -16)
+	lib.mguibtmrules:SetWidth(115)
+	lib.mguibtmrules:SetHeight(12)
+	lib.mguibtmrules:SetPoint("TOPLEFT",  lib.ammailgui, "TOPLEFT", 12, -20)
 	lib.ammailgui.mguibtmrules = lib.mguibtmrules
 
 
 	lib.mguimailfor = lib.ammailgui:CreateFontString(three, "OVERLAY", "NumberFontNormalYellow")
-	lib.mguimailfor:SetText("Misc:")
+	lib.mguimailfor:SetText(_TRANS('AAMU_Interface_MailMiscLabel'))
 	lib.mguimailfor:SetJustifyH("LEFT")
-	lib.mguimailfor:SetWidth(101)
-	lib.mguimailfor:SetHeight(10)
-	lib.mguimailfor:SetPoint("TOPLEFT",  lib.mguibtmrules, "TOPRIGHT", 25, 0)
-	--lib.mguimailfor:SetPoint("TOPRIGHT", lib.ammailgui.loadprospect, "BOTTOMRIGHT", 0, 0)
+	lib.mguimailfor:SetWidth(115)
+	lib.mguimailfor:SetHeight(12)
+	lib.mguimailfor:SetPoint("TOPLEFT",  lib.ammailgui, "TOPLEFT", 126, -20)
 	lib.ammailgui.mguimailfor = lib.mguimailfor
 
 
-	lib.createMailButton("Disenchant", "Add all items tagged \nfor DE to the mail.", function() lib.scanBags(lib.disenchantAction) end )
-	lib.createMailButton("Gems", "Add all Gems to the mail.", function() lib.scanBags(lib.gemAction) end )
-	lib.createMailButton("Herbs", "Add all items classified \nas herbs to the mail", function() lib.scanBags(lib.herbAction) end )
-	lib.createMailButton("Prospect", "Add all items tagged \nfor Prospect to the mail.", function() lib.scanBags(lib.prospectAction) end )
-	lib.createMailButton("Chant Mats", "Add all Enchanting mats \nto the mail.", function() lib.scanBags(lib.dematAction) end )
-	lib.createMailButton("Pigments", "Add all Pigments \nto the mail.", function() lib.scanBags(lib.pigmentAction) end )
+	lib.createMailButton(_TRANS('AAMU_Interface_MailBtnDisenchant'), _TRANS('AAMU_HelpTooltip_MailBtnDisenchant'), function() lib.scanBags(lib.disenchantAction) end )
+	lib.createMailButton(_TRANS('AAMU_Interface_MailBtnGems'), _TRANS('AAMU_HelpTooltip_MailBtnGems'), function() lib.scanBags(lib.gemAction) end )
+	lib.createMailButton(_TRANS('AAMU_Interface_MailBtnHerbs'), _TRANS('AAMU_HelpTooltip_MailBtnHerbs'), function() lib.scanBags(lib.herbAction) end )
+	lib.createMailButton(_TRANS('AAMU_Interface_MailBtnProspect'), _TRANS('AAMU_HelpTooltip_MailBtnProspect'), function() lib.scanBags(lib.prospectAction) end )
+	lib.createMailButton(_TRANS('AAMU_Interface_MailBtnChantMats'), _TRANS('AAMU_HelpTooltip_MailBtnChantMats'), function() lib.scanBags(lib.dematAction) end )
+	lib.createMailButton(_TRANS('AAMU_Interface_MailBtnPigments'), _TRANS('AAMU_HelpTooltip_MailBtnPigments'), function() lib.scanBags(lib.pigmentAction) end )
 
 	--Lets make the Reason code based buttons a  different color Blue for SUI rule based, Green for default lists
 	do
@@ -194,19 +192,19 @@ function lib.makeMailGUI()
 	frame.DragBottom:SetScript("OnMouseUp", function() frame:StopMovingOrSizing() end)
 
 
-	local	title = frame:CreateFontString(aamCustomMailertitle, "OVERLAY", "GameFontNormalLarge")
-	title:SetText("AutoMagic: Custom Mailer Setup")
+	local title = frame:CreateFontString(aamCustomMailertitle, "OVERLAY", "GameFontNormalLarge")
+	title:SetText(_TRANS('AAMU_Interface_CustomMailerTitle'))
 	title:SetTextColor(1, 0.85, 0.25)
-	title:SetJustifyH("CENTER")
-	title:SetWidth(300)
-	title:SetHeight(10)
-	title:SetPoint("TOPLEFT",  frame, "TOPLEFT", 0, -17)
+	title:SetJustifyH("LEFT")
+	title:SetWidth(240)
+	title:SetPoint("TOPLEFT", frame, "TOPLEFT", 16, -16)
 	frame.title = title
 
 	--Close Button
 	frame.closeButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-	frame.closeButton:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -530, 10)
-	frame.closeButton:SetText("Close")
+	frame.closeButton:SetSize(110, 22)
+	frame.closeButton:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 16, 12)
+	frame.closeButton:SetText(_TRANS('AAMU_Interface_Close'))
 	frame.closeButton:SetScript("OnClick",  function() frame:Hide() end)
 	if UIStyle then
 		UIStyle.StyleButton(frame.closeButton, "default")
@@ -217,7 +215,7 @@ function lib.makeMailGUI()
 
 	function frame.slotclear()
 		frame.slot:SetNormalTexture("")
-		frame.slot.help:SetText("Drop item into box")
+		frame.slot.help:SetText(_TRANS('AAMU_Interface_DropItemBox'))
 		frame.slot.workingItem = nil
 		frame.addButton:Disable()
 		frame.removeButton:Disable()
@@ -240,21 +238,24 @@ function lib.makeMailGUI()
 	end
 
 	frame.resultlist = CreateFrame("Frame", nil, frame, BackdropTemplateMixin and "BackdropTemplate")
-	frame.resultlist:SetBackdrop({
-		bgFile = "Interface/Tooltips/UI-Tooltip-Background",
-		edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
-		tile = true, tileSize = 32, edgeSize = 16,
-		insets = { left = 5, right = 5, top = 5, bottom = 5 }
-	})
-
-	frame.resultlist:SetBackdropColor(0, 0, 0.0, 0.5)
-	frame.resultlist:SetPoint("TOPLEFT", frame, "BOTTOMLEFT", 270, 400)
-	frame.resultlist:SetPoint("TOPRIGHT", frame, "TOPLEFT",630, 0)
-	frame.resultlist:SetPoint("BOTTOM", frame, "BOTTOM", 0, 10)
+	if UIStyle then
+		UIStyle.StylePanel(frame.resultlist)
+	else
+		frame.resultlist:SetBackdrop({
+			bgFile = "Interface/Tooltips/UI-Tooltip-Background",
+			edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
+			tile = true, tileSize = 32, edgeSize = 16,
+			insets = { left = 5, right = 5, top = 5, bottom = 5 }
+		})
+		frame.resultlist:SetBackdropColor(0, 0, 0.0, 0.5)
+	end
+	frame.resultlist:SetPoint("TOPLEFT", frame, "TOPLEFT", 260, -38)
+	frame.resultlist:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -10, -38)
+	frame.resultlist:SetPoint("BOTTOM", frame, "BOTTOM", 0, 12)
 
 	frame.resultlist.sheet = ScrollSheet:Create(frame.resultlist, {
-		{ ('Item'), "TOOLTIP", 170 },
-		{ "Item ID", "NUMBER", 170 },
+		{ _TRANS('AAMU_Interface_Item'), "TOOLTIP", 170 },
+		{ _TRANS('AAMU_Interface_ItemID'), "NUMBER", 170 },
 		{"", "TEXT", 0.001 }, --metadata thats not used in visual display
 	})
 	frame.resultlist.sheet.enableselect = true
@@ -288,10 +289,10 @@ function lib.makeMailGUI()
 			end
 		end
 		if selection then
-			frame.workingname:SetText("|Cff00ffff Items Mailed by|r |Cffff0000"..selection:upper())
+			frame.workingname:SetText(_TRANS('AAMU_Interface_ItemsMailedBy').." |Cffff0000"..selection:upper())
 			frame.removeListButton:Enable()
 		else
-			frame.workingname:SetText("|Cff00ffff Select a Button from the LEFT list")
+			frame.workingname:SetText(_TRANS('AAMU_Interface_SelectButtonLeft'))
 			frame.removeListButton:Disable()
 		end
 		--update and render scrollframes
@@ -320,7 +321,7 @@ function lib.makeMailGUI()
 							--if new line or hidden we will have a nil. So add a new entry to the data
 							if Old == nil then
 								settings[text] = {}
-								lib.createMailButton(text, "Add all items on this \list to the mail.", lib.customAction)
+								lib.createMailButton(text, _TRANS('AAMU_HelpTooltip_CustomMailBtn'), lib.customAction)
 							else
 								for i, name in pairs(sheet.data) do
 									if name == Old then
@@ -332,7 +333,7 @@ function lib.makeMailGUI()
 								end
 							end
 						else
-							print("Button Name "..text.." already exists")
+							print(_TRANS('AAMU_Interface_ButtonExists'):format(text))
 						end
 						lib.MailListUpdate()
 						frame.listEditBox:Hide()
@@ -341,21 +342,24 @@ function lib.makeMailGUI()
 
 	--Frame for displaying the lists
 	frame.buttonList = CreateFrame("Frame", nil, frame, BackdropTemplateMixin and "BackdropTemplate")
-	frame.buttonList:SetBackdrop({
-		bgFile = "Interface/Tooltips/UI-Tooltip-Background",
-		edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
-		tile = true, tileSize = 32, edgeSize = 16,
-		insets = { left = 5, right = 5, top = 5, bottom = 5 }
-	})
-
-	frame.buttonList:SetBackdropColor(0, 0, 0.0, 0.5)
+	if UIStyle then
+		UIStyle.StylePanel(frame.buttonList)
+	else
+		frame.buttonList:SetBackdrop({
+			bgFile = "Interface/Tooltips/UI-Tooltip-Background",
+			edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
+			tile = true, tileSize = 32, edgeSize = 16,
+			insets = { left = 5, right = 5, top = 5, bottom = 5 }
+		})
+		frame.buttonList:SetBackdropColor(0, 0, 0.0, 0.5)
+	end
 	frame.buttonList:SetWidth(140)
-	frame.buttonList:SetHeight(250)
-	frame.buttonList:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 10, 30)
+	frame.buttonList:SetHeight(235)
+	frame.buttonList:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 16, 44)
 
 	frame.buttonList.sheet = ScrollSheet:Create(frame.buttonList, {
 --~ 		{ ('Add'), "TEXT", 30 },
-		{ ('Button Name'), "TOOLTIP", 100 },
+		{ _TRANS('AAMU_Interface_ButtonName'), "TOOLTIP", 100 },
 		{"", "TEXT", 0.001 }, --metadata thats not used in visual display
 	})
 	frame.buttonList.sheet.enableselect = true
@@ -397,18 +401,18 @@ function lib.makeMailGUI()
 		end
 	end
 
-	frame.buttonList.help = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+	frame.buttonList.help = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 	frame.buttonList.help:ClearAllPoints()
-	frame.buttonList.help:SetPoint("LEFT", frame.buttonList, "TOPRIGHT", 0, -90)
-	frame.buttonList.help:SetText("|Cff00ffff To add a|r \n|CffffffffNEW Button|r \n|Cffffff00SHIFT click|r|Cff00ffff on any empty spot in the |Cffffff00LEFT |Cff00fffflist\n\n\n To |CffffffffEDIT |Cff00ffff the name of a button just |Cffffff00SHIFT click|r|Cff00ffff on it in the |Cffffff00LEFT |Cff00fffflist \n\n\n  |CffFF0000BUTTON NAMES WILL NOT UPDATE TILL RELOAD")
-	frame.buttonList.help:SetWidth(120)
+	frame.buttonList.help:SetPoint("TOPLEFT", frame.buttonList, "TOPRIGHT", 8, 0)
+	frame.buttonList.help:SetJustifyH("LEFT")
+	frame.buttonList.help:SetText(_TRANS('AAMU_Interface_CustomMailerHelp'))
+	frame.buttonList.help:SetWidth(90)
 
 
 	--Itemicon/slot
 	frame.slot = CreateFrame("Button", "autoMagicSlotFrame", frame, "UIPanelButtonTemplate")
-	frame.slot:SetPoint("TOPLEFT", frame, "TOPLEFT", 23, -50)
-	frame.slot:SetWidth(38)
-	frame.slot:SetHeight(38)
+	frame.slot:SetPoint("TOPLEFT", frame, "TOPLEFT", 16, -48)
+	frame.slot:SetSize(42, 42)
 	frame.slot:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square.blp")
 		function frame.slotIconDrop(self, data, ...)
 			local objtype, itemID = GetCursorInfo()
@@ -423,20 +427,22 @@ function lib.makeMailGUI()
 	frame.slot:SetScript("OnReceiveDrag", frame.slotIconDrop)
 
 	frame.slot.help = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	frame.slot.help:SetPoint("LEFT", frame.slot, "RIGHT", 2, 7)
-	frame.slot.help:SetText(("Drop item into box")) --"Drop item into box to search."
-	frame.slot.help:SetWidth(100)
+	frame.slot.help:SetPoint("LEFT", frame.slot, "RIGHT", 10, 0)
+	frame.slot.help:SetJustifyH("LEFT")
+	frame.slot.help:SetText(_TRANS('AAMU_Interface_DropItemBox'))
+	frame.slot.help:SetWidth(180)
 
 	frame.workingname = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	frame.workingname:SetPoint("BOTTOM", frame.resultlist, "TOP", 0, 0)
+	frame.workingname:SetPoint("BOTTOMLEFT", frame.resultlist, "TOPLEFT", 0, 6)
+	frame.workingname:SetJustifyH("LEFT")
 	frame.workingname:SetText("|Cff00ffff")
-	frame.workingname:SetWidth(200)
+	frame.workingname:SetWidth(350)
 
 
 	frame.removeListButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-	frame.removeListButton:SetPoint("BOTTOM", frame.buttonList, "TOP", 0, 0)
-	frame.removeListButton:SetWidth(160)
-	frame.removeListButton:SetText("Remove selected list")
+	frame.removeListButton:SetPoint("BOTTOMLEFT", frame.buttonList, "TOPLEFT", 0, 6)
+	frame.removeListButton:SetSize(160, 22)
+	frame.removeListButton:SetText(_TRANS('AAMU_Interface_RemoveSelectedList'))
 	frame.removeListButton:Disable()
 	frame.removeListButton:SetScript("OnClick",  function()
 					local settings = frame.buttonList.SavedButtons
@@ -448,8 +454,9 @@ function lib.makeMailGUI()
 				end)
 
 	frame.addButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-	frame.addButton:SetPoint("TOPLEFT", frame.slot, "BOTTOMLEFT", 0,-10)
-	frame.addButton:SetText(("Add"))
+	frame.addButton:SetSize(95, 22)
+	frame.addButton:SetPoint("TOPLEFT", frame.slot, "BOTTOMLEFT", 0, -10)
+	frame.addButton:SetText(_TRANS('AAMU_Interface_Add'))
 	frame.addButton:Disable()
 	frame.addButton:SetScript("OnClick",  function()
 					local itemID = frame.slot.workingItem
@@ -467,18 +474,19 @@ function lib.makeMailGUI()
 						if not exists then
 							table.insert(settings[selection], {itemLink, itemID})
 						else
-							print(itemLink, "already on list")
+							print(itemLink, _TRANS('AAMU_Interface_AlreadyOnList'))
 						end
 					end
 					frame.slotclear()
 				end)
-	frame.addButton:SetScript("OnEnter", function() lib.buttonTooltips( frame.addButton, "Click to add Item to this list.") end)
+	frame.addButton:SetScript("OnEnter", function() lib.buttonTooltips( frame.addButton, _TRANS('AAMU_HelpTooltip_AddItemToList')) end)
 	frame.addButton:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
 
 	frame.removeButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-	frame.removeButton:SetPoint("LEFT", frame.addButton, "RIGHT", 0, 0)
-	frame.removeButton:SetText("Remove")
+	frame.removeButton:SetSize(95, 22)
+	frame.removeButton:SetPoint("LEFT", frame.addButton, "RIGHT", 8, 0)
+	frame.removeButton:SetText(_TRANS('AAMU_Interface_Remove'))
 	frame.removeButton:Disable()
 	frame.removeButton:SetScript("OnClick", function(self)
 		local settings = frame.buttonList.SavedButtons
@@ -501,9 +509,10 @@ function lib.makeMailGUI()
 
 	--create buttons
 	for buttonName in pairs(frame.buttonList.SavedButtons) do
-		lib.createMailButton(buttonName, "Add all items on this \list to the mail.", lib.customAction)
+		lib.createMailButton(buttonName, _TRANS('AAMU_HelpTooltip_CustomMailBtn'), lib.customAction)
 	end
 	if UIStyle then
+		UIStyle.StyleItemSlot(frame.slot, 42)
 		UIStyle.StyleEditBox(frame.listEditBox)
 		UIStyle.StyleButton(frame.removeListButton, "default")
 		UIStyle.StyleButton(frame.addButton, "primary")
@@ -513,9 +522,9 @@ function lib.makeMailGUI()
 
 	--Add Config button to mail window
 	lib.ammailgui.configureButton = CreateFrame("Button", nil, lib.ammailgui)
-	lib.ammailgui.configureButton:SetPoint("TOPLEFT", lib.ammailgui, "TOPLEFT", -15,0)
-	lib.ammailgui.configureButton:SetHeight(30)
-	lib.ammailgui.configureButton:SetWidth(30)
+	lib.ammailgui.configureButton:SetPoint("TOPLEFT", lib.ammailgui, "TOPLEFT", 6, -4)
+	lib.ammailgui.configureButton:SetHeight(20)
+	lib.ammailgui.configureButton:SetWidth(20)
 	lib.ammailgui.configureButton:SetNormalTexture("Interface\\GossipFrame\\HealerGossipIcon")
 	lib.ammailgui.configureButton:SetHighlightTexture("Interface\\GossipFrame\\BinderGossipIcon")
 
@@ -529,7 +538,7 @@ function lib.makeMailGUI()
 										end)
 	lib.ammailgui.configureButton:SetScript("OnEnter", function(self)
 								GameTooltip:SetOwner(self, "ANCHOR_BOTTOMRIGHT")
-								GameTooltip:SetText("Click to add new mail buttons")
+								GameTooltip:SetText(_TRANS('AAMU_HelpTooltip_ClickAddMailButtons'))
 							end)
 	lib.ammailgui.configureButton:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
@@ -552,6 +561,7 @@ function lib.createMailButton(name, tooltip, click)
 	local buttonRef = "Button"..total
 
 	lib.ammailgui[buttonRef]= CreateFrame("Button", "", lib.ammailgui, "UIPanelButtonTemplate")
+	lib.ammailgui[buttonRef]:SetSize(108, 22)
 	lib.ammailgui[buttonRef]:SetText(name)
 	lib.ammailgui[buttonRef]:SetScript("OnEnter", function() lib.buttonTooltips( lib.ammailgui[buttonRef], tooltip) end)
 	lib.ammailgui[buttonRef]:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -563,18 +573,17 @@ function lib.createMailButton(name, tooltip, click)
 
 
 	if lib.ammailgui.ButtonCount == 1 then --anchor to starting point
-		local spacer = -24
-		if lib.ammailgui.ButtonTotal == 1 then spacer = -28 end --first row is padded more
-		lib.ammailgui[buttonRef]:SetPoint("TOPLEFT", lib.ammailgui, "TOPLEFT", 10, spacer * lib.ammailgui.ButtonRow)
+		local yOffset = -34 - (lib.ammailgui.ButtonRow - 1) * 25
+		lib.ammailgui[buttonRef]:SetPoint("TOPLEFT", lib.ammailgui, "TOPLEFT", 10, yOffset)
 	else
-		local prevButton =  "Button"..total-1
-		lib.ammailgui[buttonRef]:SetPoint("LEFT", lib.ammailgui[prevButton], "RIGHT", 10, 0)
+		local prevButton = "Button"..(total - 1)
+		lib.ammailgui[buttonRef]:SetPoint("LEFT", lib.ammailgui[prevButton], "RIGHT", 8, 0)
 	end
 
 	--set frame height for player added buttons
 	if lib.ammailgui.ButtonRow > 2 then
-		local width = 24 * (lib.ammailgui.ButtonRow -2)
-		lib.ammailgui:SetHeight(75 + width)
+		local extraH = 25 * (lib.ammailgui.ButtonRow - 2)
+		lib.ammailgui:SetHeight(88 + extraH)
 	end
 
 	lib.ammailgui.ButtonTotal = lib.ammailgui.ButtonTotal + 1

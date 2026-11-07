@@ -54,7 +54,7 @@ USAGE:
 ]]
 
 local LIBRARY_VERSION_MAJOR = "Configator"
-local LIBRARY_VERSION_MINOR = 39
+local LIBRARY_VERSION_MINOR = 40
 local lib = LibStub:NewLibrary(LIBRARY_VERSION_MAJOR, LIBRARY_VERSION_MINOR)
 if not lib then return end
 
@@ -192,12 +192,25 @@ function UIStyle.StyleButton(btn, variant)
 	UIStyle.ApplyBox(btn, 0.15, 0.18, 0.23, 1, 0.27, 0.31, 0.39, 1)
 
 	local fs = btn:GetFontString()
+	local function EnsureButtonTextFits(self)
+		local fontStr = self:GetFontString()
+		if not fontStr then return end
+		fontStr:SetFontObject("GameFontHighlightSmall")
+		local textW = fontStr:GetStringWidth() or 0
+		local curW = self:GetWidth() or 0
+		if textW > 0 and curW < (textW + 16) then
+			self:SetWidth(math.ceil(textW + 20))
+		end
+	end
 	if fs then
-		fs:SetFontObject("GameFontHighlightSmall")
+		EnsureButtonTextFits(btn)
 	end
 
 	if not btn._uiHooked then
 		btn._uiHooked = true
+		if btn.SetText then
+			hooksecurefunc(btn, "SetText", EnsureButtonTextFits)
+		end
 		btn:HookScript("OnEnter", function(self)
 			self._uiHovered = true
 			RefreshButtonState(self)
@@ -208,9 +221,71 @@ function UIStyle.StyleButton(btn, variant)
 		end)
 		btn:HookScript("OnEnable", RefreshButtonState)
 		btn:HookScript("OnDisable", RefreshButtonState)
-		btn:HookScript("OnShow", RefreshButtonState)
+		btn:HookScript("OnShow", function(self)
+			EnsureButtonTextFits(self)
+			RefreshButtonState(self)
+		end)
 	end
 	RefreshButtonState(btn)
+end
+
+function UIStyle.StyleItemSlot(slot, size)
+	if not slot then return end
+	if size then
+		slot:SetSize(size, size)
+	end
+	local name = slot:GetName()
+	if name then
+		for _, suffix in ipairs({"Left", "Middle", "Right"}) do
+			local tex = _G[name..suffix]
+			if tex and tex.Hide then tex:Hide(); tex:SetAlpha(0) end
+		end
+	end
+	for _, key in ipairs({"Left", "Middle", "Right", "NineSlice"}) do
+		if slot[key] and slot[key].Hide then
+			slot[key]:Hide()
+			if slot[key].SetAlpha then slot[key]:SetAlpha(0) end
+		end
+	end
+	if slot.SetPushedTexture then slot:SetPushedTexture("") end
+	if slot.SetDisabledTexture then slot:SetDisabledTexture("") end
+	UIStyle.ApplyBox(slot, 0.05, 0.06, 0.08, 1, 0.35, 0.40, 0.50, 1)
+
+	local function UpdateSlotIcon(self, texPath)
+		local ntex = self.GetNormalTexture and self:GetNormalTexture()
+		if not ntex then return end
+		if not texPath or texPath == "" then
+			ntex:Hide()
+			ntex:SetAlpha(0)
+		else
+			ntex:ClearAllPoints()
+			ntex:SetPoint("TOPLEFT", self, "TOPLEFT", 2, -2)
+			ntex:SetPoint("BOTTOMRIGHT", self, "BOTTOMRIGHT", -2, 2)
+			if ntex.SetTexCoord then
+				ntex:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+			end
+			ntex:SetAlpha(1)
+			ntex:Show()
+		end
+	end
+
+	UpdateSlotIcon(slot, nil)
+	if not slot._uiSlotHooked then
+		slot._uiSlotHooked = true
+		if slot.SetNormalTexture then
+			hooksecurefunc(slot, "SetNormalTexture", UpdateSlotIcon)
+		end
+		slot:HookScript("OnEnter", function(self)
+			if self.SetBackdropBorderColor then
+				self:SetBackdropBorderColor(0.86, 0.70, 0.20, 1)
+			end
+		end)
+		slot:HookScript("OnLeave", function(self)
+			if self.SetBackdropBorderColor then
+				self:SetBackdropBorderColor(0.35, 0.40, 0.50, 1)
+			end
+		end)
+	end
 end
 
 function UIStyle.StyleEditBox(box)

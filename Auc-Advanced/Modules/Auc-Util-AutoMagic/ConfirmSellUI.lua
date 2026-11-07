@@ -31,7 +31,7 @@ if not AucAdvanced then return end
 
 local lib = AucAdvanced.Modules.Util.AutoMagic
 if not lib then return end
-local print,decode,_,_,replicate,empty,get,set,default,debugPrint,fill = AucAdvanced.GetModuleLocals()
+local print,decode,_,_,replicate,empty,get,set,default,debugPrint,fill,_TRANS = AucAdvanced.GetModuleLocals()
 local GetPrice = function() return 0,0 end --fake getPrice when Appraiser is not available
 if AucAdvanced.Modules.Util.Appraiser then
 	GetPrice = AucAdvanced.Modules.Util.Appraiser.GetPrice
@@ -136,10 +136,10 @@ function lib.ASCRefreshSheet()
 		if linkType == "item" then
 			local vendor = GetSellValue and GetSellValue(iID) or 0
 			local abuy, abid = GetPrice(itemLink, nil, true)
-			local vendorignored = "YES"
+			local vendorignored = _TRANS('AAMU_Interface_Yes')
 			local styleColor = {0,1,0}
 			if get("util.automagic.vidignored"..iID) == true then
-				vendorignored = "NO"
+				vendorignored = _TRANS('AAMU_Interface_No')
 				styleColor = {1,0,0}
 			end
 			table.insert(ASCtempstorage,{
@@ -208,8 +208,8 @@ function lib.makeconfirmsellui()
 	lib.confirmsellui:ClearAllPoints()
 	lib.confirmsellui:SetPoint("CENTER", UIParent, "CENTER", 1,1)
 	lib.confirmsellui:SetFrameStrata("DIALOG")
-	lib.confirmsellui:SetHeight(220)
-	lib.confirmsellui:SetWidth(650)
+	lib.confirmsellui:SetHeight(250)
+	lib.confirmsellui:SetWidth(660)
 	if UIStyle then
 		UIStyle.StyleWindow(lib.confirmsellui, true)
 	else
@@ -243,24 +243,23 @@ function lib.makeconfirmsellui()
 	lib.confirmsellui.Drag:SetHighlightTexture("Interface\\FriendsFrame\\UI-FriendsFrame-HighlightBar")
 	lib.confirmsellui.Drag:SetScript("OnMouseDown", function() lib.confirmsellui:StartMoving() end)
 	lib.confirmsellui.Drag:SetScript("OnMouseUp", function() lib.confirmsellui:StopMovingOrSizing() end)
-	lib.confirmsellui.Drag:SetScript("OnEnter", function() lib.buttonTooltips( lib.confirmsellui.Drag, "Click and drag to reposition window") end)
+	lib.confirmsellui.Drag:SetScript("OnEnter", function() lib.buttonTooltips( lib.confirmsellui.Drag, _TRANS('AAMU_HelpTooltip_DragReposition')) end)
 	lib.confirmsellui.Drag:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
 	-- Text Header
 	lib.confirmsellheader = lib.confirmsellui:CreateFontString(one, "OVERLAY", "NumberFontNormalYellow")
-	lib.confirmsellheader:SetText("AutoMagic: Confirm Pending Sales")
+	lib.confirmsellheader:SetText(_TRANS('AAMU_Interface_ConfirmPendingSales'))
 	lib.confirmsellheader:SetJustifyH("CENTER")
-	lib.confirmsellheader:SetWidth(200)
-	lib.confirmsellheader:SetHeight(10)
-	lib.confirmsellheader:SetPoint("TOPLEFT",  lib.confirmsellui, "TOPLEFT", 0, -10)
-	lib.confirmsellheader:SetPoint("TOPRIGHT", lib.confirmsellui, "TOPRIGHT", 0, 0)
+	lib.confirmsellheader:SetHeight(14)
+	lib.confirmsellheader:SetPoint("TOPLEFT",  lib.confirmsellui, "TOPLEFT", 16, -8)
+	lib.confirmsellheader:SetPoint("TOPRIGHT", lib.confirmsellui, "TOPRIGHT", -28, -8)
 	lib.confirmsellui.confirmsellheader = lib.confirmsellheader
 
 	lib.confirmsellui.help = lib.confirmsellui:CreateFontString(nil, "OVERLAY", "NumberFontNormalYellow")
-	lib.confirmsellui.help:SetText("Drop items here to add to the sell list")
+	lib.confirmsellui.help:SetText(_TRANS('AAMU_Interface_DropItemsToSellList'))
 	lib.confirmsellui.help:SetJustifyH("CENTER")
-	lib.confirmsellui.help:SetWidth(100)
-	lib.confirmsellui.help:SetPoint("LEFT",  lib.confirmsellui, "LEFT", 10, 0)
+	lib.confirmsellui.help:SetWidth(105)
+	lib.confirmsellui.help:SetPoint("LEFT",  lib.confirmsellui, "LEFT", 12, 0)
 
 	-- [name of frame]:SetPoint("[relative to point on my frame]","[frame we want to be relative to]","[point on relative frame]",-left/+right, -down/+up)
 
@@ -275,16 +274,16 @@ function lib.makeconfirmsellui()
 		})
 		lib.confirmsellui.resultlist:SetBackdropColor(0, 0, 0.0, 0.5)
 	end
-	lib.confirmsellui.resultlist:SetPoint("TOPLEFT", lib.confirmsellui, "TOPLEFT", 120, -25)
-	lib.confirmsellui.resultlist:SetPoint("TOPRIGHT", lib.confirmsellui, "TOPRIGHT", -10, -10)
-	lib.confirmsellui.resultlist:SetPoint("BOTTOM", lib.confirmsellui, "BOTTOM", 0, 30)
+	lib.confirmsellui.resultlist:SetPoint("TOPLEFT", lib.confirmsellui, "TOPLEFT", 126, -28)
+	lib.confirmsellui.resultlist:SetPoint("TOPRIGHT", lib.confirmsellui, "TOPRIGHT", -12, -28)
+	lib.confirmsellui.resultlist:SetPoint("BOTTOM", lib.confirmsellui, "BOTTOM", 0, 38)
 
 	lib.confirmsellui.resultlist.sheet = ScrollSheet:Create(lib.confirmsellui.resultlist, {
-		{ ('Item:'), "TOOLTIP", 170, { DESCENDING=false, DEFAULT=true }  },
-		{ "Vendor", "COIN", 70 },
-		{ "Appraiser", "COIN", 70 },
-		{ "Selling for", "TEXT", 70 },
-		{ "Will be Sold", "TEXT", 100},
+		{ _TRANS('AAMU_Interface_ItemCol'), "TOOLTIP", 170, { DESCENDING=false, DEFAULT=true }  },
+		{ _TRANS('AAMU_Interface_Vendor'), "COIN", 70 },
+		{ _TRANS('AAMU_Interface_Appraiser'), "COIN", 70 },
+		{ _TRANS('AAMU_Interface_SellingFor'), "TEXT", 70 },
+		{ _TRANS('AAMU_Interface_WillBeSold'), "TEXT", 100},
 	})
 	lib.confirmsellui.resultlist.sheet:EnableVerticalScrollReset(false)
 	lib.confirmsellui.resultlist.sheet:EnableSelect(true)
@@ -306,30 +305,34 @@ function lib.makeconfirmsellui()
 
 	-- Continue with sales button
 	lib.confirmsellui.continueButton = CreateFrame("Button", nil, lib.confirmsellui, "UIPanelButtonTemplate")
-	lib.confirmsellui.continueButton:SetPoint("BOTTOMRIGHT", lib.confirmsellui, "BOTTOMRIGHT", -18, 10)
-	lib.confirmsellui.continueButton:SetText(("Continue"))
+	lib.confirmsellui.continueButton:SetSize(105, 22)
+	lib.confirmsellui.continueButton:SetPoint("BOTTOMRIGHT", lib.confirmsellui, "BOTTOMRIGHT", -14, 10)
+	lib.confirmsellui.continueButton:SetText(_TRANS('AAMU_Interface_Continue'))
 	lib.confirmsellui.continueButton:SetScript("OnClick",  lib.ASCConfirmContinue)
-	lib.confirmsellui.continueButton:SetScript("OnEnter", function() lib.buttonTooltips( lib.confirmsellui.continueButton, "Click to sell all listed items to vendor.") end)
+	lib.confirmsellui.continueButton:SetScript("OnEnter", function() lib.buttonTooltips( lib.confirmsellui.continueButton, _TRANS('AAMU_HelpTooltip_ContinueSell')) end)
 	lib.confirmsellui.continueButton:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
 	--Remove item from sales button
 	lib.confirmsellui.removeButton = CreateFrame("Button", nil, lib.confirmsellui, "UIPanelButtonTemplate")
-	lib.confirmsellui.removeButton:SetPoint("BOTTOMRIGHT", lib.confirmsellui.continueButton, "BOTTOMLEFT", -18, 0)
-	lib.confirmsellui.removeButton:SetText(("Remove"))
+	lib.confirmsellui.removeButton:SetSize(105, 22)
+	lib.confirmsellui.removeButton:SetPoint("BOTTOMRIGHT", lib.confirmsellui.continueButton, "BOTTOMLEFT", -12, 0)
+	lib.confirmsellui.removeButton:SetText(_TRANS('AAMU_Interface_Remove'))
 	lib.confirmsellui.removeButton:SetScript("OnClick",  lib.ASCRemoveItem)
 	lib.confirmsellui.removeButton:Disable()
 
 	-- Ignore item from future sales
 	lib.confirmsellui.ignoreButton = CreateFrame("Button", nil, lib.confirmsellui, "UIPanelButtonTemplate")
-	lib.confirmsellui.ignoreButton:SetPoint("BOTTOMRIGHT", lib.confirmsellui.removeButton, "BOTTOMLEFT", -18, 0)
-	lib.confirmsellui.ignoreButton:SetText(("Ignore"))
+	lib.confirmsellui.ignoreButton:SetSize(105, 22)
+	lib.confirmsellui.ignoreButton:SetPoint("BOTTOMRIGHT", lib.confirmsellui.removeButton, "BOTTOMLEFT", -12, 0)
+	lib.confirmsellui.ignoreButton:SetText(_TRANS('AAMU_Interface_Ignore'))
 	lib.confirmsellui.ignoreButton:SetScript("OnClick",  lib.ASCIgnoreItem)
 	lib.confirmsellui.ignoreButton:Disable()
 
 	-- Un-Ignore item from future sales
 	lib.confirmsellui.unignoreButton = CreateFrame("Button", nil, lib.confirmsellui, "UIPanelButtonTemplate")
-	lib.confirmsellui.unignoreButton:SetPoint("BOTTOMRIGHT", lib.confirmsellui.ignoreButton, "BOTTOMLEFT", -18, 0)
-	lib.confirmsellui.unignoreButton:SetText(("Un-Ignore"))
+	lib.confirmsellui.unignoreButton:SetSize(115, 22)
+	lib.confirmsellui.unignoreButton:SetPoint("BOTTOMRIGHT", lib.confirmsellui.ignoreButton, "BOTTOMLEFT", -12, 0)
+	lib.confirmsellui.unignoreButton:SetText(_TRANS('AAMU_Interface_UnIgnore'))
 	lib.confirmsellui.unignoreButton:SetScript("OnClick",  lib.ASCUnIgnoreItem)
 	lib.confirmsellui.unignoreButton:Disable()
 	if UIStyle then
