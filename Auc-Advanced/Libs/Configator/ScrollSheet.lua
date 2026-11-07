@@ -26,7 +26,7 @@
 --]]
 
 local LIBRARY_VERSION_MAJOR = "ScrollSheet"
-local LIBRARY_VERSION_MINOR = 24
+local LIBRARY_VERSION_MINOR = 25
 local lib = LibStub:NewLibrary(LIBRARY_VERSION_MAJOR, LIBRARY_VERSION_MINOR)
 if not lib then return end
 
@@ -122,6 +122,7 @@ local function calculateMaxScroll(self, w, height)
 		scroll = 0
 	end
 	self.vSize = scroll
+	self:Update()
 end
 
 local kit = {}
@@ -530,14 +531,20 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize, onSelect
 	name = name..id
 
 	local parentHeight = frame:GetHeight()
-	local content = CreateFrame("Frame", name.."Content", frame)
-	content:SetHeight(parentHeight - 30)
+	if not parentHeight or parentHeight < 100 then
+		parentHeight = 360
+	end
 
 	local panel = PanelScroller:Create(name.."ScrollPanel", frame)
 	panel:SetPoint("TOPLEFT", frame, "TOPLEFT", 5,-5)
 	panel:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -25,25)
+
+	local content = CreateFrame("Frame", name.."Content", panel)
+	content:SetHeight(parentHeight - 30)
+
 	panel:SetScrollChild(content)
-	panel:SetScrollBarVisible("VERTICAL","FAUX")
+	panel:SetScrollBarVisible("HORIZONTAL", "AUTO")
+	panel:SetScrollBarVisible("VERTICAL", "FAUX")
 	panel.vSize = 0
 
 	local totalWidth = 0;
@@ -607,7 +614,19 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize, onSelect
 			nub:SetScript("OnLeave", function(self) self:UnlockHighlight() end)
 			--buttons lose the proper anchor when resized, havnt figured out why. So store and then reattach
 			nub:SetScript("OnMouseDown", function() nub.point, nub.relativeTo, nub.relativePoint, nub.xOfs, nub.yOfs = button:GetPoint()  button:StartSizing() end )
-			nub:SetScript("OnMouseUp", function() button:StopMovingOrSizing() button:SetPoint(nub.point, nub.relativeTo, nub.relativePoint, nub.xOfs, nub.yOfs) lib.Processor("ColumnWidthSet", sheet, button, i) end )
+			nub:SetScript("OnMouseUp", function()
+				button:StopMovingOrSizing()
+				button:SetPoint(nub.point, nub.relativeTo, nub.relativePoint, nub.xOfs, nub.yOfs)
+				lib.Processor("ColumnWidthSet", sheet, button, i)
+				if sheet and sheet.labels and sheet.content and sheet.panel then
+					local newTotal = 10
+					for idx = 1, #sheet.labels do
+						newTotal = newTotal + (sheet.labels[idx].button:GetWidth() or 30) + (idx > 1 and 3 or 0)
+					end
+					sheet.content:SetWidth(newTotal)
+					sheet.panel:Update()
+				end
+			end )
 		end
 		label:SetPoint("TOPLEFT", button, "TOPLEFT", 0,0)
 		label:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", 0,0)

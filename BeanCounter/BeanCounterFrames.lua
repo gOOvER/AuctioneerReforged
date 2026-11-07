@@ -260,7 +260,7 @@ function private.CreateFrames()
 
 	--Add Title to the Top
 	local title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-	title:SetPoint("TOPLEFT", frame, "TOPLEFT", 80, -17)
+	title:SetPoint("TOPLEFT", frame, "TOPLEFT", 18, -12)
 	title:SetTextColor(1, 0.85, 0.25)
 	title:SetText(_BC("UiAddonTitle"))
 
@@ -277,10 +277,10 @@ function private.CreateFrames()
 
 	--Add Configuration Button for those who dont use sidebar.
 	frame.Config = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-	frame.Config:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -139, -15)
+	frame.Config:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -8, -8)
 	frame.Config:SetScript("OnClick", function() private.GUI() end)
-	frame.Config:SetText("Configure")
-	frame.Config:SetWidth(100)
+	frame.Config:SetText(_BC('UiConfigure'))
+	frame.Config:SetWidth(110)
 	frame.Config:SetHeight(20)
 	UIStyle.StyleButton(frame.Config, "default")
 	frame.Config:SetScript("OnEnter", function() private.buttonTooltips( frame.Config, _BC('TTOpenconfig')) end)--"Opens the BeanCounter configuration window"
@@ -302,16 +302,16 @@ function private.CreateFrames()
 	end
 
 	frame.slot = frame:CreateTexture(nil, "BORDER")
-	frame.slot:SetPoint("TOPLEFT", frame, "TOPLEFT", 23, -125)
-	frame.slot:SetWidth(45)
-	frame.slot:SetHeight(45)
+	frame.slot:SetPoint("TOPLEFT", frame, "TOPLEFT", 18, -112)
+	frame.slot:SetWidth(42)
+	frame.slot:SetHeight(42)
 	frame.slot:SetTexCoord(0.15, 0.85, 0.15, 0.85)
 	frame.slot:SetTexture("Interface\\Buttons\\UI-EmptySlot")
 
 	frame.icon = CreateFrame("Button", nil, frame)
 	frame.icon:SetPoint("TOPLEFT", frame.slot, "TOPLEFT", 3, -3)
-	frame.icon:SetWidth(38)
-	frame.icon:SetHeight(38)
+	frame.icon:SetWidth(36)
+	frame.icon:SetHeight(36)
 	frame.icon:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square.blp")
 	frame.icon:SetScript("OnClick", frame.IconClicked)
 	frame.icon:SetScript("OnReceiveDrag", frame.IconClicked)
@@ -319,10 +319,11 @@ function private.CreateFrames()
 	frame.icon:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
 	--help text
-	frame.slot.help = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	frame.slot.help:SetPoint("LEFT", frame.slot, "RIGHT", 2, 7)
+	frame.slot.help = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+	frame.slot.help:SetPoint("LEFT", frame.slot, "RIGHT", 6, 0)
+	frame.slot.help:SetJustifyH("LEFT")
 	frame.slot.help:SetText(_BC('HelpGuiItemBox')) --"Drop item into box to search."
-	frame.slot.help:SetWidth(100)
+	frame.slot.help:SetWidth(114)
 
 	--Select box, used to chooose where the stats comefrom we show server/faction/player/all
 	frame.SelectBoxSetting = {"1","server"}
@@ -338,20 +339,18 @@ function private.CreateFrames()
 
 	frame.selectbox = CreateFrame("Frame", "BeanCounterSelectBox", frame)
 	frame.selectbox.box = SelectBox:Create("BeanCounterSelectBox", frame.selectbox, 140, private.ChangeControls, vals, "default")
-	frame.selectbox.box:SetPoint("TOPLEFT", frame, "TOPLEFT", 4,-80)
+	frame.selectbox.box:SetPoint("TOPLEFT", frame, "TOPLEFT", 2, -74)
 	frame.selectbox.box.element = "selectBox"
-	frame.selectbox.box:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-	frame.selectbox.box:SetPoint("BOTTOMLEFT", frame, "TOPLEFT", 0,-90)
 	frame.selectbox.box:SetText(private.realmName.." ".._BC('UiData'))
 	frame.selectbox.box.button:SetScript("OnEnter", function() private.buttonTooltips( frame.selectbox.box.button, _BC('TT_BeanCounterSelectBox')) end)--"Filter search results by server, player, faction"
 	frame.selectbox.box.button:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
 	--Search box
 	frame.searchBox = CreateFrame("EditBox", "BeancountersearchBox", frame, "InputBoxTemplate")
-	frame.searchBox:SetPoint("TOPLEFT", frame, "TOPLEFT", 29, -180)
+	frame.searchBox:SetPoint("TOPLEFT", frame, "TOPLEFT", 18, -162)
 	frame.searchBox:SetAutoFocus(false)
 	frame.searchBox:SetHeight(20)
-	frame.searchBox:SetWidth(150)
+	frame.searchBox:SetWidth(154)
 	UIStyle.StyleEditBox(frame.searchBox)
 	frame.searchBox:SetScript("OnEnterPressed", function()
 		local itemName = frame.searchBox:GetText()
@@ -367,9 +366,9 @@ function private.CreateFrames()
 
 	--Search Button
 	frame.searchButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-	frame.searchButton:SetPoint("TOPLEFT", frame.searchBox, "BOTTOMLEFT", -6, -3)
+	frame.searchButton:SetPoint("TOPLEFT", frame.searchBox, "BOTTOMLEFT", 0, -4)
 	frame.searchButton:SetText(_BC('UiSearch'))
-	frame.searchButton:SetSize(84, 22)
+	frame.searchButton:SetSize(96, 20)
 	UIStyle.StyleButton(frame.searchButton, "primary")
 	frame.searchButton:SetScript("OnClick", function()
 		local itemName = frame.searchBox:GetText()
@@ -429,43 +428,45 @@ function private.CreateFrames()
 
 	--Check boxes to narrow our search
 	frame.exactCheck = CreateFrame("CheckButton", "BeancounterexactCheck", frame, "UICheckButtonTemplate")
-	frame.exactCheck:SetChecked(get("util.beancounter.ButtonExactCheck")) --get the last used checked/unchecked value Then use below script to store state changes
-	frame.exactCheck:SetPoint("TOPLEFT", frame, "TOPLEFT", 19, -217)
+	frame.exactCheck:SetChecked(get("util.beancounter.ButtonExactCheck"))
+	frame.exactCheck:SetPoint("TOPLEFT", frame, "TOPLEFT", 16, -212)
 	frame.exactCheck:SetScript("OnClick", function(self) set("util.beancounter.ButtonExactCheck", self:GetChecked() ) private.wipeSearchCache() end)
 	_G["BeancounterexactCheckText"]:SetText(_BC('UiExactNameSearch'))
-	frame.exactCheck:SetScript("OnEnter", function() private.buttonTooltips( frame.exactCheck, _BC('TT_ExactCheck')) end) --"Only match the Exact text in the search box"
+	UIStyle.StyleCheckBox(frame.exactCheck, 18)
+	frame.exactCheck:SetHitRectInsets(0, -130, 0, 0)
+	frame.exactCheck:SetScript("OnEnter", function() private.buttonTooltips( frame.exactCheck, _BC('TT_ExactCheck')) end)
 	frame.exactCheck:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
-	--search classic data
+	--search classic/neutral data
 	frame.neutralCheck = CreateFrame("CheckButton", "BeancounterneutralCheck", frame, "UICheckButtonTemplate")
-	frame.neutralCheck:SetChecked(false) --Set this to false We only want this to be true/searchabe if there is a classic DB to search
+	frame.neutralCheck:SetChecked(false)
 	frame.neutralCheck:SetScript("OnClick", function(self) set("util.beancounter.ButtonneutralCheck", self:GetChecked() ) private.wipeSearchCache() end)
 	_G["BeancounterneutralCheckText"]:SetText(_BC('UiNeutralCheckBox'))
-	frame.neutralCheck:SetPoint("TOP", frame.exactCheck, "BOTTOM", 0, 6)
-	frame.neutralCheck:SetScript("OnEnter", function() private.buttonTooltips( frame.neutralCheck, _BC('TT_neutralCheck')) end) --"Display results from BeanCounter Classic Database"
+	UIStyle.StyleCheckBox(frame.neutralCheck, 18)
+	frame.neutralCheck:SetHitRectInsets(0, -130, 0, 0)
+	frame.neutralCheck:SetPoint("TOPLEFT", frame.exactCheck, "BOTTOMLEFT", 0, -2)
+	frame.neutralCheck:SetScript("OnEnter", function() private.buttonTooltips( frame.neutralCheck, _BC('TT_neutralCheck')) end)
 	frame.neutralCheck:SetScript("OnLeave", function() GameTooltip:Hide() end)
-
-
 
 	--search bids
 	frame.bidCheck = CreateFrame("CheckButton", "BeancounterbidCheck", frame, "UICheckButtonTemplate")
 	frame.bidCheck:SetChecked(get("util.beancounter.ButtonBidCheck"))
 	frame.bidCheck:SetScript("OnClick", function(self) set("util.beancounter.ButtonBidCheck", self:GetChecked() ) private.wipeSearchCache() end)
 	_G["BeancounterbidCheckText"]:SetText(_BC('UiBids'))
-	frame.bidCheck:SetScale(0.85)
-	frame.bidCheck:SetHitRectInsets(0, -60, 0, 0) --stops frame from overlaping with nearby checkbox
-	frame.bidCheck:SetPoint("TOPLEFT", frame, "TOPLEFT", 25, -313)
-	frame.bidCheck:SetScript("OnEnter", function() private.buttonTooltips( frame.bidCheck, _BC('TT_BidCheck')) end) --"Display items bought from the Auction House"
+	UIStyle.StyleCheckBox(frame.bidCheck, 18)
+	frame.bidCheck:SetHitRectInsets(0, -130, 0, 0)
+	frame.bidCheck:SetPoint("TOPLEFT", frame.neutralCheck, "BOTTOMLEFT", 0, -2)
+	frame.bidCheck:SetScript("OnEnter", function() private.buttonTooltips( frame.bidCheck, _BC('TT_BidCheck')) end)
 	frame.bidCheck:SetScript("OnLeave", function() GameTooltip:Hide() end)
-
 
 	frame.bidFailedCheck = CreateFrame("CheckButton", "BeancounterbidFailedCheck", frame, "UICheckButtonTemplate")
 	frame.bidFailedCheck:SetChecked(get("util.beancounter.ButtonBidFailedCheck"))
 	frame.bidFailedCheck:SetScript("OnClick", function(self) set("util.beancounter.ButtonBidFailedCheck", self:GetChecked() ) private.wipeSearchCache() end)
-	frame.bidFailedCheck:SetScale(0.85)
 	_G["BeancounterbidFailedCheckText"]:SetText(_BC('UiOutbids'))
-	frame.bidFailedCheck:SetPoint("LEFT", frame.bidCheck, "RIGHT", 60, 0)
-	frame.bidFailedCheck:SetScript("OnEnter", function() private.buttonTooltips( frame.bidFailedCheck, _BC('TT_BidFailedCheck')) end) --"Display items you were outbided on."
+	UIStyle.StyleCheckBox(frame.bidFailedCheck, 18)
+	frame.bidFailedCheck:SetHitRectInsets(0, -130, 0, 0)
+	frame.bidFailedCheck:SetPoint("TOPLEFT", frame.bidCheck, "BOTTOMLEFT", 0, -2)
+	frame.bidFailedCheck:SetScript("OnEnter", function() private.buttonTooltips( frame.bidFailedCheck, _BC('TT_BidFailedCheck')) end)
 	frame.bidFailedCheck:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
 	--search Auctions
@@ -473,42 +474,41 @@ function private.CreateFrames()
 	frame.auctionCheck:SetChecked(get("util.beancounter.ButtonAuctionCheck"))
 	frame.auctionCheck:SetScript("OnClick", function(self) set("util.beancounter.ButtonAuctionCheck", self:GetChecked() ) private.wipeSearchCache() end)
 	_G["BeancounterauctionCheckText"]:SetText(_BC('UiAuctions'))
-	frame.auctionCheck:SetScale(0.85)
-	frame.auctionCheck:SetHitRectInsets(0, -60, 0, 0) --stops frame from overlaping with nearby checkbox
-	frame.auctionCheck:SetPoint("TOP", frame.bidCheck, "BOTTOM", 0, 2)
-	frame.auctionCheck:SetScript("OnEnter", function() private.buttonTooltips( frame.auctionCheck, _BC('TT_AuctionCheck')) end) --"Display items sold at the Auction House"
+	UIStyle.StyleCheckBox(frame.auctionCheck, 18)
+	frame.auctionCheck:SetHitRectInsets(0, -130, 0, 0)
+	frame.auctionCheck:SetPoint("TOPLEFT", frame.bidFailedCheck, "BOTTOMLEFT", 0, -2)
+	frame.auctionCheck:SetScript("OnEnter", function() private.buttonTooltips( frame.auctionCheck, _BC('TT_AuctionCheck')) end)
 	frame.auctionCheck:SetScript("OnLeave", function() GameTooltip:Hide() end)
-
-
 
 	frame.auctionFailedCheck = CreateFrame("CheckButton", "BeancounterauctionFailedCheck", frame, "UICheckButtonTemplate")
 	frame.auctionFailedCheck:SetChecked(get("util.beancounter.ButtonAuctionFailedCheck"))
 	frame.auctionFailedCheck:SetScript("OnClick", function(self) set("util.beancounter.ButtonAuctionFailedCheck", self:GetChecked() ) private.wipeSearchCache() end)
-	frame.auctionFailedCheck:SetScale(0.85)
 	_G["BeancounterauctionFailedCheckText"]:SetText(_BC('UiFailedAuctions'))
-	BeancounterauctionFailedCheckText:SetWidth(80) --keeps text from overlaping
-	frame.auctionFailedCheck:SetPoint("LEFT", frame.auctionCheck, "RIGHT", 60, 0)
-	frame.auctionFailedCheck:SetScript("OnEnter", function() private.buttonTooltips( frame.auctionFailedCheck, _BC('TT_AuctionFailedCheck')) end) --Display items you failed to sell.
+	UIStyle.StyleCheckBox(frame.auctionFailedCheck, 18)
+	frame.auctionFailedCheck:SetHitRectInsets(0, -130, 0, 0)
+	frame.auctionFailedCheck:SetPoint("TOPLEFT", frame.auctionCheck, "BOTTOMLEFT", 0, -2)
+	frame.auctionFailedCheck:SetScript("OnEnter", function() private.buttonTooltips( frame.auctionFailedCheck, _BC('TT_AuctionFailedCheck')) end)
 	frame.auctionFailedCheck:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
 	--[[Date filter edit boxes]]--
 	frame.useDateCheck = CreateFrame("CheckButton", "BeancounteruseDateCheck", frame, "UICheckButtonTemplate")
 	frame.useDateCheck:SetScript("OnClick", function(self) set("util.beancounter.ButtonuseDateCheck", self:GetChecked() ) private.wipeSearchCache() end)
-	set("util.beancounter.ButtonuseDateCheck", false)--always start off
+	set("util.beancounter.ButtonuseDateCheck", false)
 	frame.useDateCheck:SetChecked(get("util.beancounter.ButtonuseDateCheck"))
-	frame.useDateCheck:SetScale(0.85)
 	BeancounteruseDateCheckText:SetText(_BC('UiUseDateFilter'))
-	frame.useDateCheck:SetPoint("TOP", frame.auctionCheck, "BOTTOM", 0, 4)
-	frame.useDateCheck:SetScript("OnEnter", function() private.buttonTooltips( frame.useDateCheck, _BC('TT_useDateCheck')) end) --"Display items you were outbided on."
+	UIStyle.StyleCheckBox(frame.useDateCheck, 18)
+	frame.useDateCheck:SetHitRectInsets(0, -130, 0, 0)
+	frame.useDateCheck:SetPoint("TOPLEFT", frame.auctionFailedCheck, "BOTTOMLEFT", 0, -2)
+	frame.useDateCheck:SetScript("OnEnter", function() private.buttonTooltips( frame.useDateCheck, _BC('TT_useDateCheck')) end)
 	frame.useDateCheck:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
 	private.lowerDateBox = private.dateBoxTemplate(frame, "BeanCounterLower")
-	private.lowerDateBox.hour = 0 --sets time so we cover teh full day
-	private.lowerDateBox:SetPoint("TOPLEFT", frame.useDateCheck, "BOTTOM", 10, -20)
+	private.lowerDateBox.hour = 0
+	private.lowerDateBox:SetPoint("TOPLEFT", frame, "TOPLEFT", 18, -374)
 
 	private.upperDateBox = private.dateBoxTemplate(frame, "BeanCounterUpper")
-	private.upperDateBox.hour = 24 --sets time so we cover teh full day
-	private.upperDateBox:SetPoint("TOP", private.lowerDateBox, "BOTTOM", 0, -10)
+	private.upperDateBox.hour = 24
+	private.upperDateBox:SetPoint("TOPLEFT", private.lowerDateBox, "BOTTOMLEFT", 0, -6)
 	--tab between two sets
 	private.lowerDateBox.year:SetScript("OnTabPressed", function(self)
 		if IsShiftKeyDown() then
@@ -526,19 +526,19 @@ function private.CreateFrames()
 	end)
 
 
-	frame.dateHelp = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+	frame.dateHelp = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
 	frame.dateHelp:ClearAllPoints()
-	frame.dateHelp:SetPoint("BOTTOMLEFT", private.lowerDateBox, "TOPLEFT", 0, 10)
-	frame.dateHelp:SetText("month day year")
+	frame.dateHelp:SetPoint("BOTTOMLEFT", private.lowerDateBox, "TOPLEFT", 0, 4)
+	frame.dateHelp:SetText(_BC('UiDateFilterHelp'))
 
 	--creates teh report text that tells info on # of entries
 	frame.DBCount = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	frame.DBCount:SetPoint("TOPLEFT", frame, "TOPLEFT", 70, -40)
-	frame.DBCount:SetText("Items: "..private.DBSumEntry)
+	frame.DBCount:SetPoint("TOPLEFT", frame, "TOPLEFT", 20, -40)
+	frame.DBCount:SetText(_BC('UiItemsCount')..private.DBSumEntry)
 
 	frame.DBItems = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	frame.DBItems:SetPoint("TOPLEFT", frame, "TOPLEFT", 70, -55)
-	frame.DBItems:SetText("Entries: "..private.DBSumItems)
+	frame.DBItems:SetPoint("TOPLEFT", frame, "TOPLEFT", 20, -55)
+	frame.DBItems:SetText(_BC('UiEntriesCount')..private.DBSumItems)
 	private.sumDatabase() --Sums database Done on first Start and Search of the session
 
 	--Edit box for changing UI reason codes
@@ -583,9 +583,9 @@ function private.CreateFrames()
 	--Create the results window
 	frame.resultlist = CreateFrame("Frame", nil, frame, BackdropTemplateMixin and "BackdropTemplate")
 	UIStyle.StylePanel(frame.resultlist)
-	frame.resultlist:SetPoint("TOPLEFT", frame, "TOPLEFT", 187, -32.5) --change anchors to allow for vert resize
-	frame.resultlist:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -3, 0)
-	frame.resultlist:SetPoint("BOTTOM", frame, "BOTTOM", 0, 35)
+	frame.resultlist:SetPoint("TOPLEFT", frame, "TOPLEFT", 187, -34)
+	frame.resultlist:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -8, -34)
+	frame.resultlist:SetPoint("BOTTOM", frame, "BOTTOM", 0, 36)
 
 	--Scripts that are executed when we mouse over a TOOLTIP frame
 	function private.scrollSheetOnEnter(button, row, index)
@@ -989,17 +989,17 @@ function private.dateBoxTemplate(frame, name)
 	if frame.name then print("This name already exists") return end
 
 	local self = CreateFrame("Frame", name, frame)
-	self:SetWidth(100) --total frame width of all elements
-	self:SetHeight(15)
+	self:SetWidth(116) --total frame width of all elements
+	self:SetHeight(18)
 
-	local month = private.editboxTemplate(self, name.."MonthEditBox", 15, 20, 2, true)
+	local month = private.editboxTemplate(self, name.."MonthEditBox", 18, 28, 2, true)
 	month:SetPoint("LEFT", self, "LEFT", 0, 0)
 
-	local day = private.editboxTemplate(self, name.."DayEditBox", 15, 20, 2, true)
-	day:SetPoint("LEFT", month, "RIGHT", 10, 0)
+	local day = private.editboxTemplate(self, name.."DayEditBox", 18, 28, 2, true)
+	day:SetPoint("LEFT", month, "RIGHT", 6, 0)
 
-	local year = private.editboxTemplate(self, name.."YearEditBox", 15, 40, 4, true)
-	year:SetPoint("LEFT", day, "RIGHT", 10, 0)
+	local year = private.editboxTemplate(self, name.."YearEditBox", 18, 48, 4, true)
+	year:SetPoint("LEFT", day, "RIGHT", 6, 0)
 
 	month:SetScript("OnTabPressed", function(self)
 		if IsShiftKeyDown() then

@@ -54,7 +54,7 @@ USAGE:
 ]]
 
 local LIBRARY_VERSION_MAJOR = "Configator"
-local LIBRARY_VERSION_MINOR = 38
+local LIBRARY_VERSION_MINOR = 39
 local lib = LibStub:NewLibrary(LIBRARY_VERSION_MAJOR, LIBRARY_VERSION_MINOR)
 if not lib then return end
 
@@ -106,7 +106,22 @@ end
 
 function UIStyle.StylePanel(frame)
 	if not frame then return end
-	UIStyle.ApplyBox(frame, 0.08, 0.09, 0.12, 0.96, 0.22, 0.25, 0.32, 1)
+	UIStyle.ApplyBox(frame, 0.08, 0.09, 0.12, 0.99, 0.22, 0.25, 0.32, 1)
+end
+
+function UIStyle.StyleCheckBox(check, size)
+	if not check then return end
+	size = size or 18
+	check:SetScale(1)
+	check:SetSize(size, size)
+	local name = check:GetName()
+	local fs = (name and _G[name.."Text"]) or (check.GetFontString and check:GetFontString()) or check.Text or check.text
+	if fs then
+		fs:SetFontObject("GameFontHighlightSmall")
+		fs:ClearAllPoints()
+		fs:SetPoint("LEFT", check, "RIGHT", 4, 0)
+		fs:SetJustifyH("LEFT")
+	end
 end
 
 function UIStyle.StyleHeaderBar(frame)
@@ -726,7 +741,12 @@ function kit:GetButton(pos)
 	-- Create a button for this tab
 	local button = CreateFrame("Button", nil, self)
 	button:SetWidth(148)
-	button:SetHeight(19)
+	button:SetHeight(16)
+	button:EnableMouseWheel(true)
+	button:SetScript("OnMouseWheel", function(_, delta)
+		self.tabOffset = math.max(0, (self.tabOffset or 0) - delta)
+		self:RenderTabs()
+	end)
 
 	button.bg = button:CreateTexture(nil, "BACKGROUND")
 	button.bg:SetPoint("TOPLEFT", button, "TOPLEFT", 1, -1)
@@ -774,7 +794,7 @@ function kit:GetButton(pos)
 	if pos == 1 then
 		button:SetPoint("TOPLEFT", self, "TOPLEFT", 6, self.buttonTop-10)
 	else
-		button:SetPoint("TOPLEFT", self:GetButton(pos-1), "BOTTOMLEFT", 0, -2)
+		button:SetPoint("TOPLEFT", self:GetButton(pos-1), "BOTTOMLEFT", 0, -1)
 	end
 	return button
 end
@@ -785,9 +805,16 @@ function kit:RenderTabs()
 
 	if not self.render then self:RegenTabs() end
 
-	local offset = 0
 	local total = #self.render
-	local count = math.floor((self.dialogHeight - 36) / 21)
+	local curHeight = self.dialogHeight - (self.heightDelta or 0)
+	local topSpace = 12 - (self.buttonTop or 0)
+	local bottomSpace = self.buttonBottom or 36
+	local availHeight = math.max(68, curHeight - topSpace - bottomSpace)
+	local count = math.max(1, math.floor(availHeight / 17))
+	local maxOffset = math.max(0, total - count)
+	local offset = math.min(math.max(0, self.tabOffset or 0), maxOffset)
+	self.tabOffset = offset
+
 	for i=1, count do
 		local pos = i + offset
 		local button = self:GetButton(i)
@@ -823,6 +850,15 @@ function kit:RenderTabs()
 			button.catId = nil
 			button.tabName = nil
 			button:Hide()
+		end
+	end
+	if self.buttons then
+		for i = count + 1, #self.buttons do
+			self.buttons[i]:SetText("")
+			self.buttons[i]:SetArrowDirection("NONE")
+			self.buttons[i].catId = nil
+			self.buttons[i].tabName = nil
+			self.buttons[i]:Hide()
 		end
 	end
 end
@@ -909,6 +945,48 @@ function kit:ZeroFrame()
 	return 0
 end
 
+local function raiseFrameTree(frame, level)
+	if not frame or not frame.SetFrameLevel then return end
+	frame:SetFrameLevel(level)
+	for i = 1, select("#", frame:GetChildren()) do
+		local child = select(i, frame:GetChildren())
+		raiseFrameTree(child, level + 2)
+	end
+end
+
+local function updateTabScrollHeight(tab)
+	if not tab or not tab.scroll or not tab.content then return end
+	local content = tab.content
+	local needed = (content._estHeight or 250) + 25
+	local top = content:GetTop()
+	if top and tab.frame and tab.frame.ctrls then
+		local minBottom = top
+		for i = 1, tab.frame.ctrls.pos or 0 do
+			local ctrl = tab.frame.ctrls[i]
+			if ctrl and ctrl.kids then
+				for _, kid in ipairs(ctrl.kids) do
+					if kid and kid.GetBottom and kid:IsShown() then
+						local b = kid:GetBottom()
+						if b and b < minBottom then
+							minBottom = b
+						end
+					end
+				end
+			end
+		end
+		if top > minBottom then
+			needed = math.max(needed, (top - minBottom) + 25)
+		end
+	end
+	if needed > (content:GetHeight() or 0) then
+		content:SetHeight(needed)
+	end
+	if tab.scroll.UpdateScrollChildRect then
+		tab.scroll:UpdateScrollChildRect()
+	end
+	tab.scroll:Update()
+end
+
 function kit:SetPosition(parent, width, height, left, top)
 	assert(isGuiObject(self), "Must be called on a valid object")
 
@@ -929,19 +1007,25 @@ function kit:SetPosition(parent, width, height, left, top)
 	self:SetWidth(width)
 	self:SetHeight(height)
 
+	local baseLevel = math.max(15, (self:GetFrameLevel() or 1) + 12)
 	for id, tab in ipairs(self.tabs) do
+		if tab and tab.frame then
+			raiseFrameTree(tab.frame, baseLevel)
+		end
 		if tab and tab.scroll then
 			local frame = tab.frame
 			local lOfs = frame.leftOffset or 0
 			local gWidth = frame.gapWidth or 0
 			local cWidth = width - lOfs - gWidth - 210
 			tab.content:SetWidth(cWidth)
+			updateTabScrollHeight(tab)
 		end
 	end
-	local button = self.buttons[1]
+	local button = self.buttons and self.buttons[1]
 	if button then
-		button:SetPoint("TOPLEFT", self, "TOPLEFT", 5, self.buttonTop-15)
+		button:SetPoint("TOPLEFT", self, "TOPLEFT", 6, self.buttonTop-10)
 	end
+	self:RenderTabs()
 
 	local id = self.tabs.active
 	if id and self.tabs[id] then
@@ -980,7 +1064,9 @@ function kit:ExpandFrame(id)
 	tab.frame.fullsize:SetNormalTexture("Interface\\Minimap\\UI-Minimap-ZoomOutButton-Up")
 	tab.frame.fullsize:SetPushedTexture("Interface\\Minimap\\UI-Minimap-ZoomOutButton-Down")
 	tab.frame:SetPoint("BOTTOMRIGHT", self.Done, "TOPRIGHT", 0-tab.gapWidth, 5+tab.expandGap)
+	raiseFrameTree(tab.frame, math.max(15, (self:GetFrameLevel() or 1) + 12))
 	tab.expanded = true
+	updateTabScrollHeight(tab)
 end
 function kit:ContractFrame(id)
 	assert(isGuiObject(self), "Must be called on a valid object")
@@ -989,7 +1075,9 @@ function kit:ContractFrame(id)
 	tab.frame.fullsize:SetNormalTexture("Interface\\Minimap\\UI-Minimap-ZoomInButton-Up")
 	tab.frame.fullsize:SetPushedTexture("Interface\\Minimap\\UI-Minimap-ZoomInButton-Down")
 	tab.frame:SetPoint("BOTTOMRIGHT", self.Done, "TOPRIGHT", 0-tab.gapWidth, 5+tab.gapHeight-self.heightDelta)
+	raiseFrameTree(tab.frame, math.max(15, (self:GetFrameLevel() or 1) + 12))
 	tab.expanded = nil
+	updateTabScrollHeight(tab)
 end
 function kit:SetExpandGap(id, gap)
 	assert(isGuiObject(self), "Must be called on a valid object")
@@ -1055,7 +1143,7 @@ function kit:AddTab(tabName, catId, gapWidth, gapHeight, topOffset, leftOffset)
 	frame:SetPoint("BOTTOMRIGHT", self.Done, "TOPRIGHT", 0-gapWidth, 5+gapHeight)
 	UIStyle.StylePanel(frame)
 	if frame.SetClipsChildren then frame:SetClipsChildren(true) end
-	frame:SetFrameLevel(10)
+	raiseFrameTree(frame, math.max(15, (self:GetFrameLevel() or 1) + 12))
 
 	frame.fullsize = CreateFrame("Button", nil, frame)
 	frame.fullsize:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", -3, -3)
@@ -1131,8 +1219,10 @@ local function anchorPoint(frame, el, last, indent, width, height, yofs)
 	end
 	if (last) then
 		el:SetPoint("TOP", last, "BOTTOM", 0, -5 + (yofs or 0) - clearance)
+		frame._estHeight = (frame._estHeight or 10) + (height or 18) + 5 - (yofs or 0) + clearance
 	else
 		el:SetPoint("TOP", frame, "TOP", 0, -5 - clearance)
+		frame._estHeight = 10 + (height or 18) + clearance
 	end
 end
 
@@ -1895,6 +1985,9 @@ function kit:AddControl(id, cType, column, ...)
 	end
 
 	self:SetLast(id, last)
+	if self.tabs[id] and self.tabs[id].scroll then
+		updateTabScrollHeight(self.tabs[id])
+	end
 	return control
 end
 
@@ -1927,6 +2020,7 @@ function kit:ActivateTab(id)
 	end
 	local tab = self.tabs[id]
 	tab.frame:Show()
+	raiseFrameTree(tab.frame, math.max(15, (self:GetFrameLevel() or 1) + 12))
 	self.tabs.active = id
 	self.config.selectedCat = tab.catId
 	self.config.selectedTab = tab.tabName
@@ -1941,6 +2035,7 @@ function kit:ActivateTab(id)
 	if self.expandOnActivate then
 		self:ExpandFrame(id)
 	end
+	updateTabScrollHeight(tab)
 end
 
 function kit:GetTabByName(tabName, catId)

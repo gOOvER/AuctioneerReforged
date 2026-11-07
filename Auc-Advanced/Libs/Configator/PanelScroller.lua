@@ -26,12 +26,12 @@
 --]]
 
 local LIBRARY_VERSION_MAJOR = "PanelScroller"
-local LIBRARY_VERSION_MINOR = 6
+local LIBRARY_VERSION_MINOR = 7
 local lib = LibStub:NewLibrary(LIBRARY_VERSION_MAJOR, LIBRARY_VERSION_MINOR)
 if not lib then return end
 
 local kit = {
-	hPos = 0, hSize = 0, hWin = 0, hType = "NO",
+	hPos = 0, hSize = 0, hWin = 0, hType = "AUTO",
 	vPos = 0, vSize = 0, vWin = 0, vType = "AUTO",
 }
 local abs = abs
@@ -155,20 +155,43 @@ end
 
 -- This function updates the entire scrollable unit, hidin
 function kit:Update()
-	self:UpdateScrollChildRect()
+	if not self:IsVisible() then
+		self.hScroll:Hide()
+		self.vScroll:Hide()
+		return
+	end
+	if self.UpdateScrollChildRect then
+		self:UpdateScrollChildRect()
+	end
+
+	local child = self:GetScrollChild()
+	local winW = self:GetWidth() or 0
+	local winH = self:GetHeight() or 0
 
 	if self.hType ~= "FAUX" then
-		self.hSize = self:GetHorizontalScrollRange();
+		self.hSize = self:GetHorizontalScrollRange() or 0
+		if child and winW > 0 then
+			local manualH = math.max(0, (child:GetWidth() or 0) - winW)
+			if manualH > self.hSize then
+				self.hSize = manualH
+			end
+		end
 	end
 	if self.vType ~= "FAUX" then
-		self.vSize = self:GetVerticalScrollRange();
+		self.vSize = self:GetVerticalScrollRange() or 0
+		if child and winH > 0 then
+			local manualV = math.max(0, (child:GetHeight() or 0) - winH)
+			if manualV > self.vSize then
+				self.vSize = manualV
+			end
+		end
 	end
 
 	self.hPos = self.hScroll:GetValue()
 	self.vPos = self.vScroll:GetValue()
 
-	self.hWin = self:GetWidth()
-	self.vWin = self:GetHeight()
+	self.hWin = winW
+	self.vWin = winH
 
 	if (self.hPos > self.hSize) then self.hPos = self.hSize end
 	if (self.vPos > self.vSize) then self.vPos = self.vSize end
@@ -247,31 +270,41 @@ end
 
 -- OnScript functions
 local function LeftButtonOnClick(self)
-	self:GetParent():GetParent():ScrollByPercent("HORIZONTAL", -0.25)
+	local bar = self:GetParent()
+	local scroller = (bar and bar.scroller) or bar:GetParent()
+	scroller:ScrollByPercent("HORIZONTAL", -0.25)
 	PlaySound(SOUNDKIT.U_CHAT_SCROLL_BUTTON)
 end
 
 local function RightButtonOnClick(self)
-	self:GetParent():GetParent():ScrollByPercent("HORIZONTAL", 0.25)
+	local bar = self:GetParent()
+	local scroller = (bar and bar.scroller) or bar:GetParent()
+	scroller:ScrollByPercent("HORIZONTAL", 0.25)
 	PlaySound(SOUNDKIT.U_CHAT_SCROLL_BUTTON)
 end
 
 local function UpButtonOnClick(self)
-	self:GetParent():GetParent():ScrollByPercent("VERTICAL", -0.25)
+	local bar = self:GetParent()
+	local scroller = (bar and bar.scroller) or bar:GetParent()
+	scroller:ScrollByPercent("VERTICAL", -0.25)
 	PlaySound(SOUNDKIT.U_CHAT_SCROLL_BUTTON)
 end
 
 local function DownDuttonOnClick(self)
-	self:GetParent():GetParent():ScrollByPercent("VERTICAL", 0.25)
+	local bar = self:GetParent()
+	local scroller = (bar and bar.scroller) or bar:GetParent()
+	scroller:ScrollByPercent("VERTICAL", 0.25)
 	PlaySound(SOUNDKIT.U_CHAT_SCROLL_BUTTON)
 end
 
 local function HorizontalScrollBarOnValueChanged(self, value)
-	self:GetParent():ScrollToCoords(value, nil)
+	local scroller = self.scroller or self:GetParent()
+	scroller:ScrollToCoords(value, nil)
 end
 
 local function VerticalScrollBarOnValueChanged(self, value)
-	self:GetParent():ScrollToCoords(nil, value)
+	local scroller = self.scroller or self:GetParent()
+	scroller:ScrollToCoords(nil, value)
 end
 
 local function ScrollUpdate(self)
@@ -380,18 +413,30 @@ end
 
 function lib:CreateTemplate(name, parent)
 	local frame = CreateFrame("ScrollFrame", name, parent)
+	if frame.SetClipsChildren then
+		frame:SetClipsChildren(true)
+	end
 
-	local hbar = HorizontalScrollBarTemplate(name.."HorizontalScrollBar", frame)
+	local barParent = parent or frame
+	local hbar = HorizontalScrollBarTemplate(name.."HorizontalScrollBar", barParent)
+	hbar.scroller = frame
 	hbar:SetPoint("TOPLEFT", frame, "BOTTOMLEFT", 16, -1)
 	hbar:SetPoint("TOPRIGHT", frame, "BOTTOMRIGHT", -16, -1)
 
-	local vbar = VerticalScrollBarTemplate(name.."VerticalScrollBar", frame)
+	local vbar = VerticalScrollBarTemplate(name.."VerticalScrollBar", barParent)
+	vbar.scroller = frame
 	vbar:SetPoint("TOPLEFT", frame, "TOPRIGHT", 1, -16)
 	vbar:SetPoint("BOTTOMLEFT", frame, "BOTTOMRIGHT", 1, 16)
 
 	frame:SetScript("OnScrollRangeChanged", ScrollUpdate)
-	frame:SetScript("OnVerticalScroll", ScrollUpdate) -- ### todo: why was this only setup for vertical?
+	frame:SetScript("OnVerticalScroll", ScrollUpdate)
+	frame:SetScript("OnHorizontalScroll", ScrollUpdate)
 	frame:SetScript("OnMouseWheel", OnMouseWheel)
+	frame:SetScript("OnShow", ScrollUpdate)
+	frame:SetScript("OnHide", function()
+		hbar:Hide()
+		vbar:Hide()
+	end)
 
 	return frame
 end

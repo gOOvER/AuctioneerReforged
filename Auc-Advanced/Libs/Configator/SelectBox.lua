@@ -26,7 +26,7 @@
 --]]
 
 local LIBRARY_VERSION_MAJOR = "SelectBox"
-local LIBRARY_VERSION_MINOR = 8
+local LIBRARY_VERSION_MINOR = 9
 local lib = LibStub:NewLibrary(LIBRARY_VERSION_MAJOR, LIBRARY_VERSION_MINOR)
 if not lib then return end
 
@@ -394,6 +394,10 @@ function lib:CreateTemplate(name, parent)
 	button:SetWidth(20)
 	button:SetHeight(20)
 	button:SetPoint("RIGHT", box, "RIGHT", -1, 0)
+	button:SetFrameLevel(box:GetFrameLevel() + 2)
+	box:HookScript("OnShow", function(self)
+		button:SetFrameLevel(self:GetFrameLevel() + 2)
+	end)
 	button:SetBackdrop({
 		bgFile = "Interface\\Buttons\\WHITE8X8",
 		edgeFile = "Interface\\Buttons\\WHITE8X8",
@@ -425,11 +429,12 @@ function lib:CreateTemplate(name, parent)
 		arrow:SetTextColor(0.92, 0.78, 0.30)
 	end)
 
-	local text = frame:CreateFontString(name.."Text", "OVERLAY", "GameFontHighlightSmall")
+	local text = box:CreateFontString(name.."Text", "OVERLAY", "GameFontHighlightSmall")
 	text:SetHeight(14)
 	text:SetPoint("LEFT", box, "LEFT", 8, 0)
 	text:SetPoint("RIGHT", button, "LEFT", -4, 0)
 	text:SetJustifyH("LEFT")
+	text:SetTextColor(0.95, 0.95, 0.95, 1)
 
 	return frame
 end

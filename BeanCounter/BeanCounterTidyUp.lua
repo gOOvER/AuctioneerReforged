@@ -103,8 +103,8 @@ function private.sumDatabase()
 			end
 		end
 	end
-	private.frame.DBCount:SetText("Items: "..private.DBSumEntry)
-	private.frame.DBItems:SetText("Entries: "..private.DBSumItems)
+	private.frame.DBCount:SetText(_BC('UiItemsCount')..private.DBSumEntry)
+	private.frame.DBItems:SetText(_BC('UiEntriesCount')..private.DBSumItems)
 	return private.DBSumEntry, private.DBSumItems
 end
 
