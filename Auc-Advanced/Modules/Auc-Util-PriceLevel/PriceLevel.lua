@@ -37,6 +37,19 @@ if not lib then return end
 local print,decode,_,_,replicate,empty,get,set,default,debugPrint,fill = AucAdvanced.GetModuleLocals()
 
 local data
+private.peerWorthCache = {}
+private.hookedItemLists = {}
+
+local function ApplyBarGradient(tex, orientation, r, g, b, a1, a2)
+	tex:SetColorTexture(1, 1, 1, 1)
+	if tex.SetGradientAlpha then
+		tex:SetGradientAlpha(orientation, r, g, b, a1, r, g, b, a2)
+	elseif tex.SetGradient and CreateColor then
+		tex:SetGradient(orientation:upper(), CreateColor(r, g, b, a1), CreateColor(r, g, b, a2))
+	else
+		tex:SetColorTexture(r, g, b, math.max(a1 or 0.3, a2 or 0.3))
+	end
+end
 
 lib.Processors = {
 	itemtooltip = function(callbackType, ...)
@@ -47,13 +60,30 @@ lib.Processors = {
 		private.SetupConfigGui(gui)
 	end,
 
+	auctionui = function()
+		private.HookRetailAH()
+	end,
+
 	listupdate = function()
 		private.ListUpdate()
 	end,
 
+	scanstats = function()
+		wipe(private.peerWorthCache)
+		private.ListUpdate()
+	end,
+
+	iteminfoupdate = function()
+		if AuctionHouseFrame and AuctionHouseFrame:IsVisible() then
+			private.UpdateAllRetailLists()
+		end
+	end,
+
 	configchanged = function(callbackType, setting, value, subsetting, module, base)
-		if (module == "pricelevel" or base == "profile") and (AuctionFrameBrowse and AuctionFrameBrowse:IsVisible()) then
-			private.ListUpdate()
+		if (module == "pricelevel" or base == "profile") then
+			if (AuctionFrameBrowse and AuctionFrameBrowse:IsVisible()) or (AuctionHouseFrame and AuctionHouseFrame:IsVisible()) then
+				private.ListUpdate()
+			end
 		end
 	end,
 }
@@ -72,7 +102,7 @@ function lib.ProcessTooltip(tooltip, hyperlink, serverKey, quantity, decoded, ad
 end
 
 function lib.OnLoad()
-	default("util.pricelevel.colorize", false)
+	default("util.pricelevel.colorize", true)
 	default("util.pricelevel.single", true)
 	default("util.pricelevel.model", "market")
 	default("util.pricelevel.basis", "try")
@@ -81,12 +111,20 @@ function lib.OnLoad()
 	default("util.pricelevel.yellow", 80)
 	default("util.pricelevel.orange", 110)
 	default("util.pricelevel.red", 135)
-	default("util.pricelevel.opacity", 30)
+	default("util.pricelevel.opacity", 35)
 	default("util.pricelevel.gradient", true)
 	default("util.pricelevel.direction", "LEFT")
 
+	if not get("util.pricelevel.colorize_migrated") then
+		set("util.pricelevel.colorize", true)
+		set("util.pricelevel.colorize_migrated", true)
+	end
+
 	set("util.pricelevel.blue", nil) -- blue is a fake slider for display only - always 0
 
+	if AuctionHouseFrame then
+		private.HookRetailAH()
+	end
 end
 
 --[[ Local functions ]]--
@@ -166,7 +204,10 @@ function private.SetupConfigGui(gui)
 end
 
 function lib.ResetBars()
-	if AucAdvanced.IsRetailAH then return end
+	if AucAdvanced.IsRetailAH then
+		private.ResetRetailBars()
+		return
+	end
 	local tex
 	for i=1, NUM_BROWSE_TO_DISPLAY do
 		tex = _G["BrowseButton"..i.."PriceLevel"]
@@ -182,6 +223,7 @@ function lib.SetBar(i, r,g,b, pct)
 	
 	local tex
 	local button = _G["BrowseButton"..i]
+	if not button then return end
 	local colorize = AucAdvanced.Settings.GetSetting("util.pricelevel.colorize")
 
 	if (button.AddTexture) then
@@ -224,20 +266,21 @@ function lib.SetBar(i, r,g,b, pct)
 		elseif (opacity > 1) then opacity = 1 end
 
 		local gradient = AucAdvanced.Settings.GetSetting("util.pricelevel.gradient")
-		tex:SetColorTexture(1,1,1)
 		if (gradient) then
 			local direction = AucAdvanced.Settings.GetSetting("util.pricelevel.direction")
 			if (direction == "LEFT") then
-				tex:SetGradientAlpha("Horizontal", r,g,b, 0, r,g,b, opacity)
+				ApplyBarGradient(tex, "Horizontal", r,g,b, 0, opacity)
 			elseif (direction == "RIGHT") then
-				tex:SetGradientAlpha("Horizontal", r,g,b, opacity, r,g,b, 0)
+				ApplyBarGradient(tex, "Horizontal", r,g,b, opacity, 0)
 			elseif (direction == "BOTTOM") then
-				tex:SetGradientAlpha("Vertical", r,g,b, 0, r,g,b, opacity)
+				ApplyBarGradient(tex, "Vertical", r,g,b, 0, opacity)
 			elseif (direction == "TOP") then
-				tex:SetGradientAlpha("Vertical", r,g,b, opacity, r,g,b, 0)
+				ApplyBarGradient(tex, "Vertical", r,g,b, opacity, 0)
+			else
+				ApplyBarGradient(tex, "Horizontal", r,g,b, 0, opacity)
 			end
 		else
-			tex:SetGradientAlpha("Vertical", r,g,b, opacity, r,g,b, opacity)
+			ApplyBarGradient(tex, "Vertical", r,g,b, opacity, opacity)
 		end
 		tex:Show()
 	else
@@ -245,8 +288,457 @@ function lib.SetBar(i, r,g,b, pct)
 	end
 end
 
+local function GetItemListRowFrames(itemList)
+	local frames = {}
+	if not itemList then return frames end
+	local seen = {}
+	local function addFrame(f)
+		if type(f) == "table" and not seen[f] and f.CreateTexture and f.CreateFontString then
+			seen[f] = true
+			table.insert(frames, f)
+		end
+	end
+	if itemList.ScrollBox then
+		if itemList.ScrollBox.GetFrames then
+			local ok, list = pcall(itemList.ScrollBox.GetFrames, itemList.ScrollBox)
+			if ok and type(list) == "table" then
+				for _, f in ipairs(list) do addFrame(f) end
+			end
+		end
+		if #frames == 0 and itemList.ScrollBox.ForEachFrame then
+			pcall(itemList.ScrollBox.ForEachFrame, itemList.ScrollBox, function(f) addFrame(f) end)
+		end
+	end
+	if itemList.ScrollFrame and type(itemList.ScrollFrame.buttons) == "table" then
+		for _, f in ipairs(itemList.ScrollFrame.buttons) do addFrame(f) end
+	end
+	if itemList.tableBuilder and type(itemList.tableBuilder.rows) == "table" then
+		for _, f in ipairs(itemList.tableBuilder.rows) do addFrame(f) end
+	end
+	return frames
+end
+
+local function GetRowDataFromFrame(row, itemList)
+	if not row then return nil end
+	if type(row.rowData) == "table" then return row.rowData end
+	if row.GetElementData then
+		local ok, elData = pcall(row.GetElementData, row)
+		if ok and type(elData) == "table" then return elData end
+		if ok and type(elData) == "number" and itemList and itemList.tableBuilder and itemList.tableBuilder.GetDataProviderData then
+			local ok2, d2 = pcall(itemList.tableBuilder.GetDataProviderData, itemList.tableBuilder, elData)
+			if ok2 and type(d2) == "table" then return d2 end
+		end
+	end
+	if type(row.cells) == "table" then
+		for _, cell in ipairs(row.cells) do
+			if cell and type(cell.rowData) == "table" then
+				return cell.rowData
+			end
+		end
+	end
+	return nil
+end
+
+function private.ResetRetailBars()
+	for itemList in pairs(private.hookedItemLists) do
+		local rows = GetItemListRowFrames(itemList)
+		for _, row in ipairs(rows) do
+			if row._aucPriceLevelTex then row._aucPriceLevelTex:Hide() end
+			if row._aucPriceLevelText then row._aucPriceLevelText:SetText("") end
+		end
+	end
+end
+
+function private.SetRetailRowBar(row, r, g, b, pct)
+	if not row then return end
+	if not row._aucPriceLevelTex then
+		local tex = row:CreateTexture(nil, "BORDER", nil, 2)
+		tex:SetPoint("TOPLEFT", row, "TOPLEFT", 2, -1)
+		tex:SetPoint("BOTTOMRIGHT", row, "BOTTOMRIGHT", -2, 1)
+		tex:Hide()
+		row._aucPriceLevelTex = tex
+	end
+	if not row._aucPriceLevelOverlay then
+		local overlay = CreateFrame("Frame", nil, row)
+		overlay:SetAllPoints(row)
+		overlay:SetFrameLevel((row:GetFrameLevel() or 1) + 5)
+		local txt = overlay:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+		txt:SetPoint("RIGHT", overlay, "RIGHT", -8, 0)
+		txt:SetJustifyH("RIGHT")
+		row._aucPriceLevelOverlay = overlay
+		row._aucPriceLevelText = txt
+	end
+
+	local txt = row._aucPriceLevelText
+	local tex = row._aucPriceLevelTex
+	local offset = (AucAdvanced and AucAdvanced.GetFontSizeOffset and AucAdvanced.GetFontSizeOffset()) or 0
+	local fontPath = (STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF")
+	pcall(txt.SetFont, txt, fontPath, math.max(9, 12 + offset), "OUTLINE")
+
+	if not pct or not r or not g or not b then
+		txt:SetText("")
+		tex:Hide()
+		return
+	end
+
+	local roundedPct = math.floor(pct + 0.5)
+	if roundedPct > 999 then
+		txt:SetText(">999%")
+	else
+		txt:SetText(("%d%%"):format(roundedPct))
+	end
+
+	-- Use a bright tint of the level color so the percentage is always vivid and easy to read
+	local tr = math.min(1, r * 0.8 + 0.25)
+	local tg = math.min(1, g * 0.8 + 0.25)
+	local tb = math.min(1, b * 0.8 + 0.25)
+	txt:SetTextColor(tr, tg, tb, 1)
+	txt:Show()
+
+	local colorize = AucAdvanced.Settings.GetSetting("util.pricelevel.colorize")
+	if not colorize then
+		tex:Hide()
+		return
+	end
+
+	local opacity = AucAdvanced.Settings.GetSetting("util.pricelevel.opacity")
+	opacity = math.floor(tonumber(opacity) or 35) / 100
+	if opacity < 0.05 then opacity = 0.05
+	elseif opacity > 1 then opacity = 1 end
+
+	local gradient = AucAdvanced.Settings.GetSetting("util.pricelevel.gradient")
+	if gradient then
+		local direction = AucAdvanced.Settings.GetSetting("util.pricelevel.direction")
+		if direction == "LEFT" then
+			ApplyBarGradient(tex, "Horizontal", r, g, b, opacity * 0.25, opacity)
+		elseif direction == "RIGHT" then
+			ApplyBarGradient(tex, "Horizontal", r, g, b, opacity, opacity * 0.25)
+		elseif direction == "BOTTOM" then
+			ApplyBarGradient(tex, "Vertical", r, g, b, opacity * 0.25, opacity)
+		elseif direction == "TOP" then
+			ApplyBarGradient(tex, "Vertical", r, g, b, opacity, opacity * 0.25)
+		else
+			ApplyBarGradient(tex, "Horizontal", r, g, b, opacity * 0.25, opacity)
+		end
+	else
+		ApplyBarGradient(tex, "Vertical", r, g, b, opacity, opacity)
+	end
+	tex:Show()
+end
+
+local function ComputeTrimmedMean(values)
+	local n = #values
+	if n == 0 then return nil end
+	if n == 1 then return values[1] end
+	table.sort(values)
+	local startIdx = math.max(1, math.floor(n * 0.15) + 1)
+	local endIdx = math.min(n, math.ceil(n * 0.85))
+	if endIdx < startIdx then
+		startIdx, endIdx = 1, n
+	end
+	local sum, count = 0, 0
+	for i = startIdx, endIdx do
+		sum = sum + values[i]
+		count = count + 1
+	end
+	return count > 0 and (sum / count) or values[math.ceil(n / 2)]
+end
+
+function private.GetRetailFallbackWorth(link, itemID, rowData, itemList)
+	-- 1. Check if we are in ItemBuyFrame or CommoditiesBuyFrame (all rows are the same item)
+	if itemList and AuctionHouseFrame then
+		if (AuctionHouseFrame.ItemBuyFrame and itemList == AuctionHouseFrame.ItemBuyFrame.ItemList)
+		or (AuctionHouseFrame.CommoditiesBuyFrame and itemList == AuctionHouseFrame.CommoditiesBuyFrame.ItemList) then
+			local cacheKey = "search:" .. tostring(itemID or link or "current")
+			if private.peerWorthCache[cacheKey] then
+				return private.peerWorthCache[cacheKey]
+			end
+			local unitPrices = {}
+			local rows = GetItemListRowFrames(itemList)
+			for _, rFrame in ipairs(rows) do
+				local rData = GetRowDataFromFrame(rFrame, itemList)
+				if rData then
+					local qty = (rData.quantity and rData.quantity > 0) and rData.quantity or 1
+					local p = rData.unitPrice or (rData.buyoutAmount and rData.buyoutAmount > 0 and (rData.buyoutAmount / qty)) or (rData.bidAmount and rData.bidAmount > 0 and (rData.bidAmount / qty))
+					if p and p > 0 then
+						table.insert(unitPrices, p)
+					end
+				end
+			end
+			local avg = ComputeTrimmedMean(unitPrices)
+			if avg and avg > 0 then
+				private.peerWorthCache[cacheKey] = avg
+				return avg
+			end
+		end
+	end
+
+	-- 2. In BrowseResultsFrame: compute peer baseline across current browse results
+	local browseStats = private.peerWorthCache._browseStats
+	if not browseStats then
+		local prices = {}
+		local perIlvl = {}
+		local results = (C_AuctionHouse and C_AuctionHouse.GetBrowseResults and C_AuctionHouse.GetBrowseResults()) or nil
+		if type(results) == "table" and #results > 0 then
+			for _, entry in ipairs(results) do
+				local minP = entry and entry.minPrice
+				if minP and minP > 0 then
+					table.insert(prices, minP)
+					local ilvl = entry.itemKey and entry.itemKey.itemLevel
+					if ilvl and ilvl > 1 then
+						table.insert(perIlvl, minP / ilvl)
+					end
+				end
+			end
+		elseif itemList then
+			local rows = GetItemListRowFrames(itemList)
+			for _, rFrame in ipairs(rows) do
+				local rData = GetRowDataFromFrame(rFrame, itemList)
+				local minP = rData and rData.minPrice
+				if minP and minP > 0 then
+					table.insert(prices, minP)
+					local ilvl = rData.itemKey and rData.itemKey.itemLevel
+					if ilvl and ilvl > 1 then
+						table.insert(perIlvl, minP / ilvl)
+					end
+				end
+			end
+		end
+		browseStats = {
+			meanPrice = ComputeTrimmedMean(prices),
+			meanPerIlvl = (#perIlvl >= 3) and ComputeTrimmedMean(perIlvl) or nil,
+		}
+		private.peerWorthCache._browseStats = browseStats
+	end
+
+	local rowIlvl = (rowData and rowData.itemKey and rowData.itemKey.itemLevel) or nil
+	if (not rowIlvl or rowIlvl <= 1) and (itemID or link) then
+		local _, _, _, ilvl = GetItemInfo(itemID or link)
+		if ilvl and ilvl > 1 then rowIlvl = ilvl end
+	end
+	if browseStats.meanPerIlvl and rowIlvl and rowIlvl > 1 then
+		return browseStats.meanPerIlvl * rowIlvl
+	end
+	if browseStats.meanPrice and browseStats.meanPrice > 0 then
+		return browseStats.meanPrice
+	end
+
+	-- 3. Last resort: vendor sell price * 4
+	if itemID or link then
+		local vendorPrice = select(11, GetItemInfo(itemID or link))
+		if vendorPrice and vendorPrice > 0 then
+			return vendorPrice * 4
+		end
+	end
+	return nil
+end
+
+function private.UpdateRetailRow(row, itemList)
+	if not row then return end
+	if not row:IsShown() then
+		private.SetRetailRowBar(row, nil, nil, nil, nil)
+		return
+	end
+	local rowData = GetRowDataFromFrame(row, itemList)
+	if not rowData then
+		private.SetRetailRowBar(row, nil, nil, nil, nil)
+		return
+	end
+
+	local quantity, bidPrice, buyPrice
+	if rowData.minPrice and rowData.minPrice > 0 then
+		quantity = 1
+		buyPrice = rowData.minPrice
+		bidPrice = rowData.minPrice
+	elseif rowData.unitPrice and rowData.unitPrice > 0 then
+		quantity = 1
+		buyPrice = rowData.unitPrice
+		bidPrice = rowData.unitPrice
+	else
+		quantity = (rowData.quantity and rowData.quantity > 0) and rowData.quantity or 1
+		buyPrice = rowData.buyoutAmount or 0
+		bidPrice = rowData.bidAmount or rowData.minBid or buyPrice or 0
+	end
+
+	if (not buyPrice or buyPrice <= 0) and (not bidPrice or bidPrice <= 0) then
+		private.SetRetailRowBar(row, nil, nil, nil, nil)
+		return
+	end
+
+	local itemID = rowData.itemID or (rowData.itemKey and rowData.itemKey.itemID)
+	if not itemID and AuctionHouseFrame and AuctionHouseFrame.CommoditiesBuyFrame and itemList == AuctionHouseFrame.CommoditiesBuyFrame.ItemList then
+		itemID = AuctionHouseFrame.CommoditiesBuyFrame.itemID
+			or (AuctionHouseFrame.CommoditiesBuyFrame.BuyDisplay and AuctionHouseFrame.CommoditiesBuyFrame.BuyDisplay.itemID)
+	end
+
+	local link = rowData.itemLink
+	if not link and itemID then
+		local _, infoLink = GetItemInfo(itemID)
+		link = infoLink or rowData.appearanceLink
+		if not link then
+			if C_Item and C_Item.RequestLoadItemDataByID then
+				pcall(C_Item.RequestLoadItemDataByID, itemID)
+			end
+			local suffix = (rowData.itemKey and rowData.itemKey.itemSuffix) or 0
+			link = ("|cffffffff|Hitem:%d:0:0:0:0:0:%d:0:0|h[item:%d]|h|r"):format(itemID, suffix, itemID)
+		end
+	end
+
+	if not link then
+		private.SetRetailRowBar(row, nil, nil, nil, nil)
+		return
+	end
+
+	local priceLevel, _, r, g, b = lib.CalcLevel(link, quantity, bidPrice, buyPrice)
+	if not priceLevel then
+		local fallbackWorth = private.GetRetailFallbackWorth(link, itemID, rowData, itemList)
+		if fallbackWorth and fallbackWorth > 0 then
+			priceLevel, _, r, g, b = lib.CalcLevel(link, quantity, bidPrice, buyPrice, fallbackWorth)
+		end
+	end
+
+	private.SetRetailRowBar(row, r, g, b, priceLevel)
+end
+
+function private.UpdateRetailItemList(itemList)
+	if not itemList or not itemList:IsVisible() then return end
+	if itemList.HeaderContainer and not itemList.HeaderContainer._aucPctHeader then
+		local hdr = itemList.HeaderContainer:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+		hdr:SetPoint("RIGHT", itemList.HeaderContainer, "RIGHT", -12, 0)
+		hdr:SetText("%")
+		hdr:SetTextColor(1, 0.82, 0, 0.9)
+		itemList.HeaderContainer._aucPctHeader = hdr
+	end
+	local rows = GetItemListRowFrames(itemList)
+	for _, row in ipairs(rows) do
+		private.UpdateRetailRow(row, itemList)
+	end
+end
+
+function private.UpdateAllRetailLists()
+	for itemList in pairs(private.hookedItemLists) do
+		if itemList:IsVisible() then
+			private.UpdateRetailItemList(itemList)
+		end
+	end
+end
+
+local function HookSingleRetailItemList(itemList)
+	if not itemList or private.hookedItemLists[itemList] then return end
+	private.hookedItemLists[itemList] = true
+
+	if itemList.RefreshScrollFrame then
+		hooksecurefunc(itemList, "RefreshScrollFrame", function(self)
+			private.UpdateRetailItemList(self)
+		end)
+	end
+	if itemList.UpdateTable then
+		hooksecurefunc(itemList, "UpdateTable", function(self)
+			private.UpdateRetailItemList(self)
+		end)
+	end
+	if itemList.DirtyScrollFrame then
+		hooksecurefunc(itemList, "DirtyScrollFrame", function(self)
+			private.UpdateRetailItemList(self)
+		end)
+	end
+	if itemList.ScrollBox then
+		if itemList.ScrollBox.Update then
+			hooksecurefunc(itemList.ScrollBox, "Update", function()
+				private.UpdateRetailItemList(itemList)
+			end)
+		end
+		if ScrollBoxListMixin and ScrollBoxListMixin.Event and ScrollBoxListMixin.Event.OnDataRangeChanged and itemList.ScrollBox.RegisterCallback then
+			pcall(itemList.ScrollBox.RegisterCallback, itemList.ScrollBox, ScrollBoxListMixin.Event.OnDataRangeChanged, function()
+				private.UpdateRetailItemList(itemList)
+			end, private)
+		end
+	end
+	if itemList.ScrollFrame then
+		itemList.ScrollFrame:HookScript("OnVerticalScroll", function()
+			private.UpdateRetailItemList(itemList)
+		end)
+		if type(itemList.ScrollFrame.update) == "function" then
+			hooksecurefunc(itemList.ScrollFrame, "update", function()
+				private.UpdateRetailItemList(itemList)
+			end)
+		end
+	end
+	if itemList.tableBuilder then
+		if itemList.tableBuilder.Populate then
+			hooksecurefunc(itemList.tableBuilder, "Populate", function()
+				private.UpdateRetailItemList(itemList)
+			end)
+		end
+		if itemList.tableBuilder.AddRow then
+			hooksecurefunc(itemList.tableBuilder, "AddRow", function(_, row)
+				private.UpdateRetailRow(row, itemList)
+			end)
+		end
+		if itemList.tableBuilder.Arrange then
+			hooksecurefunc(itemList.tableBuilder, "Arrange", function()
+				private.UpdateRetailItemList(itemList)
+			end)
+		end
+	end
+	itemList:HookScript("OnShow", function(self)
+		private.UpdateRetailItemList(self)
+	end)
+end
+
+function private.HookRetailAH()
+	if not AuctionHouseFrame then return end
+	if AuctionHouseFrame.BrowseResultsFrame and AuctionHouseFrame.BrowseResultsFrame.ItemList then
+		HookSingleRetailItemList(AuctionHouseFrame.BrowseResultsFrame.ItemList)
+	end
+	if AuctionHouseFrame.ItemBuyFrame and AuctionHouseFrame.ItemBuyFrame.ItemList then
+		HookSingleRetailItemList(AuctionHouseFrame.ItemBuyFrame.ItemList)
+	end
+	if AuctionHouseFrame.CommoditiesBuyFrame and AuctionHouseFrame.CommoditiesBuyFrame.ItemList then
+		HookSingleRetailItemList(AuctionHouseFrame.CommoditiesBuyFrame.ItemList)
+	end
+
+	if not private.retailEventFrame then
+		local ef = CreateFrame("Frame")
+		ef:RegisterEvent("AUCTION_HOUSE_BROWSE_RESULTS_UPDATED")
+		ef:RegisterEvent("AUCTION_HOUSE_BROWSE_RESULTS_ADDED")
+		ef:RegisterEvent("ITEM_SEARCH_RESULTS_UPDATED")
+		ef:RegisterEvent("ITEM_SEARCH_RESULTS_ADDED")
+		ef:RegisterEvent("COMMODITY_SEARCH_RESULTS_UPDATED")
+		local pendingDelay = nil
+		ef:SetScript("OnEvent", function()
+			wipe(private.peerWorthCache)
+			private.UpdateAllRetailLists()
+			pendingDelay = 0.08
+		end)
+		ef:SetScript("OnUpdate", function(_, elapsed)
+			if not pendingDelay then return end
+			pendingDelay = pendingDelay - elapsed
+			if pendingDelay <= 0 then
+				pendingDelay = nil
+				private.UpdateAllRetailLists()
+			end
+		end)
+		private.retailEventFrame = ef
+	end
+
+	if AucAdvanced and AucAdvanced.ApplyAllFonts and not private.hookedApplyAllFonts then
+		private.hookedApplyAllFonts = true
+		hooksecurefunc(AucAdvanced, "ApplyAllFonts", function()
+			private.UpdateAllRetailLists()
+		end)
+	end
+
+	private.UpdateAllRetailLists()
+end
+
 function private.ListUpdate()
-	if AucAdvanced.IsRetailAH then return end
+	if AucAdvanced.IsRetailAH then
+		wipe(private.peerWorthCache)
+		private.HookRetailAH()
+		private.UpdateAllRetailLists()
+		return
+	end
 	lib.ResetBars()
 	local index, link, quantity, minBid, minInc, buyPrice, bidPrice, priceLevel, perItem, r,g,b, _
 	local numBatchAuctions, totalAuctions = GetNumAuctionItems("list");

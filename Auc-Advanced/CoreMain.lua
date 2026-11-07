@@ -710,6 +710,10 @@ local function OnEvent(self, event, arg1, arg2, ...)
 		end
 	elseif event == "AUCTION_ITEM_LIST_UPDATE" then
 		internal.Scan.NotifyItemListUpdated()
+	elseif event == "AUCTION_HOUSE_BROWSE_RESULTS_UPDATED" then
+		if AucAdvanced.API and AucAdvanced.API.ListUpdate then
+			AucAdvanced.API.ListUpdate()
+		end
 	elseif event == "AUCTION_OWNED_LIST_UPDATE" then
 		internal.Scan.NotifyOwnedListUpdated()
 	elseif (event == "ITEM_LOCK_CHANGED" and arg2) or event == "BAG_UPDATE" then

@@ -449,11 +449,12 @@ local function RetailBuildItemData(info, link, timeLeft)
 	itemData[Const.BUYOUT] = buyoutPrice or 0
 
 	-- Pre-fill item details from GetItemInfo since DecodeLink can't parse retail links
-	local itemName, _, _, iLevel, uLevel, _, _, _, _, _, _, classID, subClassID = GetItemInfo(itemID)
+	local itemName, _, _, iLevel, uLevel, _, _, _, equipLoc, _, _, classID, subClassID = GetItemInfo(itemID)
 	-- A known classID keeps GetAuctionItemFillIn from dropping the row if the
 	-- item cache is not available; 0 is used only as a last resort.
 	itemData[Const.CLASSID] = classID or 0
 	itemData[Const.SUBCLASSID] = subClassID or 0
+	itemData[Const.IEQUIP] = equipLoc and EquipCodeToInvType[equipLoc] or nil
 	itemData[Const.ILEVEL] = iLevel or 1
 	itemData[Const.ULEVEL] = uLevel or 0
 	itemData[Const.SEED] = 0

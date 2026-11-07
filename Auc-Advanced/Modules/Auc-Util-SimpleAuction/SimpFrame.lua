@@ -409,14 +409,25 @@ function private.UpdateCompetition(image)
 			if curbid == 0 then
 				curbid = result[Const.MINBID]
 			end
+			-- price level row color
+			if AucAdvanced.Modules.Util.PriceLevel then
+				local _, _, r, g, b = AucAdvanced.Modules.Util.PriceLevel.CalcLevel(result[Const.LINK], count, curbid, result[Const.BUYOUT])
+				if r and g and b then
+					if not style[i] then style[i] = {} end
+					if not style[i][1] then style[i][1] = {} end
+					style[i][1].rowColor = {r, g, b, 0, 0.25, "HORIZONTAL"}
+				end
+			end
 			--color ignored/self sellers
 			local seller = result[Const.SELLER]
 			if seller == Const.PlayerName then
 				if not style[i] then style[i] = {} end
-				style[i][1] = { textColor = {0,1,0} }
+				if not style[i][1] then style[i][1] = {} end
+				style[i][1].textColor = {0,1,0}
 			elseif IsPlayerIgnored(seller) then
 				if not style[i] then style[i] = {} end
-				style[i][1] = { textColor = {1,0,0} }
+				if not style[i][1] then style[i][1] = {} end
+				style[i][1].textColor = {1,0,0}
 			end
 		end
 	end
