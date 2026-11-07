@@ -31,6 +31,13 @@ Enchantrix_RegisterRevision("$URL: Enchantrix/EnxMiniIcon.lua $", "$Rev: 6768 $"
 
 local settings = Enchantrix.Settings
 
+local function L(key)
+	if _ENCH then
+		return _ENCH(key)
+	end
+	return key
+end
+
 --[[
 
 Icon on the minimap related bits
@@ -61,17 +68,21 @@ end
 local function click(obj, button)
 	if (button == "LeftButton") then
 		if (IsModifierKeyDown()) then
-			CastSpellByName(_ENCH("Jewelcrafting"))
+			CastSpellByName(L("Jewelcrafting"))
 		else
-			CastSpellByName(_ENCH("Enchanting"))
+			CastSpellByName(L("Enchanting"))
 		end
 	elseif (button == "RightButton") then
-		settings.MakeGuiConfig()
-		local gui = settings.Gui
-		if (gui:IsVisible()) then
-			gui:Hide()
-		else
-			gui:Show()
+		if settings and settings.MakeGuiConfig then
+			settings.MakeGuiConfig()
+			local gui = settings.Gui
+			if gui then
+				if (gui:IsVisible()) then
+					gui:Hide()
+				else
+					gui:Show()
+				end
+			end
 		end
 	end
 end
@@ -120,10 +131,10 @@ local function mmButton_OnEnter(self)
 	GameTooltip:SetPoint("TOPLEFT", self, "BOTTOMLEFT")
 	GameTooltip:ClearLines()
 	GameTooltip:AddLine("Enchantrix",  1,1,0.5, 1)
-	GameTooltip:AddLine(_ENCH("EnxMMTip"),  1,1,0.5, 1)
-	GameTooltip:AddLine("|cff1fb3ff".._ENCH("Click").."|r ".._ENCH("TipOpenEnchant"), 1,1,0.5, 1)
-	GameTooltip:AddLine("|cff1fb3ff".._ENCH("ShiftClick").."|r ".._ENCH("TipOpenJewel"), 1,1,0.5, 1)
-	GameTooltip:AddLine("|cff1fb3ff".._ENCH("RightClick").."|r ".._ENCH("TipOpenConfig"), 1,1,0.5, 1)
+	GameTooltip:AddLine(L("EnxMMTip"),  1,1,0.5, 1)
+	GameTooltip:AddLine("|cff1fb3ff"..L("Click").."|r "..L("TipOpenEnchant"), 1,1,0.5, 1)
+	GameTooltip:AddLine("|cff1fb3ff"..L("ShiftClick").."|r "..L("TipOpenJewel"), 1,1,0.5, 1)
+	GameTooltip:AddLine("|cff1fb3ff"..L("RightClick").."|r "..L("TipOpenConfig"), 1,1,0.5, 1)
 	GameTooltip:Show()
 end
 
@@ -182,10 +193,10 @@ if LibStub then
 					})
 		function sideIcon:OnTooltipShow()
 			self:AddLine("Enchantrix",  1,1,0.5, 1)
-			self:AddLine(_ENCH("EnxMMTip"),  1,1,0.5, 1)
-			self:AddLine("|cff1fb3ff".._ENCH("Click").."|r ".._ENCH("TipOpenEnchant"), 1,1,0.5, 1)
-			self:AddLine("|cff1fb3ff".._ENCH("ShiftClick").."|r ".._ENCH("TipOpenJewel"), 1,1,0.5, 1)
-			self:AddLine("|cff1fb3ff".._ENCH("RightClick").."|r ".._ENCH("TipOpenConfig"), 1,1,0.5, 1)
+			self:AddLine(L("EnxMMTip"),  1,1,0.5, 1)
+			self:AddLine("|cff1fb3ff"..L("Click").."|r "..L("TipOpenEnchant"), 1,1,0.5, 1)
+			self:AddLine("|cff1fb3ff"..L("ShiftClick").."|r "..L("TipOpenJewel"), 1,1,0.5, 1)
+			self:AddLine("|cff1fb3ff"..L("RightClick").."|r "..L("TipOpenConfig"), 1,1,0.5, 1)
 		end
 		function sideIcon:OnEnter()
 			GameTooltip:SetOwner(self, "ANCHOR_NONE")

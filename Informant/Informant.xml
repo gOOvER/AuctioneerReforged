@@ -48,16 +48,16 @@
 		</Anchors>
 		<Scripts>
 			<OnLoad>
-				Informant.FrameLoaded()
+				if Informant and Informant.FrameLoaded then Informant.FrameLoaded() end
 			</OnLoad>
 			<OnShow>
-				Informant.FrameActive(true);
+				if Informant and Informant.FrameActive then Informant.FrameActive(true) end
 			</OnShow>
 			<OnHide>
-				Informant.FrameActive(false);
+				if Informant and Informant.FrameActive then Informant.FrameActive(false) end
 			</OnHide>
 			<OnEvent>
-				Informant.OnEvent(event, ...);
+				if Informant and Informant.OnEvent then Informant.OnEvent(event, ...) end
 			</OnEvent>
 			<OnDragStart>self:StartMoving()</OnDragStart>
 			<OnDragStop>self:StopMovingOrSizing()</OnDragStop>
