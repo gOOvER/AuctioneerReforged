@@ -378,11 +378,6 @@ private.HiddenBuiltinFrames = {}
 local function SetRetailTabChecked(tab, checked)
 	if not tab then return end
 	tab._checked = checked and true or false
-	if checked then
-		if PanelTemplates_SelectTab then pcall(PanelTemplates_SelectTab, tab) end
-	else
-		if PanelTemplates_DeselectTab then pcall(PanelTemplates_DeselectTab, tab) end
-	end
 	if tab.LeftActive then tab.LeftActive:SetShown(checked) end
 	if tab.MiddleActive then tab.MiddleActive:SetShown(checked) end
 	if tab.RightActive then tab.RightActive:SetShown(checked) end
@@ -400,15 +395,12 @@ local function ResizeRetailTab(tab)
 		local txt = tab:GetText() or ""
 		textWidth = #txt * 7
 	end
-	local width = math.max(76, math.ceil(textWidth + 30))
+	local width = math.max(92, math.ceil(textWidth + 26))
 	tab:SetWidth(width)
+	tab:SetHeight(24)
 	if fs then
-		fs:SetWidth(0)
-	end
-	if tab.Middle then tab.Middle:SetWidth(math.max(20, width - 30)) end
-	if tab.MiddleActive then tab.MiddleActive:SetWidth(math.max(20, width - 30)) end
-	if PanelTemplates_TabResize then
-		pcall(PanelTemplates_TabResize, tab, 0, nil, 36)
+		fs:SetMaxLines(1)
+		fs:SetWidth(width - 10)
 	end
 end
 
@@ -463,7 +455,7 @@ local function EnsureTabFrameSurface(tabFrame, ahFrame)
 	tabFrame:SetPoint("BOTTOMRIGHT", ahFrame, "BOTTOMRIGHT", -6, 6)
 	tabFrame:EnableMouse(true)
 	if not tabFrame._aucSurface then
-		local bg = tabFrame:CreateTexture(nil, "BACKGROUND", nil, -7)
+		local bg = tabFrame:CreateTexture(nil, "BACKGROUND")
 		bg:SetAllPoints(tabFrame)
 		bg:SetColorTexture(0.07, 0.08, 0.10, 0.98)
 		tabFrame._aucSurface = bg
@@ -589,16 +581,11 @@ function lib.AddTab(tabButton, tabFrame)
 		tabButton:ClearAllPoints()
 		if tabCount > 1 then
 			local prevTab = private.RetailTabs[tabCount - 1]
-			tabButton:SetPoint("LEFT", prevTab, "RIGHT", -3, 0)
+			tabButton:SetPoint("LEFT", prevTab, "RIGHT", 2, 0)
 		else
-			local lastBuiltin = ahFrame.Tabs and ahFrame.Tabs[#ahFrame.Tabs]
-			if lastBuiltin then
-				tabButton:SetPoint("LEFT", lastBuiltin, "RIGHT", -3, 0)
-			else
-				tabButton:SetPoint("BOTTOMLEFT", ahFrame, "BOTTOMLEFT", 285, -30)
-			end
+			tabButton:SetPoint("BOTTOMLEFT", ahFrame, "BOTTOMLEFT", 285, -22)
 		end
-		tabButton:SetID((ahFrame.Tabs and #ahFrame.Tabs or 3) + tabCount)
+		tabButton:SetID(tabCount)
 		tabButton:Show()
 
 		-- Hook ahFrame show/hide to manage custom tabs
