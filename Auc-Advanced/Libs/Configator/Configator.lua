@@ -54,7 +54,7 @@ USAGE:
 ]]
 
 local LIBRARY_VERSION_MAJOR = "Configator"
-local LIBRARY_VERSION_MINOR = 42
+local LIBRARY_VERSION_MINOR = 43
 local lib = LibStub:NewLibrary(LIBRARY_VERSION_MAJOR, LIBRARY_VERSION_MINOR)
 if not lib then return end
 
@@ -74,12 +74,12 @@ lib.UIStyle = UIStyle
 UIStyle._fontListeners = UIStyle._fontListeners or {}
 
 function UIStyle.GetFontSize()
-	local sz = (_G.AucAdvancedData and tonumber(_G.AucAdvancedData.UtilUiFontSize)) or 13
-	return math.min(math.max(math.floor(sz), 10), 18)
+	local sz = (_G.AucAdvancedData and tonumber(_G.AucAdvancedData.UtilUiFontSize)) or 14
+	return math.min(math.max(math.floor(sz), 10), 20)
 end
 
 function UIStyle.SetFontSize(size)
-	size = math.min(math.max(math.floor(tonumber(size) or 13), 10), 18)
+	size = math.min(math.max(math.floor(tonumber(size) or 14), 10), 20)
 	_G.AucAdvancedData = _G.AucAdvancedData or {}
 	_G.AucAdvancedData.UtilUiFontSize = size
 	for _, fn in ipairs(UIStyle._fontListeners) do

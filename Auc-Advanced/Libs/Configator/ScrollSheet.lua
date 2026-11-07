@@ -26,7 +26,7 @@
 --]]
 
 local LIBRARY_VERSION_MAJOR = "ScrollSheet"
-local LIBRARY_VERSION_MINOR = 26
+local LIBRARY_VERSION_MINOR = 27
 local lib = LibStub:NewLibrary(LIBRARY_VERSION_MAJOR, LIBRARY_VERSION_MINOR)
 if not lib then return end
 
@@ -116,11 +116,19 @@ end
 local function calculateMaxScroll(self, w, height)
 	-- calculate max scroll, based on current number of items in list, and current height of viewport panel (self)
 	local sheet = self.sheet
+	if not sheet then return end
 
-	-- calculate visible rows: each row is height 14, label row is height 16
-	local viewRows = floor((height - 16) / 14)
-	if viewRows > sheet.maxRows then
-		viewRows = sheet.maxRows
+	height = height or self:GetHeight() or 330
+	local headerH = sheet.headerHeight or 20
+	local rowH = sheet.rowHeight or 17
+
+	local viewRows = math.max(1, floor((height - headerH) / rowH))
+	if viewRows > #sheet.rows then
+		viewRows = #sheet.rows
+	end
+	sheet.maxRows = viewRows
+	if sheet.content then
+		sheet.content:SetHeight(headerH + (viewRows * rowH))
 	end
 
 	-- allow to scroll 1 beyond the last item, as a visual indicator of reaching the end
@@ -130,6 +138,7 @@ local function calculateMaxScroll(self, w, height)
 	end
 	self.vSize = scroll
 	self:Update()
+	sheet:Render()
 end
 
 local kit = {}
@@ -475,8 +484,10 @@ function kit:Render()
 		self.style = style
 		self:PerformSort()--sort our rearranged data
 	end
+	local maxVisible = self.maxRows or #rows
 	for i = 1, #rows do
-		local rowNum = sort[vPos+i]
+		local inView = (i <= maxVisible)
+		local rowNum = inView and sort[vPos+i] or nil
 		local rowPos = nil
 		if rowNum then rowPos = (rowNum-1)*hSize end
 
@@ -488,7 +499,7 @@ function kit:Render()
 				local pos = rowPos + j
 				local text = data[pos] or ""
 				local settings = style[pos] or empty
-				local red,green,blue = 0.8,0.8,0.8
+				local red,green,blue = 0.85,0.85,0.85
 
 				if cell.layout == "COIN" then
 					text = coins(data[pos])
@@ -505,8 +516,12 @@ function kit:Render()
 				cell:SetTextColor(red,green,blue)
 				cell:SetText(text)
 				cell:Show()
+				if cell.button then cell.button:Show() end
 			else
 				cell:Hide()
+				if cell.button then
+					if inView then cell.button:Show() else cell.button:Hide() end
+				end
 			end
 		end
 		if rowPos and rowA1 == 0 and rowA2 == 0 then
@@ -516,7 +531,12 @@ function kit:Render()
 				rowR, rowG, rowB, rowA1, rowA2 = 0.07, 0.08, 0.11, 0.20, 0.20
 			end
 		end
-		rows[i].colorTex:SetGradient(direction,CreateColor(rowR, rowG, rowB, rowA1),CreateColor(rowR, rowG, rowB, rowA2))
+		if inView then
+			rows[i].colorTex:Show()
+			rows[i].colorTex:SetGradient(direction,CreateColor(rowR, rowG, rowB, rowA1),CreateColor(rowR, rowG, rowB, rowA2))
+		else
+			rows[i].colorTex:Hide()
+		end
 	end
 	self:RowSelect()
 end
@@ -526,8 +546,9 @@ local PanelScroller = LibStub:GetLibrary("PanelScroller")
 function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize, onSelect)
 	local sheet
 	local Configator = LibStub:GetLibrary("Configator", true)
-	if Configator and Configator.UIStyle then
-		Configator.UIStyle.StylePanel(frame)
+	local UIStyle = Configator and Configator.UIStyle
+	if UIStyle then
+		UIStyle.StylePanel(frame)
 	end
 	local name = (frame:GetName() or "").."ScrollSheet"
 
@@ -541,6 +562,10 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize, onSelect
 	if not parentHeight or parentHeight < 100 then
 		parentHeight = 360
 	end
+
+	local baseFontSize = (UIStyle and UIStyle.GetFontSize and UIStyle.GetFontSize()) or 14
+	local headerHeight = math.max(18, baseFontSize + 5)
+	local rowHeight = math.max(16, baseFontSize + 3)
 
 	local panel = PanelScroller:Create(name.."ScrollPanel", frame)
 	panel:SetPoint("TOPLEFT", frame, "TOPLEFT", 5,-5)
@@ -570,13 +595,16 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize, onSelect
 		local label = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 		label.origText = layout[i][1]
 		label:SetText(T(layout[i][1]))
+		if UIStyle then
+			UIStyle.ApplyFont(label, 0)
+		end
 		local colWidth = layout[i][3] or 30 --Never us a nil width, causes issues with overlay highlight
 
 		totalWidth = totalWidth + colWidth
 		button:SetWidth(colWidth)
-		button:SetHeight(16)
+		button:SetHeight(headerHeight)
 		button:SetResizable(true)
-		button:SetResizeBounds(0, 0, 400, 16)
+		button:SetResizeBounds(0, 0, 450, headerHeight)
 
 		button:SetID(i)
 		button:SetScript("OnMouseDown", function(self, ...) sheet:ButtonClick(self:GetID(), ...) end)
@@ -654,19 +682,22 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize, onSelect
 
 	local rows = {}
 	local rowNum = 1
-	local maxHeight = content:GetHeight()
-	local totalHeight = 16
-	while (totalHeight + 14 < maxHeight) do
+	local maxAllocHeight = math.max(parentHeight - 30, 880)
+	local totalHeight = headerHeight
+	while (totalHeight + rowHeight < maxAllocHeight) do
 		local row = {}
 		for i = 1, #layout do
 			local cell = content:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+			if UIStyle then
+				UIStyle.ApplyFont(cell, -1)
+			end
 			local button = CreateFrame("Button", nil, content)
 			if rowNum == 1 then
 				cell:SetPoint("TOPLEFT", labels[i], "BOTTOMLEFT", 0,0)
 				cell:SetPoint("TOPRIGHT", labels[i], "BOTTOMRIGHT", 0,0)
 
 				local row, index = rowNum, i
-				button:SetHeight(totalHeight)
+				button:SetHeight(rowHeight)
 				button:SetAllPoints(cell)
 				button:SetID(rowNum)
 				button:SetScript("OnMouseDown", function(self, ...) sheet:RowSelect(self:GetID(), ...) lib.Processor("OnMouseDownCell", sheet, self, index, row, nil, ...) end)
@@ -683,7 +714,7 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize, onSelect
 				cell:SetPoint("TOPRIGHT", rows[rowNum-1][i], "BOTTOMRIGHT", 0,0)
 
 				local row, index = rowNum, i
-				button:SetHeight(totalHeight)
+				button:SetHeight(rowHeight)
 				button:SetAllPoints(cell)
 				button:SetID(rowNum)
 				button:SetScript("OnMouseDown", function(self, ...) sheet:RowSelect(self:GetID(), ...) lib.Processor("OnMouseDownCell", sheet, self, index, row, nil, ...) end)
@@ -697,8 +728,8 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize, onSelect
 				cell.button = button
 			end
 
-			cell:SetHeight(14)
-			cell:SetJustifyV("TOP")
+			cell:SetHeight(rowHeight)
+			cell:SetJustifyV("MIDDLE")
 			if (layout[i][2] == "TEXT") then
 				cell:SetJustifyH("LEFT")
 			elseif (layout[i][2] == "TOOLTIP") then
@@ -728,10 +759,12 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize, onSelect
 
 		rows[rowNum] = row
 		rowNum = rowNum + 1
-		totalHeight = totalHeight + 14
+		totalHeight = totalHeight + rowHeight
 	end
 
+	local initialVisibleRows = math.max(1, math.min(#rows, floor(((parentHeight - 30) - headerHeight) / rowHeight)))
 	content:SetWidth(totalWidth)
+	content:SetHeight(headerHeight + initialVisibleRows * rowHeight)
 	panel:UpdateScrollChildRect()
 	panel:Update()
 
@@ -747,7 +780,9 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize, onSelect
 		labels = labels,
 		rows = rows,
 		hSize = #labels,
-		maxRows = #rows,
+		maxRows = initialVisibleRows,
+		headerHeight = headerHeight,
+		rowHeight = rowHeight,
 		data = {},
 		style = {},
 		sort = {},
@@ -762,6 +797,30 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize, onSelect
 	panel.sheet = sheet -- panel needs access to sheet values, particularly for vSize calculations
 	panel:SetScript("OnSizeChanged", calculateMaxScroll)
 	panel:ScrollSync()
+
+	if UIStyle and UIStyle.RegisterFontListener then
+		UIStyle.RegisterFontListener(function(newFontSize)
+			local newHeaderH = math.max(18, newFontSize + 5)
+			local newRowH = math.max(16, newFontSize + 3)
+			sheet.headerHeight = newHeaderH
+			sheet.rowHeight = newRowH
+			for i = 1, #labels do
+				UIStyle.ApplyFont(labels[i], 0)
+				labels[i].button:SetHeight(newHeaderH)
+			end
+			for r = 1, #rows do
+				for c = 1, #layout do
+					local cell = rows[r][c]
+					UIStyle.ApplyFont(cell, -1)
+					cell:SetHeight(newRowH)
+					if cell.button then
+						cell.button:SetHeight(newRowH)
+					end
+				end
+			end
+			calculateMaxScroll(panel, panel:GetWidth(), panel:GetHeight())
+		end)
+	end
 
 	_G[name] = sheet
 

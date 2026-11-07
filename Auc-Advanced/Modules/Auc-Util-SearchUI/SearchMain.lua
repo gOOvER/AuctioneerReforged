@@ -1036,17 +1036,16 @@ function lib.AddSearcher(gui, searchType, searchDetail, searchPos)
 end
 
 function lib.AttachToAH()
-	if private.isAttached then return end
 	local height, width = 410, 830
 	-- The Configator dialog is a fixed width designed for the classic AH frame.
-	-- On retail, clamp it to the actual content-frame width/height so the results
+	-- On retail, match the actual content-frame width/height so the results
 	-- sheet, saves bar and scrollbar fill the Auction House window cleanly.
 	local parent = gui.AuctionFrame
 	if AucAdvanced.IsRetailAH and parent then
 		local parentWidth = parent:GetWidth()
 		local parentHeight = parent:GetHeight()
 		if parentWidth and parentWidth > 200 then
-			width = math.min(width, math.floor(parentWidth) - 10)
+			width = math.max(760, math.floor(parentWidth) - 10)
 		end
 		if parentHeight and parentHeight > 250 then
 			height = math.max(410, math.floor(parentHeight) - 36)
@@ -1102,13 +1101,9 @@ function private.CreateAuctionFrames()
 
 	local function OnTabClick(self, button, down)
 		if isRetail then
-			if frame:IsShown() then
-				-- Already showing: do nothing (standard tab behavior)
-			else
-				AucAdvanced.HideAllRetailTabs()
-				frame:Show()
-				lib.AttachToAH()
-			end
+			AucAdvanced.HideAllRetailTabs()
+			frame:Show()
+			lib.AttachToAH()
 		else
 			-- Classic: check if our tab is selected via global lookup
 			local index = self:GetID()
@@ -1137,6 +1132,16 @@ function private.CreateAuctionFrames()
 		PanelTemplates_DeselectTab(frame.tab)
 	end
 	AucAdvanced.AddTab(frame.tab, frame)
+	frame:HookScript("OnHide", function()
+		lib.DetachFromAH()
+	end)
+	frame:HookScript("OnSizeChanged", function(self, w, h)
+		if private.isAttached and gui and w and h and w > 200 and h > 250 then
+			local newW = math.max(760, math.floor(w) - 10)
+			local newH = math.max(410, math.floor(h) - 36)
+			gui:SetPosition(self, newW, newH, 5, 7 + newH)
+		end
+	end)
 
 	-- Retail content-frame insets are applied by AucAdvanced.AddTab (CoreUtil),
 	-- shared by all custom tabs. Do not re-anchor here or the SearchUI panel

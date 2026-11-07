@@ -1175,6 +1175,18 @@ function private.CreateFrames()
 	frame.err:SetJustifyV("TOP")
 	frame.err:SetTextColor(1,0.2,0,1)
 	frame.err:SetText(_TRANS("-- No item selected --"))
+	if UIStyle then
+		UIStyle.ApplyFont(frame.title, 2)
+		UIStyle.ApplyFont(frame.name, 1)
+		UIStyle.ApplyFont(frame.info, -1)
+		UIStyle.ApplyFont(frame.err, -1)
+		UIStyle.RegisterFontListener(function()
+			UIStyle.ApplyFont(frame.title, 2)
+			UIStyle.ApplyFont(frame.name, 1)
+			UIStyle.ApplyFont(frame.info, -1)
+			UIStyle.ApplyFont(frame.err, -1)
+		end)
+	end
 
 	frame.icon = CreateFrame("Button", nil, frame.topPanel, BackdropTemplateMixin and "BackdropTemplate")
 	frame.icon:SetPoint("TOPLEFT", frame.slot, "TOPLEFT", 3, -3)
@@ -1425,13 +1437,9 @@ function private.CreateFrames()
 
 	local function OnSimpleTabClick(self, _, index)
 		if AucAdvanced.IsRetailAH then
-			if frame:IsShown() then
-				-- Already showing: do nothing (standard tab behavior)
-			else
-				AucAdvanced.HideAllRetailTabs()
-				frame:Show()
-				private.UpdateDisplay()
-			end
+			AucAdvanced.HideAllRetailTabs()
+			frame:Show()
+			private.UpdateDisplay()
 		else
 			-- Classic: check if our tab is selected via global lookup
 			if not index then index = self:GetID() end

@@ -68,7 +68,8 @@ function private.HookAH()
 	local parentFrame = isRetail and (AuctionHouseFrame or UIParent) or AuctionFrameBrowse
 	if not parentFrame then return end
 
-	private.buttons = CreateFrame("Frame", nil, parentFrame)
+	private.buttons = CreateFrame("Frame", "AucScanButtonBar", parentFrame)
+	private.buttons._aucKeepVisible = true
 	if isRetail then
 		private.buttons:SetPoint("TOPLEFT", AuctionHouseFrame, "TOPLEFT", 68, -3)
 		private.buttons:SetFrameStrata("DIALOG")

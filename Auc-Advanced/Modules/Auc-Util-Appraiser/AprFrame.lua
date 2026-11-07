@@ -2104,6 +2104,7 @@ function private.CreateFrames()
 		item.name:SetPoint("TOPLEFT", item.icon, "TOPRIGHT", 3,-1)
 		item.name:SetPoint("RIGHT", item, "RIGHT", -5,0)
 		item.name:SetText(_TRANS('APPR_Interface_None') )--[None]
+		UIStyle.ApplyFont(item.name, -1)
 
 		item.size = item:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
 		item.size:SetJustifyH("RIGHT")
@@ -2111,6 +2112,7 @@ function private.CreateFrames()
 		item.size:SetPoint("BOTTOMLEFT", item.icon, "BOTTOMRIGHT", 3,2)
 		item.size:SetPoint("RIGHT", item, "RIGHT", -10,0)
 		item.size:SetText(_TRANS('APPR_Interface_25x') )--25x
+		UIStyle.ApplyFont(item.size, -2)
 
 		item.info = item:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
 		item.info:SetJustifyH("LEFT")
@@ -2118,6 +2120,7 @@ function private.CreateFrames()
 		item.info:SetPoint("BOTTOMLEFT", item.icon, "BOTTOMRIGHT", 3,2)
 		item.info:SetPoint("RIGHT", item, "RIGHT", -10,0)
 		item.info:SetText("" )
+		UIStyle.ApplyFont(item.info, -2)
 
 		item.bg = item:CreateTexture(nil, "ARTWORK")
 		item.bg:SetTexture("Interface\\FriendsFrame\\UI-FriendsFrame-HighlightBar")
@@ -2968,17 +2971,13 @@ function private.CreateFrames()
 	end
 	local function OnAppraiserTabClick(self)
 		if AucAdvanced.IsRetailAH then
-			if frame:IsShown() then
-				-- Already showing: do nothing (standard tab behavior)
-			else
-				AucAdvanced.HideAllRetailTabs()
-				if SideDressUpFrame and SideDressUpFrame:IsVisible() then
-					SideDressUpFrame:Hide()
-					SideDressUpFrame.reshow = true
-				end
-				frame:Show()
-				frame.GenerateList(true)
+			AucAdvanced.HideAllRetailTabs()
+			if SideDressUpFrame and SideDressUpFrame:IsVisible() then
+				SideDressUpFrame:Hide()
+				SideDressUpFrame.reshow = true
 			end
+			frame:Show()
+			frame.GenerateList(true)
 		else
 			-- Classic: check if our tab is selected via global lookup
 			local index = self:GetID()

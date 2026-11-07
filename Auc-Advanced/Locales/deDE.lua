@@ -1934,5 +1934,6 @@ AuctioneerLocalizations.deDE = {
 		["Other priority: %d%%"]	= "Priorität Sonstiges: %d%%";
 		["Change localization language (for next session)"]	= "Sprache ändern (für nächste Sitzung)";
 		["The selected Locale takes effect after a /reload or on next login"]	= "Die gewählte Sprache wird nach einem /reload oder beim nächsten Login aktiv.";
+		["Click and drag to resize window"]	= "Ziehen, um die Fenstergröße zu ändern (Rechtsklick: Standardgröße)";
 
 }

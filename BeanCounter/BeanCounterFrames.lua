@@ -43,18 +43,26 @@ local auctionUICreated
 function private.AuctionUI()
 	if auctionUICreated then return end
 	frame = private.frame
+	if not frame then return end
+
+	if C_AuctionHouse and AuctionHouseFrame and AucAdvanced then
+		AucAdvanced.IsRetailAH = true
+	end
+	if AucAdvanced and AucAdvanced.IsRetailAH and not AuctionHouseFrame then
+		return
+	end
 
 	--Create the TAB
 	local tabTemplate
 	if AucAdvanced and AucAdvanced.GetAHTabTemplate then
 		tabTemplate = AucAdvanced.GetAHTabTemplate()
 	end
-	if not tabTemplate and not AucAdvanced.IsRetailAH then
+	if not tabTemplate and not (AucAdvanced and AucAdvanced.IsRetailAH) then
 		tabTemplate = "AuctionTabTemplate"
 	end
 	-- For retail, create tab as child of AuctionHouseFrame
 	local tabParent = (AucAdvanced and AucAdvanced.IsRetailAH) and (AuctionHouseFrame or UIParent) or AuctionFrame
-	frame.ScanTab = CreateFrame("Button", "AuctionFrameTabUtilBeanCounter", tabParent, tabTemplate)
+	frame.ScanTab = frame.ScanTab or CreateFrame("Button", "AuctionFrameTabUtilBeanCounter", tabParent, tabTemplate)
 	-- Set up tab for retail if no template was used
 	if not tabTemplate then
 		frame.ScanTab:SetWidth(100)
@@ -80,12 +88,11 @@ function private.AuctionUI()
 				private.displayGUI()
 				return
 			end
-			if frame:IsShown() then
-				-- Already showing: do nothing (standard tab behavior)
-			else
-				AucAdvanced.HideAllRetailTabs()
-				private.displayGUI("ShowAHGUI")
+			AucAdvanced.HideAllRetailTabs()
+			if AucAdvanced.HideBuiltinAHContent then
+				AucAdvanced.HideBuiltinAHContent()
 			end
+			private.displayGUI("ShowAHGUI")
 		else
 			-- Classic: check if our tab is selected via global lookup
 			if not index then index = self:GetID() end
@@ -165,6 +172,9 @@ function private.displayGUI( action )
 		private.relevelFrame(frame)--make sure our frame stays in proper order
 		BeanCounterBaseFrame:Hide()
 		frame:Show()
+		if frame.resultlist and frame.resultlist.sheet and frame.resultlist.sheet.panel then
+			frame.resultlist.sheet.panel:Update()
+		end
 	elseif BeanCounterBaseFrame:IsVisible() then
 		BeanCounterBaseFrame:Hide()
 		frame:Hide()
@@ -214,7 +224,12 @@ function private.CreateFrames()
 	base:EnableMouse(true)
 	base:SetToplevel(true)
 	base:SetResizable(true)
-	base:SetResizeBounds(834, 450, 1500, 450)
+	if base.SetResizeBounds then
+		base:SetResizeBounds(834, 450, 1600, 950)
+	elseif base.SetMinResize then
+		base:SetMinResize(834, 450)
+		base:SetMaxResize(1600, 950)
+	end
 
 	--resize button for base GUI
 	base.Resizer = CreateFrame("Button", nil, base)
@@ -251,7 +266,7 @@ function private.CreateFrames()
 	base.Done = CreateFrame("Button", nil, base, "UIPanelButtonTemplate")
 	base.Done:SetSize(90, 22)
 	base.Done:SetPoint("BOTTOMRIGHT", base, "BOTTOMRIGHT", -50, 10)
-	base.Done:SetScript("OnClick", function() base:Hide() end)
+	base.Done:SetScript("OnClick", function() base:Hide(); frame:Hide() end)
 	base.Done:SetText(_BC('UiDone'))
 	UIStyle.StyleButton(base.Done, "primary")
 
@@ -261,6 +276,7 @@ function private.CreateFrames()
 	frame:Hide()
 
 	private.frame:SetPoint("TOPLEFT", base, "TOPLEFT")
+	private.frame:SetPoint("BOTTOMRIGHT", base, "BOTTOMRIGHT")
 	private.frame:SetWidth(828)
 	private.frame:SetHeight(450)
 
@@ -269,6 +285,8 @@ function private.CreateFrames()
 	title:SetPoint("TOPLEFT", frame, "TOPLEFT", 18, -12)
 	title:SetTextColor(1, 0.85, 0.25)
 	title:SetText(_BC("UiAddonTitle"))
+	UIStyle.ApplyFont(title, 2)
+	frame.title = title
 
 	local SelectBox = LibStub:GetLibrary("SelectBox")
 	local ScrollSheet = LibStub:GetLibrary("ScrollSheet")
@@ -314,11 +332,17 @@ function private.CreateFrames()
 	frame.slot:SetTexCoord(0.15, 0.85, 0.15, 0.85)
 	frame.slot:SetTexture("Interface\\Buttons\\UI-EmptySlot")
 
-	frame.icon = CreateFrame("Button", nil, frame)
+	frame.icon = CreateFrame("Button", nil, frame, BackdropTemplateMixin and "BackdropTemplate")
 	frame.icon:SetPoint("TOPLEFT", frame.slot, "TOPLEFT", 3, -3)
 	frame.icon:SetWidth(36)
 	frame.icon:SetHeight(36)
 	frame.icon:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square.blp")
+	if UIStyle and UIStyle.StyleItemSlot then
+		frame.slot:SetTexture(nil)
+		frame.icon:ClearAllPoints()
+		frame.icon:SetPoint("TOPLEFT", frame.slot, "TOPLEFT", 0, 0)
+		UIStyle.StyleItemSlot(frame.icon, 42)
+	end
 	frame.icon:SetScript("OnClick", frame.IconClicked)
 	frame.icon:SetScript("OnReceiveDrag", frame.IconClicked)
 	frame.icon:SetScript("OnEnter", function() private.buttonTooltips( frame.icon, _BC('TT_ItemIconBox')) end) --"Drop an item here to start a search for it.\nDisplays current search's icon if possible"
@@ -330,6 +354,7 @@ function private.CreateFrames()
 	frame.slot.help:SetJustifyH("LEFT")
 	frame.slot.help:SetText(_BC('HelpGuiItemBox')) --"Drop item into box to search."
 	frame.slot.help:SetWidth(114)
+	UIStyle.ApplyFont(frame.slot.help, -1)
 
 	--Select box, used to chooose where the stats comefrom we show server/faction/player/all
 	frame.SelectBoxSetting = {"1","server"}
@@ -536,15 +561,25 @@ function private.CreateFrames()
 	frame.dateHelp:ClearAllPoints()
 	frame.dateHelp:SetPoint("BOTTOMLEFT", private.lowerDateBox, "TOPLEFT", 0, 4)
 	frame.dateHelp:SetText(_BC('UiDateFilterHelp'))
+	UIStyle.ApplyFont(frame.dateHelp, -1)
 
 	--creates teh report text that tells info on # of entries
 	frame.DBCount = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 	frame.DBCount:SetPoint("TOPLEFT", frame, "TOPLEFT", 20, -40)
 	frame.DBCount:SetText(_BC('UiItemsCount')..private.DBSumEntry)
+	UIStyle.ApplyFont(frame.DBCount, 0)
 
 	frame.DBItems = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	frame.DBItems:SetPoint("TOPLEFT", frame, "TOPLEFT", 20, -55)
+	frame.DBItems:SetPoint("TOPLEFT", frame, "TOPLEFT", 20, -56)
 	frame.DBItems:SetText(_BC('UiEntriesCount')..private.DBSumItems)
+	UIStyle.ApplyFont(frame.DBItems, 0)
+	UIStyle.RegisterFontListener(function()
+		UIStyle.ApplyFont(title, 2)
+		UIStyle.ApplyFont(frame.slot.help, -1)
+		UIStyle.ApplyFont(frame.dateHelp, -1)
+		UIStyle.ApplyFont(frame.DBCount, 0)
+		UIStyle.ApplyFont(frame.DBItems, 0)
+	end)
 	private.sumDatabase() --Sums database Done on first Start and Search of the session
 
 	--Edit box for changing UI reason codes

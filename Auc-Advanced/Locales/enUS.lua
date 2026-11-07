@@ -945,6 +945,7 @@ AuctioneerLocalizations.enUS = {
 		["clear"]	= "clear";
 		["push"]	= "push";
 		["APPR_HelpTooltip_ShowAppraiserTab"]	= "Shows the Appraiser tab on the Auction House window.";
+		["Click and drag to resize window"]	= "Click and drag to resize window (Right-click to reset)";
 		["SBUT_Interface_GetAllWarning"]	= "|c00ff4400Important note about the GetAll scan option:|r\n\nUtilizing this feature can result in a very fast scan once every 15 minutes, however it requires a fast computer, low latency/ping times to the server, and for the servers to be running in optimum conditions. If any one of these three things are lagging, you may be disconnected from the server during the scan process.\n\nIf you wish to continue click the button again.\n\n|c00444444If you wish, you can disable this warning message via the Scan Button configuration settings.|r";
 
 }

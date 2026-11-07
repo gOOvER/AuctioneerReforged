@@ -40,9 +40,8 @@ if not AucAdvanced then return end
 AucAdvanced.CoreFileCheckIn("CoreMain")
 
 -- Detect retail Auction House (WoW Forever / modern client)
--- Note: AuctionFrame shim is deferred to HookAH() since AuctionHouseFrame isn't ready at load time
--- Retail: has C_AuctionHouse API AND AuctionFrame doesn't exist (classic Blizzard_AuctionUI not loaded)
-AucAdvanced.IsRetailAH = (C_AuctionHouse ~= nil and not AuctionFrame)
+-- Note: Do not require `not AuctionFrame` because some clients keep an AuctionFrame alias around.
+AucAdvanced.IsRetailAH = (C_AuctionHouse ~= nil)
 
 -- Compatibility shim: C_Container for 3.3.5 / Forever clients where C_Container is absent or returns unpacked values
 if not C_Container then

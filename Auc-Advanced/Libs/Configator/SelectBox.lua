@@ -26,7 +26,7 @@
 --]]
 
 local LIBRARY_VERSION_MAJOR = "SelectBox"
-local LIBRARY_VERSION_MINOR = 9
+local LIBRARY_VERSION_MINOR = 10
 local lib = LibStub:NewLibrary(LIBRARY_VERSION_MAJOR, LIBRARY_VERSION_MINOR)
 if not lib then return end
 
@@ -430,11 +430,18 @@ function lib:CreateTemplate(name, parent)
 	end)
 
 	local text = box:CreateFontString(name.."Text", "OVERLAY", "GameFontHighlightSmall")
-	text:SetHeight(14)
+	text:SetHeight(20)
 	text:SetPoint("LEFT", box, "LEFT", 8, 0)
 	text:SetPoint("RIGHT", button, "LEFT", -4, 0)
 	text:SetJustifyH("LEFT")
 	text:SetTextColor(0.95, 0.95, 0.95, 1)
+	local Configator = LibStub("Configator", true)
+	if Configator and Configator.UIStyle then
+		Configator.UIStyle.ApplyFont(text, -1)
+		Configator.UIStyle.RegisterFontListener(function()
+			Configator.UIStyle.ApplyFont(text, -1)
+		end)
+	end
 
 	return frame
 end

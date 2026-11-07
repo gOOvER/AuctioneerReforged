@@ -377,19 +377,54 @@ private.HiddenBuiltinFrames = {}
 
 local function SetRetailTabChecked(tab, checked)
 	if not tab then return end
-	tab._checked = checked and true or false
-	if tab.LeftActive then tab.LeftActive:SetShown(checked) end
-	if tab.MiddleActive then tab.MiddleActive:SetShown(checked) end
-	if tab.RightActive then tab.RightActive:SetShown(checked) end
-	if tab.Left then tab.Left:SetShown(not checked) end
-	if tab.Middle then tab.Middle:SetShown(not checked) end
-	if tab.Right then tab.Right:SetShown(not checked) end
+	checked = checked and true or false
+	tab._checked = checked
+	local name = tab:GetName()
+	local leftActive = tab.LeftActive or tab.LeftDisabled or (name and _G[name.."LeftDisabled"])
+	local middleActive = tab.MiddleActive or tab.MiddleDisabled or (name and _G[name.."MiddleDisabled"])
+	local rightActive = tab.RightActive or tab.RightDisabled or (name and _G[name.."RightDisabled"])
+	local left = tab.Left or (name and _G[name.."Left"])
+	local middle = tab.Middle or (name and _G[name.."Middle"])
+	local right = tab.Right or (name and _G[name.."Right"])
+
+	if leftActive then leftActive:SetShown(checked) end
+	if middleActive then middleActive:SetShown(checked) end
+	if rightActive then rightActive:SetShown(checked) end
+	if left then left:SetShown(not checked) end
+	if middle then middle:SetShown(not checked) end
+	if right then right:SetShown(not checked) end
 	if tab.SelectedTexture then tab.SelectedTexture:SetShown(checked) end
+
+	if tab._isCustomRetailTab then
+		if not tab._aucActiveBar then
+			local bar = tab:CreateTexture(nil, "OVERLAY")
+			bar:SetHeight(2)
+			bar:SetPoint("BOTTOMLEFT", tab, "BOTTOMLEFT", 6, 1)
+			bar:SetPoint("BOTTOMRIGHT", tab, "BOTTOMRIGHT", -6, 1)
+			bar:SetColorTexture(1.0, 0.82, 0.15, 0.95)
+			tab._aucActiveBar = bar
+		end
+		tab._aucActiveBar:SetShown(checked)
+	elseif not checked and tab.Enable then
+		pcall(tab.Enable, tab)
+	end
+
+	local fs = tab:GetFontString() or (name and _G[name.."Text"])
+	if fs then
+		if checked then
+			fs:SetFontObject(GameFontHighlightSmall)
+			fs:SetTextColor(1.0, 1.0, 1.0)
+		else
+			fs:SetFontObject(GameFontNormalSmall)
+			fs:SetTextColor(1.0, 0.82, 0.0)
+		end
+	end
 end
 
 local function ResizeRetailTab(tab)
 	if not tab then return end
-	local fs = tab:GetFontString()
+	local name = tab:GetName()
+	local fs = tab:GetFontString() or (name and _G[name.."Text"])
 	local textWidth = (fs and fs.GetStringWidth and fs:GetStringWidth()) or 0
 	if textWidth <= 0 then
 		local txt = tab:GetText() or ""
@@ -401,6 +436,14 @@ local function ResizeRetailTab(tab)
 	if fs then
 		fs:SetMaxLines(1)
 		fs:SetWidth(width - 10)
+	end
+	local middle = tab.Middle or (name and _G[name.."Middle"])
+	local middleActive = tab.MiddleActive or tab.MiddleDisabled or (name and _G[name.."MiddleDisabled"])
+	if middle and middle:GetNumPoints() == 1 then
+		middle:SetWidth(math.max(20, width - 32))
+	end
+	if middleActive and middleActive:GetNumPoints() == 1 then
+		middleActive:SetWidth(math.max(20, width - 32))
 	end
 end
 
@@ -432,19 +475,144 @@ function lib.HideBuiltinAHContent()
 	for _, name in ipairs(builtInFrames) do
 		local frame = AuctionHouseFrame[name]
 		if frame and frame:IsShown() then
-			private.HiddenBuiltinFrames[name] = frame
+			private.HiddenBuiltinFrames[frame] = frame
 			pcall(frame.Hide, frame)
+		end
+	end
+
+	local keep = {
+		[AuctionHouseFrame.NineSlice or false] = true,
+		[AuctionHouseFrame.Bg or false] = true,
+		[AuctionHouseFrame.TitleContainer or false] = true,
+		[AuctionHouseFrame.CloseButton or false] = true,
+		[AuctionHouseFrame.PortraitFrame or false] = true,
+	}
+	if AuctionHouseFrame.Tabs then
+		for _, t in ipairs(AuctionHouseFrame.Tabs) do
+			keep[t] = true
+		end
+	end
+	for _, t in ipairs(private.RetailTabs) do
+		keep[t] = true
+		local tf = private.RetailTabFrames[t]
+		if tf then keep[tf] = true end
+	end
+	for _, child in ipairs({ AuctionHouseFrame:GetChildren() }) do
+		if child and not keep[child] and not child._aucKeepVisible and child:IsShown() then
+			local cName = child:GetName() or ""
+			if not cName:find("CloseButton") and not cName:find("Portrait") and not cName:find("NineSlice") and not cName:find("Tab") then
+				private.HiddenBuiltinFrames[child] = child
+				pcall(child.Hide, child)
+			end
 		end
 	end
 end
 
 function lib.RestoreBuiltinAHContent()
 	if not AuctionHouseFrame then return end
-	for name, frame in pairs(private.HiddenBuiltinFrames) do
+	for key, frame in pairs(private.HiddenBuiltinFrames) do
 		if frame and frame.Show then
 			pcall(frame.Show, frame)
 		end
-		private.HiddenBuiltinFrames[name] = nil
+		private.HiddenBuiltinFrames[key] = nil
+	end
+end
+
+local function SetupRetailAHWindowControls(ahFrame)
+	if not ahFrame or ahFrame._aucWindowControlsSetup then return end
+	ahFrame._aucWindowControlsSetup = true
+
+	pcall(ahFrame.SetMovable, ahFrame, true)
+	pcall(ahFrame.SetResizable, ahFrame, true)
+	if ahFrame.SetResizeBounds then
+		pcall(ahFrame.SetResizeBounds, ahFrame, 828, 538, 1600, 950)
+	else
+		if ahFrame.SetMinResize then pcall(ahFrame.SetMinResize, ahFrame, 828, 538) end
+		if ahFrame.SetMaxResize then pcall(ahFrame.SetMaxResize, ahFrame, 1600, 950) end
+	end
+
+	local Configator = LibStub and LibStub("Configator", true)
+	local UIStyle = Configator and Configator.UIStyle
+
+	-- Font size control bar [A-] [14pt] [A+] in top-right header bar
+	if UIStyle and not ahFrame._aucFontBar then
+		local fontBar = CreateFrame("Frame", "AucRetailAHFontBar", ahFrame)
+		fontBar._aucKeepVisible = true
+		fontBar:SetSize(82, 18)
+		fontBar:SetPoint("TOPRIGHT", ahFrame, "TOPRIGHT", -56, -3)
+		fontBar:SetFrameStrata("DIALOG")
+		fontBar:SetFrameLevel(100)
+
+		local btnMinus = CreateFrame("Button", nil, fontBar, BackdropTemplateMixin and "BackdropTemplate")
+		btnMinus:SetSize(22, 18)
+		btnMinus:SetPoint("LEFT", fontBar, "LEFT", 0, 0)
+		btnMinus:SetNormalFontObject("GameFontHighlightSmall")
+		btnMinus:SetText("A-")
+		UIStyle.StyleButton(btnMinus, "default")
+		btnMinus:SetWidth(22)
+
+		local lblSize = fontBar:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+		lblSize:SetPoint("LEFT", btnMinus, "RIGHT", 4, 0)
+		lblSize:SetText(UIStyle.GetFontSize().."pt")
+		lblSize:SetTextColor(0.90, 0.80, 0.45)
+
+		local btnPlus = CreateFrame("Button", nil, fontBar, BackdropTemplateMixin and "BackdropTemplate")
+		btnPlus:SetSize(22, 18)
+		btnPlus:SetPoint("LEFT", lblSize, "RIGHT", 4, 0)
+		btnPlus:SetNormalFontObject("GameFontHighlightSmall")
+		btnPlus:SetText("A+")
+		UIStyle.StyleButton(btnPlus, "default")
+		btnPlus:SetWidth(22)
+
+		btnMinus:SetScript("OnClick", function()
+			UIStyle.SetFontSize(UIStyle.GetFontSize() - 1)
+		end)
+		btnPlus:SetScript("OnClick", function()
+			UIStyle.SetFontSize(UIStyle.GetFontSize() + 1)
+		end)
+		UIStyle.RegisterFontListener(function(newSize)
+			lblSize:SetText(newSize.."pt")
+			for _, tab in ipairs(private.RetailTabs) do
+				ResizeRetailTab(tab)
+			end
+		end)
+		ahFrame._aucFontBar = fontBar
+	end
+
+	-- Bottom-right window resize grip
+	if not ahFrame._aucResizer then
+		local resizer = CreateFrame("Button", "AucRetailAHResizer", ahFrame)
+		resizer._aucKeepVisible = true
+		resizer:SetSize(20, 20)
+		resizer:SetPoint("BOTTOMRIGHT", ahFrame, "BOTTOMRIGHT", -3, 3)
+		resizer:SetFrameStrata("DIALOG")
+		resizer:SetFrameLevel(120)
+		resizer:RegisterForClicks("RightButtonUp")
+		resizer:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
+		resizer:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
+		resizer:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
+		resizer:SetScript("OnMouseDown", function(_, button)
+			if button == "LeftButton" then
+				pcall(ahFrame.StartSizing, ahFrame, "BOTTOMRIGHT")
+			end
+		end)
+		resizer:SetScript("OnMouseUp", function(_, button)
+			pcall(ahFrame.StopMovingOrSizing, ahFrame)
+			if button == "RightButton" then
+				ahFrame:SetSize(828, 538)
+			end
+		end)
+		resizer:SetScript("OnEnter", function(self)
+			if GameTooltip then
+				GameTooltip:SetOwner(self, "ANCHOR_BOTTOMRIGHT")
+				GameTooltip:SetText(lib.localizations("Click and drag to resize window"))
+				GameTooltip:Show()
+			end
+		end)
+		resizer:SetScript("OnLeave", function()
+			if GameTooltip then GameTooltip:Hide() end
+		end)
+		ahFrame._aucResizer = resizer
 	end
 end
 
@@ -472,9 +640,10 @@ function lib.AddTab(tabButton, tabFrame)
 		local ahFrame = AuctionHouseFrame
 		if not ahFrame then return end
 
+		SetupRetailAHWindowControls(ahFrame)
+
 		for _, tab in ipairs(private.RetailTabs) do
 			if tab:GetName() == tabButton:GetName() then
-				lib.Print("Tab with that name already exists")
 				return
 			end
 		end
@@ -486,6 +655,8 @@ function lib.AddTab(tabButton, tabFrame)
 		tabFrame:Hide()
 
 		-- Tab button: parent to ahFrame
+		tabButton._isCustomRetailTab = true
+		tabButton._aucKeepVisible = true
 		tabButton:SetParent(ahFrame)
 		tabButton:SetScript("OnShow", nil)
 		tabButton:SetScript("OnEvent", nil)
@@ -530,18 +701,18 @@ function lib.AddTab(tabButton, tabFrame)
 			end
 
 			PlaySound(SOUNDKIT and SOUNDKIT.IG_CHARACTER_INFO_TAB or 841)
-			ahFrame.currentCustomTab = self
-			SetRetailTabChecked(self, true)
 
 			-- Re-ensure surface & bounds before module shows frame
 			EnsureTabFrameSurface(tabFrame, ahFrame)
 
-			-- Call the module's original OnClick handler while tabFrame is still hidden
-			-- so module `if not frame:IsShown()` initialization runs properly
+			-- Call the module's original OnClick handler BEFORE setting checked state
+			-- because moduleOnClick calls lib.HideAllRetailTabs()!
 			if moduleOnClick then
 				moduleOnClick(self, button, ...)
 			end
 
+			ahFrame.currentCustomTab = self
+			SetRetailTabChecked(self, true)
 			EnsureTabFrameSurface(tabFrame, ahFrame)
 			tabFrame:Show()
 		end)
@@ -583,7 +754,18 @@ function lib.AddTab(tabButton, tabFrame)
 			local prevTab = private.RetailTabs[tabCount - 1]
 			tabButton:SetPoint("LEFT", prevTab, "RIGHT", 2, 0)
 		else
-			tabButton:SetPoint("BOTTOMLEFT", ahFrame, "BOTTOMLEFT", 285, -22)
+			local offsetX = 316
+			if ahFrame.Tabs and ahFrame:GetLeft() then
+				for _, bTab in ipairs(ahFrame.Tabs) do
+					if bTab and bTab:IsShown() and bTab:GetRight() then
+						local relRight = math.ceil(bTab:GetRight() - ahFrame:GetLeft()) + 4
+						if relRight > offsetX then
+							offsetX = relRight
+						end
+					end
+				end
+			end
+			tabButton:SetPoint("BOTTOMLEFT", ahFrame, "BOTTOMLEFT", offsetX, -22)
 		end
 		tabButton:SetID(tabCount)
 		tabButton:Show()

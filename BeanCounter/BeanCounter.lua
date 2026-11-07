@@ -129,6 +129,9 @@ if AucAdvanced then
 			end
 		end
 		private.AucModule.Processors = {}
+		function private.AucModule.Processors.auctionui()
+			private.AuctionUI()
+		end
 		function private.AucModule.Processors.querysent(callbackType, ...)
 			if lib.API.isLoaded then
 				local item = ...
