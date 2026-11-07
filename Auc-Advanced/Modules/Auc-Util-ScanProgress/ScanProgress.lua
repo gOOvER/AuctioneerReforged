@@ -71,8 +71,40 @@ private.scanStartTime = time()
 private.scanProgressFormat = "Auctioneer Advanced: %s\nScanning page %d of %d\n\nAuctions per second: %.2f\nAuctions expected: %d\nAuctions scanned thus far: %d (%3.1f%%)\n\nElapsed scan time: %s\nEstimated time left: %s\n%s"
 private.scanCompleteFormat = "Auctioneer Advanced: %s\nScan Complete\n\nAuctions per second: %.2f\nAuctions expected: %d\nAuctions scanned: %d (%3.1f%%)\n\nElapsed scan time: %s\n%s"
 
+local function GetRetailProgressOverlay()
+	if private.retailOverlay then return private.retailOverlay end
+	if not AuctionHouseFrame or not AuctionHouseFrame.BrowseResultsFrame or not AuctionHouseFrame.BrowseResultsFrame.ItemList then
+		return nil
+	end
+	local parentFrame = AuctionHouseFrame.BrowseResultsFrame.ItemList
+	local overlay = CreateFrame("Frame", "AucRetailScanProgressOverlay", parentFrame, BackdropTemplateMixin and "BackdropTemplate")
+	overlay:SetSize(380, 185)
+	overlay:SetPoint("CENTER", parentFrame, "CENTER", 0, 0)
+	overlay:SetFrameLevel((parentFrame:GetFrameLevel() or 10) + 15)
+	local Configator = LibStub and LibStub("Configator", true)
+	if Configator and Configator.UIStyle then
+		Configator.UIStyle.StylePanel(overlay)
+	elseif overlay.SetBackdrop then
+		overlay:SetBackdrop({
+			bgFile = "Interface\\Buttons\\WHITE8X8",
+			edgeFile = "Interface\\Buttons\\WHITE8X8",
+			edgeSize = 1,
+			insets = { left = 1, right = 1, top = 1, bottom = 1 },
+		})
+		overlay:SetBackdropColor(0.08, 0.09, 0.12, 0.94)
+		overlay:SetBackdropBorderColor(0.78, 0.64, 0.22, 0.85)
+	end
+	overlay.text = overlay:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+	overlay.text:SetPoint("TOPLEFT", overlay, "TOPLEFT", 14, -14)
+	overlay.text:SetPoint("BOTTOMRIGHT", overlay, "BOTTOMRIGHT", -14, 14)
+	overlay.text:SetJustifyH("CENTER")
+	overlay.text:SetJustifyV("MIDDLE")
+	overlay:Hide()
+	private.retailOverlay = overlay
+	return overlay
+end
+
 function private.UpdateScanProgress(state, totalAuctions, scannedAuctions, elapsedTime, page, maxPages, query, scanCount)
-	if AucAdvanced.IsRetailAH then return end
 	--Check that we're enabled before passing on the callback
 	if not AucAdvanced.Settings.GetSetting("util.scanprogress.activated")
 
@@ -81,13 +113,47 @@ function private.UpdateScanProgress(state, totalAuctions, scannedAuctions, elaps
 		state = false
 	end
 
+	if AucAdvanced.IsRetailAH then
+		local overlay = GetRetailProgressOverlay()
+		if not overlay then return end
+		if state == false then
+			overlay:Hide()
+			AucAdvanced.API.BlockUpdate(false, false)
+			return
+		elseif state == true then
+			private.scanStartTime = time()
+			overlay.text:SetText("Auctioneer: Scanning auctions...")
+			overlay:Show()
+		end
+		if scannedAuctions and scannedAuctions > 0 and totalAuctions and totalAuctions > 0 then
+			local secondsElapsed = math.max(1, elapsedTime or (time() - private.scanStartTime))
+			local speed = scannedAuctions / secondsElapsed
+			local pct = math.min(100, (scannedAuctions / totalAuctions) * 100)
+			local remaining = math.max(0, (totalAuctions - scannedAuctions) / math.max(1, speed))
+			overlay.text:SetText(
+				private.scanProgressFormat:format(
+					"Scanning auctions",
+					page or 1, maxPages or 1,
+					speed,
+					totalAuctions,
+					scannedAuctions, pct,
+					SecondsToTime(secondsElapsed),
+					SecondsToTime(remaining),
+					""
+				)
+			)
+			overlay:Show()
+		end
+		return
+	end
+
 	--Change the state if we have not scanned any auctions yet.
 	--This is done so that we don't start the timer too soon and thus get skewed numbers
 	if (state == nil and (
 		not scannedAuctions or
 		scannedAuctions == 0 or
 		not AucAdvanced.API.IsBlocked() or
-		BrowseButton1:IsVisible()
+		(BrowseButton1 and BrowseButton1:IsVisible())
 	)) then
 		state = true
 	end

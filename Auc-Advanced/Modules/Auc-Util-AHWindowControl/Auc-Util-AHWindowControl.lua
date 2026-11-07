@@ -219,20 +219,21 @@ local function OnMouseUp(frame)
 	private.setAnchors(frame:GetPoint()) --store the current anchor points
 end
 function private.MoveFrame()
+	local targetFrame = (AucAdvanced.IsRetailAH and AuctionHouseFrame) or AuctionFrame
 	--AH needs to exist
-	if AuctionFrame then
+	if targetFrame then
 		if get("util.ahwindowcontrol.moveenabled") then
-			AuctionFrame:SetMovable(true)
-			AuctionFrame:SetClampedToScreen(true)
-			AuctionFrame:SetScript("OnMouseDown", OnMouseDown)
-			AuctionFrame:SetScript("OnMouseUp", OnMouseUp)
+			targetFrame:SetMovable(true)
+			targetFrame:SetClampedToScreen(true)
+			targetFrame:SetScript("OnMouseDown", OnMouseDown)
+			targetFrame:SetScript("OnMouseUp", OnMouseUp)
 		else
-			AuctionFrame:SetMovable(false)
-			AuctionFrame:SetScript("OnMouseDown", AucAdvanced.NOPFUNCTION)
-			AuctionFrame:SetScript("OnMouseUp", AucAdvanced.NOPFUNCTION)
+			targetFrame:SetMovable(false)
+			targetFrame:SetScript("OnMouseDown", AucAdvanced.NOPFUNCTION)
+			targetFrame:SetScript("OnMouseUp", AucAdvanced.NOPFUNCTION)
 		end
-		if get("util.ahwindowcontrol.auctionscale") then
-			AuctionFrame:SetScale(get("util.ahwindowcontrol.auctionscale"))
+		if get("util.ahwindowcontrol.auctionscale") and get("util.ahwindowcontrol.auctionscale") ~= 1 then
+			targetFrame:SetScale(get("util.ahwindowcontrol.auctionscale"))
 		end
 		if get("util.compactui.activated") and not AucAdvanced.IsRetailAH and BrowseButton1 then
 			for i = 1,14 do
@@ -259,9 +260,13 @@ end
 
 -- RestorePosition: Restore saved AuctionFrame position
 function private.RestorePosition()
-	if get("util.ahwindowcontrol.rememberlastpos") and AuctionFrame then
-		AuctionFrame:ClearAllPoints()
-		AuctionFrame:SetPoint(private.getAnchors())
+	local targetFrame = (AucAdvanced.IsRetailAH and AuctionHouseFrame) or AuctionFrame
+	if get("util.ahwindowcontrol.rememberlastpos") and targetFrame then
+		local pt, rel, relPt, x, y = private.getAnchors()
+		if pt and relPt and x and y then
+			targetFrame:ClearAllPoints()
+			targetFrame:SetPoint(pt, rel, relPt, x, y)
+		end
 	end
 end
 

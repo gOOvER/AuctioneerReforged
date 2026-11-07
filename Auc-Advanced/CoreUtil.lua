@@ -389,38 +389,48 @@ local function SetRetailTabChecked(tab, checked)
 			pcall(PanelTemplates_DeselectTab, tab)
 		end
 	end
-
-	local name = tab:GetName()
-	local leftActive = tab.LeftActive or tab.LeftDisabled or (name and _G[name.."LeftDisabled"])
-	local middleActive = tab.MiddleActive or tab.MiddleDisabled or (name and _G[name.."MiddleDisabled"])
-	local rightActive = tab.RightActive or tab.RightDisabled or (name and _G[name.."RightDisabled"])
-	local left = tab.Left or (name and _G[name.."Left"])
-	local middle = tab.Middle or (name and _G[name.."Middle"])
-	local right = tab.Right or (name and _G[name.."Right"])
-
-	if leftActive then leftActive:SetShown(checked) end
-	if middleActive then middleActive:SetShown(checked) end
-	if rightActive then rightActive:SetShown(checked) end
-	if left then left:SetShown(not checked) end
-	if middle then middle:SetShown(not checked) end
-	if right then right:SetShown(not checked) end
-	if tab.SelectedTexture then tab.SelectedTexture:SetShown(checked) end
 	if tab._aucActiveBar then tab._aucActiveBar:Hide() end
-
-	if tab._isCustomRetailTab then
-		if tab.Enable then
-			pcall(tab.Enable, tab)
-		end
-		tab:SetNormalFontObject(checked and GameFontHighlightSmall or GameFontNormalSmall)
-	elseif not checked and tab.Enable then
-		pcall(tab.Enable, tab)
-	end
 end
 
 local function ResizeRetailTab(tab)
 	if not tab then return end
 	if PanelTemplates_TabResize then
 		pcall(PanelTemplates_TabResize, tab, 20, nil, 70)
+	end
+	if AuctionHouseFrame and AuctionHouseFrame.Tabs and AuctionHouseFrame.Tabs[1] then
+		local h = AuctionHouseFrame.Tabs[1]:GetHeight()
+		if h and h > 16 then
+			tab:SetHeight(h)
+		end
+	end
+end
+
+local function PositionRetailTabs(ahFrame)
+	if not ahFrame then return end
+	local offsetX = 3
+	if ahFrame.Tabs and ahFrame.Tabs[2] then
+		local _, _, _, xOfs = ahFrame.Tabs[2]:GetPoint(1)
+		if type(xOfs) == "number" then
+			offsetX = xOfs
+		end
+	elseif WOW_PROJECT_ID ~= WOW_PROJECT_MAINLINE then
+		offsetX = -14
+	end
+	local hitInset = math.max(0, math.floor((math.abs(offsetX) - 3) / 2))
+	for idx, tab in ipairs(private.RetailTabs) do
+		ResizeRetailTab(tab)
+		tab:ClearAllPoints()
+		if idx > 1 then
+			tab:SetPoint("TOPLEFT", private.RetailTabs[idx - 1], "TOPRIGHT", offsetX, 0)
+		else
+			local lastBuiltin = ahFrame.Tabs and ahFrame.Tabs[#ahFrame.Tabs]
+			if lastBuiltin then
+				tab:SetPoint("TOPLEFT", lastBuiltin, "TOPRIGHT", offsetX, 0)
+			else
+				tab:SetPoint("TOPLEFT", ahFrame, "BOTTOMLEFT", 15, 0)
+			end
+		end
+		tab:SetHitRectInsets(hitInset, hitInset, 0, 0)
 	end
 end
 
@@ -493,6 +503,183 @@ function lib.RestoreBuiltinAHContent()
 		end
 		private.HiddenBuiltinFrames[key] = nil
 	end
+	if lib.ReflowRetailAHInternalFrames then
+		lib.ReflowRetailAHInternalFrames(AuctionHouseFrame)
+	end
+end
+
+local function StretchFrameBackgrounds(f)
+	if not f then return end
+	if f.Background and f.Background.SetPoint then
+		f.Background:ClearAllPoints()
+		f.Background:SetPoint("TOPLEFT", f, "TOPLEFT", 2, -2)
+		f.Background:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -2, 2)
+	end
+	if f.Bg and f.Bg.SetPoint then
+		f.Bg:ClearAllPoints()
+		f.Bg:SetPoint("TOPLEFT", f, "TOPLEFT", 2, -2)
+		f.Bg:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -2, 2)
+	end
+	for _, reg in ipairs({ f:GetRegions() }) do
+		if reg and reg.IsObjectType and reg:IsObjectType("Texture") and reg:GetDrawLayer() == "BACKGROUND" then
+			local w, h = reg:GetSize()
+			if (w and w > 120) and (h and h > 120) then
+				reg:ClearAllPoints()
+				reg:SetPoint("TOPLEFT", f, "TOPLEFT", 2, -2)
+				reg:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -2, 2)
+			end
+		end
+	end
+end
+
+local function ReflowSingleRetailItemList(itemList)
+	if not itemList then return end
+	StretchFrameBackgrounds(itemList)
+
+	if itemList.HeaderContainer then
+		itemList.HeaderContainer:SetPoint("RIGHT", itemList, "RIGHT", -22, 0)
+	end
+
+	if itemList.ScrollFrame then
+		local sf = itemList.ScrollFrame
+		sf:SetPoint("BOTTOMRIGHT", itemList, "BOTTOMRIGHT", -22, 4)
+		local buttons = sf.buttons
+		if buttons and #buttons > 0 and buttons[1] then
+			local sfH = sf:GetHeight() or 400
+			local btnH = buttons[1]:GetHeight() or 20
+			if btnH < 10 then btnH = 20 end
+			local needed = math.ceil(sfH / btnH) + 2
+			local template = itemList.lineTemplate or "AuctionHouseTableBuilderRowTemplate"
+			if needed > #buttons and sf.scrollChild then
+				for i = #buttons + 1, math.min(needed, 60) do
+					local ok, newBtn = pcall(CreateFrame, "BUTTON", nil, sf.scrollChild, template)
+					if ok and newBtn then
+						newBtn:SetPoint("TOPLEFT", buttons[i - 1], "BOTTOMLEFT", 0, 0)
+						newBtn:SetPoint("TOPRIGHT", buttons[i - 1], "BOTTOMRIGHT", 0, 0)
+						newBtn:SetHeight(btnH)
+						buttons[i] = newBtn
+					else
+						break
+					end
+				end
+				sf.range = math.max(0, (#buttons * btnH) - sfH)
+			end
+			local rowW = (itemList.HeaderContainer and itemList.HeaderContainer:GetWidth()) or (sf:GetWidth() or 600)
+			if rowW and rowW > 100 then
+				for i = 1, #buttons do
+					buttons[i]:SetWidth(rowW)
+				end
+				if sf.scrollChild then
+					sf.scrollChild:SetWidth(rowW)
+				end
+			end
+		end
+	end
+
+	if itemList.ScrollBox and itemList.ScrollBox.FullUpdate then
+		pcall(itemList.ScrollBox.FullUpdate, itemList.ScrollBox, true)
+	end
+
+	if itemList.tableBuilder and itemList.HeaderContainer then
+		local hdrW = itemList.HeaderContainer:GetWidth()
+		if hdrW and hdrW > 100 then
+			pcall(itemList.tableBuilder.SetTableWidth, itemList.tableBuilder, hdrW)
+			if itemList.tableBuilder.CalculateColumnSpacing then
+				pcall(itemList.tableBuilder.CalculateColumnSpacing, itemList.tableBuilder)
+			end
+			if itemList.tableBuilder.ArrangeHeaders then
+				pcall(itemList.tableBuilder.ArrangeHeaders, itemList.tableBuilder)
+			end
+			if itemList.tableBuilder.ArrangeCells and itemList.tableBuilder.rows then
+				for _, row in ipairs(itemList.tableBuilder.rows) do
+					if row.cells and #row.cells > 0 then
+						pcall(itemList.tableBuilder.ArrangeCells, itemList.tableBuilder, row)
+					end
+				end
+			end
+		end
+	end
+
+	if itemList:IsVisible() and itemList.RefreshScrollFrame then
+		pcall(itemList.RefreshScrollFrame, itemList)
+	end
+end
+
+function lib.ReflowRetailAHInternalFrames(ahFrame)
+	ahFrame = ahFrame or AuctionHouseFrame
+	if not ahFrame then return end
+	StretchFrameBackgrounds(ahFrame)
+
+	if ahFrame.CategoriesList then
+		local cat = ahFrame.CategoriesList
+		cat:SetPoint("BOTTOM", ahFrame, "BOTTOM", 0, 34)
+		StretchFrameBackgrounds(cat)
+		if cat.ScrollFrame then
+			cat.ScrollFrame:SetPoint("BOTTOMRIGHT", cat, "BOTTOMRIGHT", -22, 4)
+			local buttons = cat.ScrollFrame.buttons
+			if buttons and #buttons > 0 and buttons[1] and cat.ScrollFrame.scrollChild then
+				local sfH = cat.ScrollFrame:GetHeight() or 400
+				local btnH = buttons[1]:GetHeight() or 20
+				if btnH < 10 then btnH = 20 end
+				local needed = math.ceil(sfH / btnH) + 2
+				if needed > #buttons and HybridScrollFrame_CreateButtons then
+					pcall(HybridScrollFrame_CreateButtons, cat.ScrollFrame, "AuctionHouseCategoryTemplate", 0, 0)
+				end
+			end
+		end
+		if cat:IsVisible() and AuctionHouseCategoriesListMixin_OnShow then
+			pcall(AuctionHouseCategoriesListMixin_OnShow, cat)
+		end
+	end
+
+	local bottomAnchoredFrames = {
+		"BrowseResultsFrame",
+		"ItemBuyFrame",
+		"CommoditiesBuyFrame",
+		"ItemSellList",
+		"CommoditiesSellList",
+		"AuctionsFrame",
+	}
+	for _, fName in ipairs(bottomAnchoredFrames) do
+		local f = ahFrame[fName]
+		if f then
+			f:SetPoint("BOTTOM", ahFrame, "BOTTOM", 0, 28)
+			StretchFrameBackgrounds(f)
+		end
+	end
+
+	if ahFrame.BrowseResultsFrame and ahFrame.BrowseResultsFrame.ItemList then
+		ahFrame.BrowseResultsFrame.ItemList:SetPoint("BOTTOM", ahFrame.BrowseResultsFrame, "BOTTOM", 0, 0)
+		ReflowSingleRetailItemList(ahFrame.BrowseResultsFrame.ItemList)
+	end
+	if ahFrame.ItemBuyFrame and ahFrame.ItemBuyFrame.ItemList then
+		ahFrame.ItemBuyFrame.ItemList:SetPoint("BOTTOM", ahFrame.ItemBuyFrame, "BOTTOM", 0, 32)
+		ReflowSingleRetailItemList(ahFrame.ItemBuyFrame.ItemList)
+	end
+	if ahFrame.CommoditiesBuyFrame and ahFrame.CommoditiesBuyFrame.ItemList then
+		ahFrame.CommoditiesBuyFrame.ItemList:SetPoint("BOTTOM", ahFrame.CommoditiesBuyFrame, "BOTTOM", 0, 0)
+		ReflowSingleRetailItemList(ahFrame.CommoditiesBuyFrame.ItemList)
+	end
+	if ahFrame.ItemSellList then
+		ReflowSingleRetailItemList(ahFrame.ItemSellList)
+	end
+	if ahFrame.CommoditiesSellList then
+		ReflowSingleRetailItemList(ahFrame.CommoditiesSellList)
+	end
+	if ahFrame.AuctionsFrame then
+		local af = ahFrame.AuctionsFrame
+		if af.SummaryList then
+			af.SummaryList:SetPoint("BOTTOM", af, "BOTTOM", 0, 32)
+			ReflowSingleRetailItemList(af.SummaryList)
+		end
+		for _, subName in ipairs({ "AllAuctionsList", "BidsList", "ItemList", "CommoditiesList" }) do
+			local sub = af[subName]
+			if sub then
+				sub:SetPoint("BOTTOM", af, "BOTTOM", 0, 32)
+				ReflowSingleRetailItemList(sub)
+			end
+		end
+	end
 end
 
 local function SetupRetailAHWindowControls(ahFrame)
@@ -500,15 +687,33 @@ local function SetupRetailAHWindowControls(ahFrame)
 	ahFrame._aucWindowControlsSetup = true
 
 	pcall(ahFrame.SetMovable, ahFrame, true)
-	-- Ensure AuctionHouseFrame is at its native 800x538 geometry so all internal frames fill 100% of the window
+	pcall(ahFrame.SetResizable, ahFrame, true)
+	if ahFrame.SetResizeBounds then
+		pcall(ahFrame.SetResizeBounds, ahFrame, 800, 538, 1500, 980)
+	elseif ahFrame.SetMinResize then
+		pcall(ahFrame.SetMinResize, ahFrame, 800, 538)
+		pcall(ahFrame.SetMaxResize, ahFrame, 1500, 980)
+	end
 	ahFrame._aucBaseWidth = 800
 	ahFrame._aucBaseHeight = 538
-	pcall(ahFrame.SetSize, ahFrame, ahFrame._aucBaseWidth, ahFrame._aucBaseHeight)
+
+	local savedW = tonumber(lib.Settings and lib.Settings.GetSetting and lib.Settings.GetSetting("core.general.ahWindowWidth"))
+	local savedH = tonumber(lib.Settings and lib.Settings.GetSetting and lib.Settings.GetSetting("core.general.ahWindowHeight"))
+	if savedW and savedH and savedW >= 800 and savedH >= 538 then
+		pcall(ahFrame.SetSize, ahFrame, savedW, savedH)
+	else
+		pcall(ahFrame.SetSize, ahFrame, ahFrame._aucBaseWidth, ahFrame._aucBaseHeight)
+	end
 
 	local savedScale = tonumber(lib.Settings and lib.Settings.GetSetting and lib.Settings.GetSetting("core.general.ahWindowScale"))
 	if savedScale and savedScale >= 0.75 and savedScale <= 1.75 then
 		pcall(ahFrame.SetScale, ahFrame, savedScale)
 	end
+
+	ahFrame:HookScript("OnSizeChanged", function(self)
+		lib.ReflowRetailAHInternalFrames(self)
+	end)
+	lib.ReflowRetailAHInternalFrames(ahFrame)
 
 	local Configator = LibStub and LibStub("Configator", true)
 	local UIStyle = Configator and Configator.UIStyle
@@ -551,14 +756,15 @@ local function SetupRetailAHWindowControls(ahFrame)
 		end)
 		UIStyle.RegisterFontListener(function(newSize)
 			lblSize:SetText(newSize.."pt")
-			for _, tab in ipairs(private.RetailTabs) do
-				ResizeRetailTab(tab)
-			end
+			PositionRetailTabs(ahFrame)
 		end)
 		ahFrame._aucFontBar = fontBar
 	end
 
-	-- Bottom-right window scale-resize grip (scales the window AND all contents proportionally)
+	-- Bottom-right window resize & scale grip:
+	-- Left-Drag: dynamically resizes window width/height and reflows all columns & rows
+	-- Shift + Left-Drag: proportionally scales window and all contents (0.75x - 1.75x)
+	-- Right-Click: resets window size and scale to default
 	if not ahFrame._aucResizer then
 		local resizer = CreateFrame("Button", "AucRetailAHResizer", ahFrame)
 		resizer._aucKeepVisible = true
@@ -572,16 +778,22 @@ local function SetupRetailAHWindowControls(ahFrame)
 		resizer:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
 
 		local isScaling = false
+		local isSizing = false
 		local startScale, uipLeft, uipTop, startCursorX, startCursorY, uiEffScale
 
 		resizer:SetScript("OnMouseDown", function(_, button)
 			if button == "LeftButton" then
-				isScaling = true
-				startScale = ahFrame:GetScale() or 1
-				uipLeft = (ahFrame:GetLeft() or 100) * startScale
-				uipTop = (ahFrame:GetTop() or 600) * startScale
-				startCursorX, startCursorY = GetCursorPosition()
-				uiEffScale = UIParent:GetEffectiveScale() or 1
+				if IsShiftKeyDown() then
+					isScaling = true
+					startScale = ahFrame:GetScale() or 1
+					uipLeft = (ahFrame:GetLeft() or 100) * startScale
+					uipTop = (ahFrame:GetTop() or 600) * startScale
+					startCursorX, startCursorY = GetCursorPosition()
+					uiEffScale = UIParent:GetEffectiveScale() or 1
+				else
+					isSizing = true
+					ahFrame:StartSizing("BOTTOMRIGHT")
+				end
 			end
 		end)
 
@@ -590,8 +802,8 @@ local function SetupRetailAHWindowControls(ahFrame)
 			local curX, curY = GetCursorPosition()
 			local dx = (curX - startCursorX) / uiEffScale
 			local dy = (startCursorY - curY) / uiEffScale
-			local baseW = ahFrame._aucBaseWidth or 800
-			local baseH = ahFrame._aucBaseHeight or 538
+			local baseW = ahFrame:GetWidth() or 800
+			local baseH = ahFrame:GetHeight() or 538
 			local scaleX = ((baseW * startScale) + dx) / baseW
 			local scaleY = ((baseH * startScale) + dy) / baseH
 			local newScale = math.max(0.75, math.min(1.75, (scaleX + scaleY) * 0.5))
@@ -601,6 +813,15 @@ local function SetupRetailAHWindowControls(ahFrame)
 		end)
 
 		resizer:SetScript("OnMouseUp", function(_, button)
+			if isSizing then
+				isSizing = false
+				ahFrame:StopMovingOrSizing()
+				lib.ReflowRetailAHInternalFrames(ahFrame)
+				if lib.Settings and lib.Settings.SetSetting then
+					pcall(lib.Settings.SetSetting, "core.general.ahWindowWidth", math.floor((ahFrame:GetWidth() or 800) + 0.5))
+					pcall(lib.Settings.SetSetting, "core.general.ahWindowHeight", math.floor((ahFrame:GetHeight() or 538) + 0.5))
+				end
+			end
 			if isScaling then
 				isScaling = false
 				local curScale = math.floor((ahFrame:GetScale() or 1) * 100 + 0.5) / 100
@@ -616,7 +837,10 @@ local function SetupRetailAHWindowControls(ahFrame)
 				ahFrame:SetScale(1.0)
 				ahFrame:ClearAllPoints()
 				ahFrame:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", leftPos, topPos)
+				lib.ReflowRetailAHInternalFrames(ahFrame)
 				if lib.Settings and lib.Settings.SetSetting then
+					pcall(lib.Settings.SetSetting, "core.general.ahWindowWidth", 800)
+					pcall(lib.Settings.SetSetting, "core.general.ahWindowHeight", 538)
 					pcall(lib.Settings.SetSetting, "core.general.ahWindowScale", 1.0)
 				end
 			end
@@ -625,6 +849,7 @@ local function SetupRetailAHWindowControls(ahFrame)
 			if GameTooltip then
 				GameTooltip:SetOwner(self, "ANCHOR_BOTTOMRIGHT")
 				GameTooltip:SetText(lib.localizations("Click and drag to resize window"))
+				GameTooltip:AddLine("Shift + Drag: Scale | Right-Click: Reset", 0.75, 0.75, 0.75)
 				GameTooltip:Show()
 			end
 		end)
@@ -698,6 +923,12 @@ function lib.AddTab(tabButton, tabFrame)
 
 		-- Preserve the module's original OnClick handler
 		local moduleOnClick = tabButton:GetScript("OnClick") or tabButton.OnClick
+
+		tabButton:SetScript("OnMouseUp", function(self, button)
+			if button == "RightButton" and moduleOnClick then
+				moduleOnClick(self, button)
+			end
+		end)
 
 		-- Tab click handler: manages tab selection and hides built-in content
 		tabButton:SetScript("OnClick", function(self, button, ...)
@@ -773,30 +1004,20 @@ function lib.AddTab(tabButton, tabFrame)
 
 		-- Position cleanly in the same row right after the built-in tabs (matching LibAHTab)
 		local tabCount = #private.RetailTabs
-		tabButton:ClearAllPoints()
-		if tabCount > 1 then
-			local prevTab = private.RetailTabs[tabCount - 1]
-			tabButton:SetPoint("TOPLEFT", prevTab, "TOPRIGHT", 3, 0)
-		else
-			local lastBuiltin = ahFrame.Tabs and ahFrame.Tabs[#ahFrame.Tabs]
-			if lastBuiltin then
-				tabButton:SetPoint("TOPLEFT", lastBuiltin, "TOPRIGHT", 3, 0)
-			else
-				tabButton:SetPoint("TOPLEFT", ahFrame, "BOTTOMLEFT", 15, 0)
-			end
-		end
 		tabButton:SetID(tabCount)
+		PositionRetailTabs(ahFrame)
 		tabButton:Show()
 
 		-- Hook ahFrame show/hide to manage custom tabs
 		if not private.closeHooked then
 			private.closeHooked = true
 			ahFrame:HookScript("OnShow", function()
+				PositionRetailTabs(ahFrame)
 				for _, tab in ipairs(private.RetailTabs) do
-					ResizeRetailTab(tab)
 					SetRetailTabChecked(tab, false)
 					tab:Show()
 				end
+				lib.ReflowRetailAHInternalFrames(ahFrame)
 			end)
 			ahFrame:HookScript("OnHide", function()
 				lib.HideAllRetailTabs()

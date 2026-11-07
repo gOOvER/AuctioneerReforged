@@ -113,11 +113,28 @@ local function coins(money)
 	-- end
 end
 
+local function ApplyRowGradient(tex, direction, r, g, b, a1, a2)
+	local orient = (type(direction) == "string" and direction:upper() == "VERTICAL") and "VERTICAL" or "HORIZONTAL"
+	r, g, b = r or 1, g or 1, b or 1
+	a1, a2 = a1 or 0, a2 or 0
+	tex:SetColorTexture(1, 1, 1, 1)
+	if tex.SetGradientAlpha then
+		tex:SetGradientAlpha(orient, r, g, b, a1, r, g, b, a2)
+		return
+	end
+	if tex.SetGradient and CreateColor then
+		local ok = pcall(tex.SetGradient, tex, orient, CreateColor(r, g, b, a1), CreateColor(r, g, b, a2))
+		if ok then return end
+	end
+	tex:SetColorTexture(r, g, b, math.max(a1, a2))
+end
+
 local function calculateMaxScroll(self, w, height)
 	-- calculate max scroll, based on current number of items in list, and current height of viewport panel (self)
 	local sheet = self.sheet
 	if not sheet then return end
 
+	w = w or self:GetWidth() or 0
 	height = height or self:GetHeight() or 330
 	local headerH = sheet.headerHeight or 20
 	local rowH = sheet.rowHeight or 17
@@ -127,8 +144,62 @@ local function calculateMaxScroll(self, w, height)
 		viewRows = #sheet.rows
 	end
 	sheet.maxRows = viewRows
+	local newContentH = headerH + (viewRows * rowH)
 	if sheet.content then
-		sheet.content:SetHeight(headerH + (viewRows * rowH))
+		sheet.content:SetHeight(newContentH)
+	end
+
+	-- Dynamically scale visible columns proportionally to fill available panel width when resized
+	if sheet.labels and sheet.content and w > 120 then
+		local availW = math.floor(w - 10)
+		local baseTotal = 0
+		local visCount = 0
+		local gapTotal = 0
+		for idx = 1, #sheet.labels do
+			local lbl = sheet.labels[idx]
+			local bw = lbl.baseWidth or lbl.button:GetWidth() or 30
+			if idx > 1 then
+				gapTotal = gapTotal + 3
+			end
+			if bw > 1 then
+				baseTotal = baseTotal + bw
+				visCount = visCount + 1
+			else
+				gapTotal = gapTotal + bw
+			end
+		end
+		local targetVisW = availW - gapTotal
+		if baseTotal > 0 and targetVisW > 100 and (availW > (baseTotal + gapTotal + 4) or (visCount <= 10 and not sheet.userResized and targetVisW >= 360)) then
+			local scale = targetVisW / baseTotal
+			local newTotal = 10
+			for idx = 1, #sheet.labels do
+				local lbl = sheet.labels[idx]
+				local bw = lbl.baseWidth or 30
+				local colW = bw
+				if bw > 1 then
+					colW = math.max(24, math.floor(bw * scale + 0.5))
+				end
+				lbl.button:SetWidth(colW)
+				if lbl.nub then
+					lbl.nub:SetHeight(newContentH)
+				end
+				newTotal = newTotal + colW + (idx > 1 and 3 or 0)
+			end
+			sheet.content:SetWidth(newTotal)
+		else
+			local newTotal = 10
+			for idx = 1, #sheet.labels do
+				local lbl = sheet.labels[idx]
+				local colW = lbl.baseWidth or lbl.button:GetWidth() or 30
+				lbl.button:SetWidth(colW)
+				if lbl.nub then
+					lbl.nub:SetHeight(newContentH)
+				end
+				newTotal = newTotal + colW + (idx > 1 and 3 or 0)
+			end
+			sheet.content:SetWidth(newTotal)
+		end
+		self:UpdateScrollChildRect()
 	end
 
 	-- allow to scroll 1 beyond the last item, as a visual indicator of reaching the end
@@ -427,6 +498,7 @@ function kit:SetOrder(saved)
 			for i, name in ipairs(self.order) do
 				self.labels[i]:SetText(name)
 				self.labels[i].button:SetWidth(self.order[name][4])
+				self.labels[i].baseWidth = self.order[name][4]
 			end
 			self:ChangeOrder() --apply saved order changes
 		else
@@ -452,6 +524,7 @@ function kit:ChangeOrder()
 	for i, name in ipairs(self.order) do
 		self.labels[i]:SetText(name)
 		self.labels[i].button:SetWidth(self.order[name][4])
+		self.labels[i].baseWidth = self.order[name][4]
 
 		for index, cell in pairs(self.rows) do
 			cell[i].layout = self.order[name][1]
@@ -533,7 +606,7 @@ function kit:Render()
 		end
 		if inView then
 			rows[i].colorTex:Show()
-			rows[i].colorTex:SetGradient(direction,CreateColor(rowR, rowG, rowB, rowA1),CreateColor(rowR, rowG, rowB, rowA2))
+			ApplyRowGradient(rows[i].colorTex, direction, rowR, rowG, rowB, rowA1, rowA2)
 		else
 			rows[i].colorTex:Hide()
 		end
@@ -599,12 +672,13 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize, onSelect
 			UIStyle.ApplyFont(label, 0)
 		end
 		local colWidth = layout[i][3] or 30 --Never us a nil width, causes issues with overlay highlight
+		label.baseWidth = colWidth
 
 		totalWidth = totalWidth + colWidth
 		button:SetWidth(colWidth)
 		button:SetHeight(headerHeight)
 		button:SetResizable(true)
-		button:SetResizeBounds(0, 0, 450, headerHeight)
+		button:SetResizeBounds(0, 0, 800, headerHeight)
 
 		button:SetID(i)
 		button:SetScript("OnMouseDown", function(self, ...) sheet:ButtonClick(self:GetID(), ...) end)
@@ -653,6 +727,8 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize, onSelect
 			nub:SetScript("OnMouseUp", function()
 				button:StopMovingOrSizing()
 				button:SetPoint(nub.point, nub.relativeTo, nub.relativePoint, nub.xOfs, nub.yOfs)
+				label.baseWidth = button:GetWidth()
+				if sheet then sheet.userResized = true end
 				lib.Processor("ColumnWidthSet", sheet, button, i)
 				if sheet and sheet.labels and sheet.content and sheet.panel then
 					local newTotal = 10
@@ -682,7 +758,7 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize, onSelect
 
 	local rows = {}
 	local rowNum = 1
-	local maxAllocHeight = math.max(parentHeight - 30, 880)
+	local maxAllocHeight = math.max(parentHeight - 30, 1400)
 	local totalHeight = headerHeight
 	while (totalHeight + rowHeight < maxAllocHeight) do
 		local row = {}

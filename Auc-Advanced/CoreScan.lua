@@ -396,6 +396,11 @@ function lib.PopScan()
 		if (_G.nLog) then
 			_G.nLog.AddMessage("Auctioneer", "Scan", _G.N_INFO, ("Scan %d Resumed, next page to scan is %d"):format(private.curQuery.qryinfo.id, private.curQuery.qryinfo.page+1))
 		end
+		if AucAdvanced.IsRetailAH then
+			private.isScanning = false
+			private.StartRetailBrowseScan(nil, nil, nil, nil, nil, nil, nil, nil, private.curQuery)
+			return
+		end
 		--aucPrint(("Resuming paused scan at page {{%d}}..."):format(private.curQuery.qryinfo.page+1))
 		private.isScanning = true
 		private.sentQuery = false
@@ -482,6 +487,151 @@ local function RetailBuildItemData(info, link, timeLeft)
 	return itemData
 end
 
+function private.StartRetailBrowseScan(name, minUseLevel, maxUseLevel, isUsable, qualityIndex, exactMatch, filterData, options, existingQuery)
+	if not AuctionHouseFrame or not AuctionHouseFrame:IsShown() then
+		return
+	end
+	if not C_AuctionHouse or not C_AuctionHouse.SendBrowseQuery then
+		return
+	end
+
+	local query = existingQuery or private.NewQueryTable(name, minUseLevel, maxUseLevel, isUsable, qualityIndex, exactMatch, filterData)
+	if type(options) == "table" and (options.NoSummary or options.nosummary) then
+		query.qryinfo.nosummary = true
+	end
+
+	private.isScanning = true
+	private.isGetAll = false
+	private.scanStartTime = private.scanStartTime or time()
+	private.scanStarted = private.scanStarted or GetTime()
+	private.totalPaused = private.totalPaused or 0
+	private.curScan = {}
+	private.curQuery = query
+
+	AucAdvanced.SendProcessorMessage("scanstart", query.qryinfo.scanSize, query.qryinfo.sig, query)
+	private.UpdateScanProgress(true, 1, 0, 0, 1, 1, query)
+
+	if not private.retailBrowseScanFrame then
+		local bf = CreateFrame("Frame")
+		bf:Hide()
+		private.retailBrowseScanFrame = bf
+
+		local function FinishBrowseScan(aborted)
+			bf:Hide()
+			bf:UnregisterAllEvents()
+			if not private.isScanning or not private.curQuery or private.isGetAll then return end
+
+			local results = (not aborted and C_AuctionHouse.GetBrowseResults and C_AuctionHouse.GetBrowseResults()) or {}
+			local curScan = {}
+			local qName = query.qryinfo.name and query.qryinfo.name:lower() or nil
+			local isExact = query.qryinfo.exactMatch
+			for _, r in ipairs(results) do
+				local itemID = r.itemKey and r.itemKey.itemID
+				local minPrice = r.minPrice or 0
+				local totalQty = r.totalQuantity or 0
+				if itemID and minPrice > 0 and totalQty > 0 then
+					local itemName, itemLink, itemRarity = GetItemInfo(itemID)
+					if not itemLink and r.appearanceLink then
+						itemLink = r.appearanceLink
+					end
+					if itemLink then
+						if not isExact or not qName or qName == "" or (itemName and itemName:lower() == qName) then
+							local info = {
+								itemName or query.qryinfo.name or "",
+								nil,
+								1,
+								itemRarity or 1,
+								true,
+								nil,
+								nil,
+								minPrice,
+								0,
+								minPrice,
+								0,
+								false,
+								nil,
+								"?",
+								"?",
+								nil,
+								itemID,
+							}
+							tinsert(curScan, RetailBuildItemData(info, itemLink, 4))
+						end
+					end
+				end
+			end
+
+			private.curScan = curScan
+			private.UpdateScanProgress(false, #curScan, #curScan, GetTime() - (private.scanStarted or GetTime()), 1, 1, private.curQuery)
+			private.Commit(aborted and true or false, false, false)
+		end
+
+		bf.FinishBrowseScan = FinishBrowseScan
+		bf:SetScript("OnEvent", function(self, event)
+			if event == "AUCTION_HOUSE_CLOSED" then
+				FinishBrowseScan(true)
+			elseif event == "AUCTION_HOUSE_BROWSE_RESULTS_UPDATED" or event == "AUCTION_HOUSE_BROWSE_RESULTS_ADDED" then
+				self.gotEvent = true
+				self.lastEvent = GetTime()
+				local results = C_AuctionHouse.GetBrowseResults and C_AuctionHouse.GetBrowseResults() or {}
+				for _, r in ipairs(results) do
+					local itemID = r.itemKey and r.itemKey.itemID
+					if itemID and C_Item and C_Item.RequestLoadItemDataByID then
+						pcall(C_Item.RequestLoadItemDataByID, itemID)
+					end
+				end
+				if C_AuctionHouse.HasFullBrowseResults and not C_AuctionHouse.HasFullBrowseResults() then
+					if (self.pagesRequested or 0) < 12 and C_AuctionHouse.RequestMoreBrowseResults then
+						self.pagesRequested = (self.pagesRequested or 0) + 1
+						pcall(C_AuctionHouse.RequestMoreBrowseResults)
+					end
+				end
+			end
+		end)
+		bf:SetScript("OnUpdate", function(self, elapsed)
+			self.elapsed = (self.elapsed or 0) + elapsed
+			if self.gotEvent then
+				local full = not C_AuctionHouse.HasFullBrowseResults or C_AuctionHouse.HasFullBrowseResults() or (self.pagesRequested or 0) >= 12
+				local settle = (GetTime() - (self.lastEvent or 0)) >= (full and 0.25 or 0.8)
+				if settle then
+					FinishBrowseScan(false)
+					return
+				end
+			end
+			if self.elapsed >= 5.0 then
+				FinishBrowseScan(false)
+			end
+		end)
+	end
+
+	local bf = private.retailBrowseScanFrame
+	bf.elapsed = 0
+	bf.gotEvent = false
+	bf.lastEvent = GetTime()
+	bf.pagesRequested = 0
+	bf:RegisterEvent("AUCTION_HOUSE_BROWSE_RESULTS_UPDATED")
+	bf:RegisterEvent("AUCTION_HOUSE_BROWSE_RESULTS_ADDED")
+	bf:RegisterEvent("AUCTION_HOUSE_CLOSED")
+	bf:Show()
+
+	local filters = {}
+	if query.qryinfo.isUsable and Enum and Enum.AuctionHouseFilter and Enum.AuctionHouseFilter.UsableOnly then
+		tinsert(filters, Enum.AuctionHouseFilter.UsableOnly)
+	end
+	if query.qryinfo.exactMatch and Enum and Enum.AuctionHouseFilter and Enum.AuctionHouseFilter.ExactMatch then
+		tinsert(filters, Enum.AuctionHouseFilter.ExactMatch)
+	end
+	local browseQuery = {
+		searchString = query.qryinfo.name or "",
+		minLevel = query.qryinfo.minUseLevel or 0,
+		maxLevel = query.qryinfo.maxUseLevel or 0,
+		filters = filters,
+		itemClassFilters = query.qryinfo.filterData or {},
+		sorts = {},
+	}
+	pcall(C_AuctionHouse.SendBrowseQuery, browseQuery)
+end
+
 function private.StartRetailScan(name, minUseLevel, maxUseLevel, isUsable, qualityIndex, GetAll, exactMatch, filterData, options)
 	if not AuctionHouseFrame or not AuctionHouseFrame:IsShown() then
 		aucPrint("Auctioneer: Retail scan requires the Auction House to be open")
@@ -495,9 +645,21 @@ function private.StartRetailScan(name, minUseLevel, maxUseLevel, isUsable, quali
 		print("Scan is currently in progress")
 		return
 	end
+
+	local isTargeted = not GetAll and (
+		(name and name ~= "")
+		or (filterData and type(filterData) == "table" and #filterData > 0)
+		or (minUseLevel and tonumber(minUseLevel) and tonumber(minUseLevel) > 0)
+		or (maxUseLevel and tonumber(maxUseLevel) and tonumber(maxUseLevel) > 0)
+		or isUsable
+		or (qualityIndex and tonumber(qualityIndex) and tonumber(qualityIndex) > 0)
+	)
+	if isTargeted then
+		return private.StartRetailBrowseScan(name, minUseLevel, maxUseLevel, isUsable, qualityIndex, exactMatch, filterData, options)
+	end
+
 	if not C_AuctionHouse or not C_AuctionHouse.ReplicateItems then
-		aucPrint("Auctioneer: C_AuctionHouse.ReplicateItems not available")
-		return
+		return private.StartRetailBrowseScan(name, minUseLevel, maxUseLevel, isUsable, qualityIndex, exactMatch, filterData, options)
 	end
 
 	-- Retail: GetAll (ReplicateItems) has a 15-minute account-wide throttle.
@@ -506,6 +668,9 @@ function private.StartRetailScan(name, minUseLevel, maxUseLevel, isUsable, quali
 	if private.retailScanLast then
 		local remaining = RETAIL_SCAN_COOLDOWN - (time() - private.retailScanLast)
 		if remaining > 0 then
+			if not GetAll then
+				return private.StartRetailBrowseScan(name, minUseLevel, maxUseLevel, isUsable, qualityIndex, exactMatch, filterData, options)
+			end
 			local mins = floor(remaining / 60)
 			local secs = remaining % 60
 			aucPrint(("Auctioneer: GetAll scan on cooldown. Next scan available in %d:%02d"):format(mins, secs))

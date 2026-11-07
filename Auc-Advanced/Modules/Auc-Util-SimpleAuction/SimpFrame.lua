@@ -123,6 +123,28 @@ function private.GetMyPrice(link, items)
 	if not link then return end
 	local searchkey = private.GetKey(link)
 	if not searchkey then return end
+	if AucAdvanced.IsRetailAH and C_AuctionHouse and C_AuctionHouse.GetNumOwnedAuctions then
+		local n = C_AuctionHouse.GetNumOwnedAuctions() or 0
+		for i = 1, n do
+			local info = C_AuctionHouse.GetOwnedAuctionInfo(i)
+			if info and (info.status == 0 or info.status == nil) and info.itemLink and private.GetKey(info.itemLink) == searchkey then
+				local stack = info.quantity or 1
+				if stack > 0 then
+					local bid = info.bidAmount or info.buyoutAmount or 0
+					local buy = info.buyoutAmount or 0
+					if bid > 0 then
+						bid = bid / stack
+						uBid = uBid and min(uBid, bid) or bid
+						if buy > 0 then
+							buy = buy / stack
+							uBuy = uBuy and min(uBuy, buy) or buy
+						end
+					end
+				end
+			end
+		end
+		return uBid, uBuy
+	end
 	local n = GetNumAuctionItems("owner")
 	if n and n > 0 then
 		for i = 1, n do
@@ -1678,6 +1700,22 @@ function private.CreateFrames()
 				StartScan(nil, nil, nil, nil, nil, nil, nil, filterData)
 			end
 		end)
+	elseif AucAdvanced.IsRetailAH and AuctionHouseFrame and AuctionHouseFrame.SearchBar then
+		frame.scanbutton = CreateFrame("Button", "AucAdvScanButton", AuctionHouseFrame.SearchBar, "UIPanelButtonTemplate")
+		frame.scanbutton:SetText(_TRANS("Scan"))
+		frame.scanbutton:SetSize(68, 22)
+		local anchorTo = AuctionHouseFrame.SearchBar.FavoritesSearchButton or AuctionHouseFrame.SearchBar.SearchBox or AuctionHouseFrame.SearchBar
+		frame.scanbutton:SetPoint("RIGHT", anchorTo, "LEFT", -8, 0)
+		frame.scanbutton:SetScript("OnClick", function()
+			if not AucIsScanning() then
+				local searchText = AuctionHouseFrame.SearchBar.SearchBox and AuctionHouseFrame.SearchBar.SearchBox:GetText()
+				if searchText and searchText ~= "" then
+					StartScan(searchText)
+				else
+					StartScan()
+				end
+			end
+		end)
 	end
 
 	frame.buy = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
@@ -1726,6 +1764,13 @@ function private.CreateFrames()
 
 	if ContainerFrameItemButton_OnModifiedClick then
 		hooksecurefunc("ContainerFrameItemButton_OnModifiedClick", frame.ClickBagHook)
+	end
+	if HandleModifiedItemClick then
+		hooksecurefunc("HandleModifiedItemClick", function(link)
+			if link and IsAltKeyDown() and GetMouseButtonClicked() == "LeftButton" and frame:IsVisible() and get("util.simpleauc.clickhook") then
+				private.LoadItemLink(link)
+			end
+		end)
 	end
 	if not AucAdvanced.IsRetailAH and AuctionFrame and AuctionFrame.numTabs then
 		for i = 1, AuctionFrame.numTabs do

@@ -556,17 +556,20 @@ local ActiveProgressBars = {}
 -- generate new bars as needed
 local function newBar()
 	local bar = CreateFrame("STATUSBAR", nil, UIParent, BackdropTemplateMixin and "TextStatusBar,BackdropTemplate" or "TextStatusBar")
-	bar:SetWidth(300)
-	bar:SetHeight(18)
+	bar:SetWidth(360)
+	bar:SetHeight(22)
+	bar:SetFrameStrata("HIGH")
 	bar:SetBackdrop({
-				bgFile="Interface\\Tooltips\\UI-Tooltip-Background",
-				edgeFile="Interface\\Tooltips\\UI-Tooltip-Border",
-				tile=1, tileSize=10, edgeSize=10,
+				bgFile="Interface\\Buttons\\WHITE8X8",
+				edgeFile="Interface\\Buttons\\WHITE8X8",
+				tile=false, tileSize=0, edgeSize=1,
 				insets={left=1, right=1, top=1, bottom=1}
 			})
+	bar:SetBackdropColor(0.08, 0.09, 0.12, 0.94)
+	bar:SetBackdropBorderColor(0.78, 0.64, 0.22, 0.85)
 
 	bar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
-	bar:SetStatusBarColor(0.6,0,0,0.6)
+	bar:SetStatusBarColor(0.82, 0.65, 0.16, 0.85)
 	bar:SetMinMaxValues(0,100)
 	bar:SetValue(50)
 	bar:Hide()
@@ -575,14 +578,14 @@ local function newBar()
 	bar.text:SetPoint("CENTER", bar, "CENTER")
 	bar.text:SetJustifyH("CENTER")
 	bar.text:SetJustifyV("MIDDLE")
-	bar.text:SetTextColor(1,1,1)
+	bar.text:SetTextColor(1, 0.96, 0.84)
 
 	tinsert(ProgressBarFrames, bar)
 	local newID = #ProgressBarFrames
 
 	if newID > 1 then
 		-- attach to previous bar
-		bar:SetPoint("BOTTOM", ProgressBarFrames[newID-1], "TOP", 0, 0)
+		bar:SetPoint("BOTTOM", ProgressBarFrames[newID-1], "TOP", 0, 2)
 	end
 	return newID
 end
@@ -597,8 +600,8 @@ local function renderBars(ID, name, value, text, options)
 	if self and not name then
 		self:Hide()
 		self.text:SetText("")
-		self:SetStatusBarColor(0.6, 0, 0, 0.6) --light red color
-		self.text:SetTextColor(1, 1, 1, 1)
+		self:SetStatusBarColor(0.82, 0.65, 0.16, 0.85)
+		self.text:SetTextColor(1, 0.96, 0.84, 1)
 		return
 	end
 
@@ -637,7 +640,10 @@ end
 --main entry point. Handles which bar will be assigned and recycling bars
 function lib.ProgressBars(name, value, show, text, options)
 	-- reanchor first bar so we can display even if AH is closed
-	if AuctionFrame and AuctionFrame:IsShown() then
+	if AuctionHouseFrame and AuctionHouseFrame:IsShown() then
+		ProgressBarFrames[1]:ClearAllPoints()
+		ProgressBarFrames[1]:SetPoint("BOTTOM", AuctionHouseFrame, "TOP", 0, 6)
+	elseif AuctionFrame and AuctionFrame:IsShown() then
 		ProgressBarFrames[1]:ClearAllPoints()
 		ProgressBarFrames[1]:SetPoint("TOPRIGHT", AuctionFrame, "TOPRIGHT", -5, 5)
 	else

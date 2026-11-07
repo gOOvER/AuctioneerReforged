@@ -141,7 +141,20 @@ lib.Processor = {
 --lib.RefreshPage()
 --role: refreshes the page based on settings, and updates private.lastPage, private.interval, and private.manualSearchPause
 function lib.RefreshPage()
-	if AucAdvanced.IsRetailAH then return end -- RealTime scanning not supported on retail yet
+	if AucAdvanced.IsRetailAH then
+		if not (AuctionHouseFrame and AuctionHouseFrame:IsVisible()) then
+			lib.SetTimerInterval(120)
+			return
+		end
+		if AucAdvanced.Scan.IsScanning() or AucAdvanced.Scan.IsPaused() then
+			lib.SetTimerInterval(get("realtime.reload.manpause"))
+			return
+		end
+		lib.SetTimerInterval(get("realtime.reload.interval"))
+		AucAdvanced.Scan.StartScan(nil, nil, nil, nil, nil, false)
+		lib.SignalRTSButton()
+		return
+	end
 	--Check to see if the AH is open for business
 	if not (AuctionFrame and AuctionFrame:IsVisible()) then
 		lib.SetTimerInterval(120) -- basically do nothing - we wait for auctionopen event
@@ -553,7 +566,20 @@ function lib.HookAH()
 end
 function private.HookAH()
 	private.HookAH = nil -- prevent calling more than once
-	if AucAdvanced.IsRetailAH then return end
+	if AucAdvanced.IsRetailAH then
+		if not AuctionHouseFrame then return end
+		local BrowseRTSButton = lib.CreateRTSButton(AuctionHouseFrame)
+		BrowseRTSButton._aucKeepVisible = true
+		BrowseRTSButton:SetSize(20, 18)
+		BrowseRTSButton:SetFrameStrata("DIALOG")
+		BrowseRTSButton:SetFrameLevel(100)
+		if AucScanButtonBar then
+			BrowseRTSButton:SetPoint("LEFT", AucScanButtonBar, "RIGHT", 6, 0)
+		else
+			BrowseRTSButton:SetPoint("TOPLEFT", AuctionHouseFrame, "TOPLEFT", 180, -3)
+		end
+		return
+	end
 	local BrowseRTSButton = lib.CreateRTSButton(AuctionFrameBrowse)
 	BrowseRTSButton:SetPoint("TOPRIGHT", AuctionFrameBrowse, "TOPLEFT", 310, -15)
 end

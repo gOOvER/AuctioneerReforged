@@ -89,9 +89,86 @@ function lib.OnLoad()
 end
 
 --[[ Local functions ]]--
+local function CheckRetailModifier(isCancel)
+	local modActive = get(isCancel and "util.EasyBuyout.EC.modifier.active" or "util.EasyBuyout.modifier.active")
+	if not modActive then return true end
+	local sel = get(isCancel and "util.EasyBuyout.EC.modifier.select" or "util.EasyBuyout.modifier.select")
+	if sel == 0 and IsShiftKeyDown() then return true end
+	if sel == 1 and IsAltKeyDown() then return true end
+	if sel == 2 and IsShiftKeyDown() and IsAltKeyDown() then return true end
+	return false
+end
+
+local function HookRetailListRows(itemList, isCancelList)
+	if not itemList or itemList._aucEasyBuyoutHooked then return end
+	itemList._aucEasyBuyoutHooked = true
+
+	local function HookRowButton(row)
+		if not row or row._aucEBHooked then return end
+		row._aucEBHooked = true
+		if row.RegisterForClicks then
+			pcall(row.RegisterForClicks, row, "LeftButtonUp", "RightButtonUp")
+		end
+		row:HookScript("OnMouseUp", function(self, button)
+			if button ~= "RightButton" then return end
+			local rowData = self.rowData or (self.GetRowData and self:GetRowData())
+			if not rowData or type(rowData) ~= "table" then return end
+			if isCancelList then
+				if not get("util.EasyBuyout.EC.active") then return end
+				if not CheckRetailModifier(true) then return end
+				if rowData.auctionID and C_AuctionHouse and C_AuctionHouse.CancelAuction then
+					pcall(C_AuctionHouse.CancelAuction, rowData.auctionID)
+					if StaticPopup_Hide then StaticPopup_Hide("CANCEL_AUCTION") end
+				end
+			else
+				if not get("util.EasyBuyout.active") then return end
+				if not CheckRetailModifier(false) then return end
+				local buyout = rowData.buyoutAmount or 0
+				if rowData.auctionID and buyout > 0 and C_AuctionHouse and C_AuctionHouse.PlaceBid then
+					if get("util.EasyBuyout.EGL.EBuy.active") and buyout > (get("util.EasyBuyout.EGL.EBuy.limit") or 100000) then
+						private.EBMessage("|cffCC1100EasyGoldLimit - Auction is over your set limit for EasyBuyout!")
+						return
+					end
+					pcall(C_AuctionHouse.PlaceBid, rowData.auctionID, buyout)
+				end
+			end
+		end)
+	end
+
+	local function ScanRows()
+		if itemList.ScrollFrame and itemList.ScrollFrame.buttons then
+			for _, btn in ipairs(itemList.ScrollFrame.buttons) do
+				HookRowButton(btn)
+			end
+		end
+		if itemList.tableBuilder and itemList.tableBuilder.rows then
+			for _, btn in ipairs(itemList.tableBuilder.rows) do
+				HookRowButton(btn)
+			end
+		end
+	end
+
+	ScanRows()
+	if itemList.RefreshScrollFrame then
+		hooksecurefunc(itemList, "RefreshScrollFrame", ScanRows)
+	end
+	itemList:HookScript("OnShow", ScanRows)
+end
+
 function private.AHLoaded()
 	if AucAdvanced.IsRetailAH then
-		-- Retail: EasyBuyout's browse button hooks are not compatible with the modern AH
+		if not AuctionHouseFrame then return end
+		if AuctionHouseFrame.ItemBuyFrame and AuctionHouseFrame.ItemBuyFrame.ItemList then
+			HookRetailListRows(AuctionHouseFrame.ItemBuyFrame.ItemList, false)
+		end
+		if AuctionHouseFrame.AuctionsFrame then
+			local af = AuctionHouseFrame.AuctionsFrame
+			for _, subName in ipairs({ "AllAuctionsList", "ItemList", "CommoditiesList" }) do
+				if af[subName] then
+					HookRetailListRows(af[subName], true)
+				end
+			end
+		end
 		return
 	end
 	if AucAdvanced.Modules.Util.CompactUI and AucAdvanced.Modules.Util.CompactUI.Private.ButtonClick and get("util.compactui.activated") then

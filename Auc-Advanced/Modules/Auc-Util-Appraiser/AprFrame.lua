@@ -40,6 +40,7 @@ local aucPrint,decode,_,_,replicate,empty,get,set,default,debugPrint,fill, _TRAN
 
 local frame
 
+local MAX_ITEMS = 32
 local NUM_ITEMS = (AucAdvanced and AucAdvanced.IsRetailAH) and 14 or 12
 
 local SigFromLink = AucAdvanced.API.GetSigFromLink
@@ -136,36 +137,74 @@ function private.CreateFrames()
 
 		if frame.showAuctions then
 			local auctionStart = #ItemList + 1
-			for auc=1, GetNumAuctionItems("owner") do
-				local name, texture, count, quality, _, _, _, _, _, _, _, _, _, _, _, _, itemId = GetAuctionItemInfo("owner", auc)
-				local link = GetAuctionItemLink("owner", auc)
-
-				local sig, linkType = SigFromLink(link)
-				if sig then
-					local found = false
-					for i = auctionStart, #ItemList do
-						local item = ItemList[i]
-						if item[1] == sig then
-							item[6] = item[6] + count
-							found = true
-							break
+			if AucAdvanced.IsRetailAH and C_AuctionHouse and C_AuctionHouse.GetNumOwnedAuctions then
+				for auc = 1, C_AuctionHouse.GetNumOwnedAuctions() do
+					local info = C_AuctionHouse.GetOwnedAuctionInfo(auc)
+					if info and (info.status == 0 or info.status == nil) and info.itemLink then
+						local link = info.itemLink
+						local count = info.quantity or 1
+						local itemId = info.itemKey and info.itemKey.itemID
+						local name, _, quality, _, _, _, _, stack, _, texture = GetItemInfo(link)
+						local sig = SigFromLink(link)
+						if sig then
+							local found = false
+							for i = auctionStart, #ItemList do
+								local item = ItemList[i]
+								if item[1] == sig then
+									item[6] = item[6] + count
+									found = true
+									break
+								end
+							end
+							if not found then
+								if not stack then
+									private.needListRefresh = true
+									stack = 1
+								end
+								local item = {
+									sig, name or link, texture, quality or 1, stack, count, link,
+									auction = true
+								}
+								if get('util.appraiser.item.'..sig..".ignore") then
+									item.ignore = true
+								end
+								table.insert(ItemList, item)
+							end
 						end
 					end
+				end
+			else
+				for auc=1, GetNumAuctionItems("owner") do
+					local name, texture, count, quality, _, _, _, _, _, _, _, _, _, _, _, _, itemId = GetAuctionItemInfo("owner", auc)
+					local link = GetAuctionItemLink("owner", auc)
 
-					if not found then
-						local _,_,_,_,_,_,_,stack = GetItemInfo(itemId)
-						if not stack then
-							private.needListRefresh = true
-							stack = 1
+					local sig, linkType = SigFromLink(link)
+					if sig then
+						local found = false
+						for i = auctionStart, #ItemList do
+							local item = ItemList[i]
+							if item[1] == sig then
+								item[6] = item[6] + count
+								found = true
+								break
+							end
 						end
-						local item = {
-							sig, name, texture, quality, stack, count, link,
-							auction=true
-						}
-						if get('util.appraiser.item.'..sig..".ignore") then
-							item.ignore = true
+
+						if not found then
+							local _,_,_,_,_,_,_,stack = GetItemInfo(itemId)
+							if not stack then
+								private.needListRefresh = true
+								stack = 1
+							end
+							local item = {
+								sig, name, texture, quality, stack, count, link,
+								auction=true
+							}
+							if get('util.appraiser.item.'..sig..".ignore") then
+								item.ignore = true
+							end
+							table.insert(ItemList, item)
 						end
-						table.insert(ItemList, item)
 					end
 				end
 			end
@@ -1009,7 +1048,7 @@ function private.CreateFrames()
 		end
 
 		frame.toggleManifest:Enable()
-		if frame.toggleManifest:GetText() == "Close Sidebar" then
+		if frame.manifestOpen then
 			frame.manifest:Show()
 		end
 
@@ -1876,6 +1915,11 @@ function private.CreateFrames()
 				button:Hide()
 			end
 		end
+		for i = NUM_ITEMS + 1, MAX_ITEMS do
+			if frame.items[i] then
+				frame.items[i]:Hide()
+			end
+		end
 		frame.olddistributioncache = nil
 	end
 
@@ -1936,20 +1980,23 @@ function private.CreateFrames()
 	title:SetTextColor(1, 0.85, 0.25)
 	title:SetText(_TRANS('APPR_Interface_AppraiserAuctionPostingInterface') )--Appraiser: Auction posting interface
 
+	frame.manifestOpen = false
 	frame.toggleManifest = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
 	frame.toggleManifest:SetScript("OnClick", function()
 		if frame.manifest:IsShown() then
+			frame.manifestOpen = false
 			frame.toggleManifest:SetText(_TRANS("Open Sidebar"))
 			frame.manifest:Hide()
 		else
+			frame.manifestOpen = true
 			frame.toggleManifest:SetText(_TRANS("Close Sidebar"))
 			frame.manifest:Show()
 		end
 	end)
 	frame.toggleManifest:SetScript("OnEnter", function(self) return frame.SetButtonTooltip(self, _TRANS('APPR_HelpTooltip_SidebarINF_Tooltip_AdditionalInfo') ) end)--Open/Close sidebar with additional price info
 	frame.toggleManifest:SetScript("OnLeave", function() return GameTooltip:Hide() end)
-	frame.toggleManifest:SetSize(116, 22)
-	frame.toggleManifest:SetText(_TRANS("Close Sidebar"))
+	frame.toggleManifest:SetSize(130, 22)
+	frame.toggleManifest:SetText(_TRANS("Open Sidebar"))
 	UIStyle.StyleButton(frame.toggleManifest, "default")
 	frame.toggleManifest:Disable()
 	frame.toggleManifest:Show()
@@ -2049,9 +2096,12 @@ function private.CreateFrames()
 	local function itemIconClick(self, button)
 		return itemButtonClick(self:GetParent(), button) -- go up one level, then tailcall
 	end
-	for i=1, NUM_ITEMS do
+	for i=1, MAX_ITEMS do
 		local item = CreateFrame("Button", nil, frame.itembox)
 		frame.items[i] = item
+		if i > NUM_ITEMS then
+			item:Hide()
+		end
 
 		item:SetScript("OnClick", itemButtonClick)
 		if (i == 1) then
@@ -2146,6 +2196,29 @@ function private.CreateFrames()
 
 	frame.itembox:EnableMouseWheel(true)
 	frame.itembox:SetScript("OnMouseWheel", function(obj, dir) scroller:SetValue(scroller:GetValue() - dir) frame.SetScroll() end)
+	frame.itembox:HookScript("OnSizeChanged", function(self, _, height)
+		local h = height or self:GetHeight() or 340
+		local newNum = math.max(12, math.min(MAX_ITEMS, math.floor((h - 14) / 27)))
+		if newNum ~= NUM_ITEMS then
+			NUM_ITEMS = newNum
+			if frame:IsVisible() and frame.scroller then
+				local listLen = #frame.list
+				if listLen <= NUM_ITEMS then
+					frame.scroller:Hide()
+					frame.scroller:SetMinMaxValues(0, 0)
+					frame.scroller:SetValue(0)
+				else
+					local curVal = frame.scroller:GetValue() or 0
+					frame.scroller:SetMinMaxValues(0, listLen - NUM_ITEMS)
+					if curVal > listLen - NUM_ITEMS then
+						frame.scroller:SetValue(listLen - NUM_ITEMS)
+					end
+					frame.scroller:Show()
+				end
+				frame.SetScroll()
+			end
+		end
+	end)
 
 	frame.salebox = CreateFrame("Frame", nil, frame, BackdropTemplateMixin and "BackdropTemplate")
 	UIStyle.StylePanel(frame.salebox)
@@ -2714,11 +2787,15 @@ function private.CreateFrames()
 
 	frame.manifest = CreateFrame("Frame", nil, frame, BackdropTemplateMixin and "BackdropTemplate")
 	UIStyle.StyleWindow(frame.manifest, true)
-	frame.manifest:SetPoint("TOPLEFT", frame, "TOPRIGHT", -20,-30)
-	frame.manifest:SetPoint("BOTTOM", frame, "BOTTOM", 0,30)
-	frame.manifest:SetWidth(230)
-	frame.manifest:SetFrameStrata("MEDIUM")
-	frame.manifest:SetFrameLevel(AuctionFrame:GetFrameLevel())
+	frame.manifest:SetPoint("TOPLEFT", frame, "TOPRIGHT", 2, -26)
+	frame.manifest:SetPoint("BOTTOMLEFT", frame, "BOTTOMRIGHT", 2, 6)
+	frame.manifest:SetWidth(235)
+	frame.manifest:SetFrameStrata("HIGH")
+	frame.manifest:SetFrameLevel((frame:GetFrameLevel() or 20) + 15)
+	frame.manifest:HookScript("OnShow", function(self)
+		self:SetFrameStrata("HIGH")
+		self:SetFrameLevel((frame:GetFrameLevel() or 20) + 15)
+	end)
 	frame.manifest:Hide()
 
 	frame.manifest.close = CreateFrame("Button", nil, frame.manifest)
@@ -2730,6 +2807,7 @@ function private.CreateFrames()
 	frame.manifest.close:SetWidth(26)
 	frame.manifest.close:SetHeight(26)
 	frame.manifest.close:SetScript("OnClick", function()
+		frame.manifestOpen = false
 		frame.manifest:Hide()
 		frame.toggleManifest:SetText(_TRANS("Open Sidebar"))
 	end)
@@ -2814,7 +2892,7 @@ function private.CreateFrames()
 	UIStyle.StylePanel(frame.imageview)
 	frame.imageview:SetPoint("TOPLEFT", frame.salebox, "BOTTOMLEFT", 0, 2)
 	frame.imageview:SetPoint("TOPRIGHT", frame.salebox, "BOTTOMRIGHT", 0, 2)
-	frame.imageview:SetPoint("BOTTOM", frame.itembox, "BOTTOM", 0, 20)
+	frame.imageview:SetPoint("BOTTOM", frame.itembox, "BOTTOM", 0, 26)
 	--records the column width changes
 	--store width by header name, that way if column reorginizing is added we apply size to proper column
 	function private.onResize(self, column, width)
@@ -2918,13 +2996,13 @@ function private.CreateFrames()
 	frame.imageview.sheet:EnableSelect(true)
 
 	frame.imageview.purchase = CreateFrame("Frame", nil, frame.imageview, BackdropTemplateMixin and "BackdropTemplate")
-	frame.imageview.purchase:SetPoint("TOPLEFT", frame.imageview, "BOTTOMLEFT", 0, 4)
-	frame.imageview.purchase:SetPoint("BOTTOMRIGHT", frame.imageview, "BOTTOMRIGHT", 0, -16)
+	frame.imageview.purchase:SetPoint("TOPLEFT", frame.imageview, "BOTTOMLEFT", 0, -2)
+	frame.imageview.purchase:SetPoint("BOTTOMRIGHT", frame.imageview, "BOTTOMRIGHT", 0, -26)
 	UIStyle.StylePanel(frame.imageview.purchase)
 
 	frame.imageview.purchase.buy = CreateFrame("Button", nil, frame.imageview.purchase, "UIPanelButtonTemplate")
-	frame.imageview.purchase.buy:SetPoint("TOPLEFT", frame.imageview.purchase, "TOPLEFT", 5, -1)
-	frame.imageview.purchase.buy:SetSize(38, 18)
+	frame.imageview.purchase.buy:SetPoint("LEFT", frame.imageview.purchase, "LEFT", 6, 0)
+	frame.imageview.purchase.buy:SetSize(64, 20)
 	frame.imageview.purchase.buy:SetText(_TRANS('APPR_Interface_Buy') )--Buy
 	UIStyle.StyleButton(frame.imageview.purchase.buy, "primary")
 	frame.imageview.purchase.buy:SetScript("OnClick", private.BuyAuction)
@@ -2933,13 +3011,13 @@ function private.CreateFrames()
 	frame.imageview.purchase.buy:Disable()
 
 	frame.imageview.purchase.buy.price = frame.imageview.purchase.buy:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-	frame.imageview.purchase.buy.price:SetPoint("TOPLEFT", frame.imageview.purchase.buy, "TOPRIGHT", 4, 0)
-	frame.imageview.purchase.buy.price:SetPoint("BOTTOMLEFT", frame.imageview.purchase.buy, "BOTTOMRIGHT", 4, 0)
+	frame.imageview.purchase.buy.price:SetPoint("TOPLEFT", frame.imageview.purchase.buy, "TOPRIGHT", 6, 0)
+	frame.imageview.purchase.buy.price:SetPoint("BOTTOMLEFT", frame.imageview.purchase.buy, "BOTTOMRIGHT", 6, 0)
 	frame.imageview.purchase.buy.price:SetJustifyV("MIDDLE")
 
 	frame.imageview.purchase.bid = CreateFrame("Button", nil, frame.imageview.purchase, "UIPanelButtonTemplate")
-	frame.imageview.purchase.bid:SetPoint("TOPLEFT", frame.imageview.purchase, "TOPLEFT", 220, -1)
-	frame.imageview.purchase.bid:SetSize(38, 18)
+	frame.imageview.purchase.bid:SetPoint("LEFT", frame.imageview.purchase, "CENTER", 10, 0)
+	frame.imageview.purchase.bid:SetSize(64, 20)
 	frame.imageview.purchase.bid:SetText(_TRANS('APPR_Interface_Bid') )--Bid
 	UIStyle.StyleButton(frame.imageview.purchase.bid, "default")
 	frame.imageview.purchase.bid:SetScript("OnClick", private.BidAuction)
@@ -2948,8 +3026,8 @@ function private.CreateFrames()
 	frame.imageview.purchase.bid:Disable()
 
 	frame.imageview.purchase.bid.price = frame.imageview.purchase.bid:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-	frame.imageview.purchase.bid.price:SetPoint("TOPLEFT", frame.imageview.purchase.bid, "TOPRIGHT")
-	frame.imageview.purchase.bid.price:SetPoint("BOTTOMLEFT", frame.imageview.purchase.bid, "BOTTOMRIGHT")
+	frame.imageview.purchase.bid.price:SetPoint("TOPLEFT", frame.imageview.purchase.bid, "TOPRIGHT", 6, 0)
+	frame.imageview.purchase.bid.price:SetPoint("BOTTOMLEFT", frame.imageview.purchase.bid, "BOTTOMRIGHT", 6, 0)
 	frame.imageview.purchase.bid.price:SetJustifyV("MIDDLE")
 
 	local tabTemplate = AucAdvanced.GetAHTabTemplate()

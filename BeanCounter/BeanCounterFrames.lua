@@ -231,11 +231,21 @@ function private.CreateFrames()
 		base:SetMaxResize(1600, 950)
 	end
 
-	--resize button for base GUI (proportional scale of window + contents)
+	--resize button for base GUI (Left-Drag: dynamic resize, Shift+Left-Drag: proportional scale, Right-Click: reset)
 	local savedBCScale = tonumber(private.getter("configator.scale"))
 	if savedBCScale and savedBCScale >= 0.75 and savedBCScale <= 1.75 then
 		base:SetScale(savedBCScale)
 	end
+	local savedBCW = tonumber(private.getter("configator.width"))
+	local savedBCH = tonumber(private.getter("configator.height"))
+	if savedBCW and savedBCH and savedBCW >= 834 and savedBCH >= 450 then
+		base:SetSize(savedBCW, savedBCH)
+	end
+	base:HookScript("OnSizeChanged", function()
+		if private.frame and private.frame.resultlist and private.frame.resultlist.sheet and private.frame.resultlist.sheet.panel then
+			private.frame.resultlist.sheet.panel:Update()
+		end
+	end)
 	base.Resizer = CreateFrame("Button", nil, base)
 	base.Resizer:SetPoint("BOTTOMRIGHT", base, "BOTTOMRIGHT", -4, 4)
 	base.Resizer:SetHeight(18)
@@ -250,40 +260,56 @@ function private.CreateFrames()
 			local left = base:GetLeft()
 			local top = base:GetTop()
 			base:SetScale(1.0)
+			base:SetSize(834.5, 450)
 			if left and top then
 				base:ClearAllPoints()
 				base:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", left * curScale, top * curScale)
 			end
 			private.setter("configator.scale", 1.0)
+			private.setter("configator.width", 834.5)
+			private.setter("configator.height", 450)
 			return
 		end
 		if button ~= "LeftButton" then return end
-		local uiScale = UIParent:GetEffectiveScale()
-		local startX, startY = GetCursorPosition()
-		startX, startY = startX / uiScale, startY / uiScale
-		local startScale = base:GetScale() or 1
-		local baseW = base:GetWidth() or 834.5
-		local left = (base:GetLeft() or 0) * startScale
-		local top = (base:GetTop() or 0) * startScale
-		self:SetScript("OnUpdate", function()
-			local curX, curY = GetCursorPosition()
-			curX, curY = curX / uiScale, curY / uiScale
-			local dx = curX - startX
-			local dy = startY - curY
-			local delta = math.abs(dx) >= math.abs(dy) and dx or (dy * (834.5 / 450))
-			local newScale = ((baseW * startScale) + delta) / baseW
-			if newScale < 0.75 then newScale = 0.75 end
-			if newScale > 1.75 then newScale = 1.75 end
-			base:SetScale(newScale)
-			if left > 0 and top > 0 then
-				base:ClearAllPoints()
-				base:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", left / newScale, top / newScale)
-			end
-		end)
+		if IsShiftKeyDown() then
+			self.isScaling = true
+			local uiScale = UIParent:GetEffectiveScale()
+			local startX, startY = GetCursorPosition()
+			startX, startY = startX / uiScale, startY / uiScale
+			local startScale = base:GetScale() or 1
+			local baseW = base:GetWidth() or 834.5
+			local left = (base:GetLeft() or 0) * startScale
+			local top = (base:GetTop() or 0) * startScale
+			self:SetScript("OnUpdate", function()
+				local curX, curY = GetCursorPosition()
+				curX, curY = curX / uiScale, curY / uiScale
+				local dx = curX - startX
+				local dy = startY - curY
+				local delta = math.abs(dx) >= math.abs(dy) and dx or (dy * (834.5 / 450))
+				local newScale = ((baseW * startScale) + delta) / baseW
+				if newScale < 0.75 then newScale = 0.75 end
+				if newScale > 1.75 then newScale = 1.75 end
+				base:SetScale(newScale)
+				if left > 0 and top > 0 then
+					base:ClearAllPoints()
+					base:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", left / newScale, top / newScale)
+				end
+			end)
+		else
+			self.isScaling = false
+			base:StartSizing("BOTTOMRIGHT")
+		end
 	end)
 	base.Resizer:SetScript("OnMouseUp", function(self)
 		self:SetScript("OnUpdate", nil)
-		private.setter("configator.scale", math.floor((base:GetScale() or 1) * 100 + 0.5) / 100)
+		if self.isScaling then
+			private.setter("configator.scale", math.floor((base:GetScale() or 1) * 100 + 0.5) / 100)
+			self.isScaling = false
+		else
+			base:StopMovingOrSizing()
+			private.setter("configator.width", math.floor(base:GetWidth() + 0.5))
+			private.setter("configator.height", math.floor(base:GetHeight() + 0.5))
+		end
 	end)
 	base.Resizer:SetScript("OnEnter", function() private.buttonTooltips(base.Resizer, _BC('Click and drag to resize window')) end)
 	base.Resizer:SetScript("OnLeave", function() GameTooltip:Hide() end)
