@@ -368,11 +368,48 @@ function private.SetupConfigGui(gui)
 	frame = gui.tabs[id].content
 	private.frame = frame
 
+	--all options in here will be duplicated in the tooltip frame
+	function private.addTooltipControls(id)
+		gui:AddControl(id, "Header",     0,    _TRANS('SHTG_Interface_HistogramOptions') )--Histogram options
+		gui:AddControl(id, "Note",       0, 1, nil, nil, " ")
+		gui:AddControl(id, "Checkbox",   0, 1, "stat.histogram.enable", _TRANS('SHTG_Interface_EnableHistogram') )--Enable Histogram Stats
+		gui:AddTip(id, _TRANS('SHTG_HelpTooltip_EnableHistogram') )--Allow Histogram to gather and return price data
+		gui:AddControl(id, "Note",       0, 1, nil, nil, " ")
+
+		gui:AddControl(id, "Checkbox",   0, 4, "stat.histogram.tooltip", _TRANS('SHTG_Interface_ShowHistogramTooltips') )--Show Histogram stats in the tooltips?
+		gui:AddTip(id, _TRANS('SHTG_HelpTooltip_ShowHistogramTooltips') )--Toggle display of stats from the Histogram module on or off
+		gui:AddControl(id, "Checkbox",   0, 6, "stat.histogram.median", _TRANS('SHTG_Interface_DisplayMedian') )--Display Median
+		gui:AddTip(id, _TRANS('SHTG_HelpTooltip_DisplayMedian') )--Toggle display of \'Median\' calculation in tooltips on or off
+		gui:AddControl(id, "Checkbox",   0, 6, "stat.histogram.iqr", _TRANS('SHTG_Interface_DisplayIQR') )--Display IQR
+		gui:AddTip(id, _TRANS('SHTG_HelpTooltip_DisplayIQR') )--Toggle display of \'IQR\' calculation in tooltips on or off.  See help for further explanation.
+		gui:AddControl(id, "Checkbox",   0, 6, "stat.histogram.precision", _TRANS('SHTG_Interface_DisplayPrecision') )--Display Precision
+		gui:AddTip(id, _TRANS('SHTG_HelpTooltip_DisplayPrecision') )--Toggle display of \'precision\' calculation in tooltips on or off
+		gui:AddControl(id, "Note",       0, 1, nil, nil, " ")
+		gui:AddControl(id, "Checkbox",   0, 4, "stat.histogram.quantmul", _TRANS('SHTG_Interface_MultiplyStack') )--Multiply by Stack Size
+		gui:AddTip(id, _TRANS('SHTG_HelpTooltip_MultiplyStack') )--Multiplies by current Stack Size if on
+
+		gui:AddHelp(id, "what median",
+			_TRANS('SHTG_Help_WhatMedian') ,--What is the median?
+			_TRANS('SHTG_Help_WhatMedianAnswer') )--The median value is the value where half of the prices seen are above, and half are below.
+		gui:AddHelp(id, "what IQR",
+			_TRANS('SHTG_Help_WhatIQR') ,--What is the IQR?
+			_TRANS('SHTG_Help_WhatIQRAnswer') )--The IQR is a measure of spread.  The middle half of the prices seen is confined with the range of IQR. An item with median 100g, and IQR 10g, has very consistent data.  If the IQR was 100g, the prices are all over the place.
+		gui:AddControl(id, "Note",       0, 1, nil, nil, " ")
+	end
+	--This is the Tooltip tab provided by aucadvnced so all tooltip configuration is in one place
+	local tooltipID = AucAdvanced.Settings.Gui.tooltipID
+
+	--now we create a duplicate of these in the tooltip frame
+	private.addTooltipControls(id)
+	if tooltipID then private.addTooltipControls(tooltipID) end
+
+	local viewerSubhead = gui:AddControl(id, "Subhead", 0, _TRANS('SHTG_Interface_ItemDataViewer') )--Item Data Viewer
+
 	frame.slot = frame:CreateTexture(nil, "BORDER")
 	frame.slot:SetDrawLayer("Artwork") -- or the border shades it
-	frame.slot:SetPoint("TOPLEFT", frame, "TOPLEFT", 30, -210)
-	frame.slot:SetWidth(45)
-	frame.slot:SetHeight(45)
+	frame.slot:SetPoint("TOPLEFT", viewerSubhead, "BOTTOMLEFT", 14, -8)
+	frame.slot:SetWidth(42)
+	frame.slot:SetHeight(42)
 	frame.slot:SetTexCoord(0.17, 0.83, 0.17, 0.83)
 	frame.slot:SetTexture("Interface\\Buttons\\UI-EmptySlot")
 	function frame.IconClicked()
@@ -403,25 +440,30 @@ function private.SetupConfigGui(gui)
 	frame.icon:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
 	frame.name = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-	frame.name:SetPoint("TOPLEFT", frame.slot, "TOPRIGHT", 5,-2)
+	frame.name:SetPoint("TOPLEFT", frame.slot, "TOPRIGHT", 8, -2)
 	frame.name:SetPoint("RIGHT", frame, "RIGHT", -15)
 	frame.name:SetHeight(20)
 	frame.name:SetJustifyH("LEFT")
 	frame.name:SetJustifyV("TOP")
-	frame.name:SetText("Insert or Alt-Click Item to start")
+	frame.name:SetText(_TRANS('SHTG_Interface_InsertItemStart'))
 	frame.name:SetTextColor(0.5, 0.5, 0.7)
 
 	frame.bargraph = CreateFrame("Frame", nil, frame, BackdropTemplateMixin and "BackdropTemplate")
-	frame.bargraph:SetPoint("TOPLEFT", frame, "TOPLEFT", 30, -260)
-	frame.bargraph:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -30, -260)
-	frame.bargraph:SetHeight(300)
-	frame.bargraph:SetBackdrop({
-		bgFile = "Interface/Tooltips/UI-Tooltip-Background",
-		edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
-		tile = true, tileSize = 32, edgeSize = 16,
-		insets = { left = 5, right = 5, top = 5, bottom = 5 }
-	})
-	frame.bargraph:SetBackdropColor(0, 0, 0.0, 0.5)
+	frame.bargraph:SetPoint("TOPLEFT", frame.slot, "BOTTOMLEFT", 0, -10)
+	frame.bargraph:SetPoint("RIGHT", frame, "RIGHT", -30, 0)
+	frame.bargraph:SetWidth(math.max(300, (frame:GetWidth() or 580) - 60))
+	frame.bargraph:SetHeight(220)
+	if gui.UIStyle and gui.UIStyle.ApplyBox then
+		gui.UIStyle.ApplyBox(frame.bargraph)
+	else
+		frame.bargraph:SetBackdrop({
+			bgFile = "Interface/Tooltips/UI-Tooltip-Background",
+			edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
+			tile = true, tileSize = 32, edgeSize = 16,
+			insets = { left = 5, right = 5, top = 5, bottom = 5 }
+		})
+		frame.bargraph:SetBackdropColor(0, 0, 0.0, 0.5)
+	end
 	frame.bargraph.bars = {}
 	frame.bargraph.pdf = {}
 	frame.bargraph.max = 100
@@ -459,7 +501,7 @@ function private.SetupConfigGui(gui)
 	frame.key:SetPoint("TOPLEFT", frame.bargraph, "TOPLEFT", 5, 22)
 	frame.key:SetJustifyH("RIGHT")
 	frame.key:SetJustifyV("TOP")
-	frame.key:SetText("|cff3fff3fRaw Data   |cffff3f3fMedian   |cff3f3fffPrice Probability")
+	frame.key:SetText(_TRANS('SHTG_Interface_GraphKey'))
 
 	frame.med = frame.bargraph:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 	frame.med:SetPoint("TOP", frame.bargraph, "BOTTOM", -50, -10)
@@ -470,44 +512,8 @@ function private.SetupConfigGui(gui)
 	frame.max:SetPoint("TOPRIGHT", frame.bargraph, "BOTTOMRIGHT", 0, -10)
 	frame.max:SetPoint("BOTTOMLEFT", frame.bargraph, "BOTTOMRIGHT", -150, -25)
 
-	--all options in here will be duplicated in the tooltip frame
-	function private.addTooltipControls(id)
-		gui:AddControl(id, "Header",     0,    _TRANS('SHTG_Interface_HistogramOptions') )--Histogram options
-		gui:AddControl(id, "Note",       0, 1, nil, nil, " ")
-		gui:AddControl(id, "Checkbox",   0, 1, "stat.histogram.enable", _TRANS('SHTG_Interface_EnableHistogram') )--Enable Histogram Stats
-		gui:AddTip(id, _TRANS('SHTG_HelpTooltip_EnableHistogram') )--Allow Histogram to gather and return price data
-		gui:AddControl(id, "Note",       0, 1, nil, nil, " ")
-
-		gui:AddControl(id, "Checkbox",   0, 4, "stat.histogram.tooltip", _TRANS('SHTG_Interface_ShowHistogramTooltips') )--Show Histogram stats in the tooltips?
-		gui:AddTip(id, _TRANS('SHTG_HelpTooltip_ShowHistogramTooltips') )--Toggle display of stats from the Histogram module on or off
-		gui:AddControl(id, "Checkbox",   0, 6, "stat.histogram.median", _TRANS('SHTG_Interface_DisplayMedian') )--Display Median
-		gui:AddTip(id, _TRANS('SHTG_HelpTooltip_DisplayMedian') )--Toggle display of \'Median\' calculation in tooltips on or off
-		gui:AddControl(id, "Checkbox",   0, 6, "stat.histogram.iqr", _TRANS('SHTG_Interface_DisplayIQR') )--Display IQR
-		gui:AddTip(id, _TRANS('SHTG_HelpTooltip_DisplayIQR') )--Toggle display of \'IQR\' calculation in tooltips on or off.  See help for further explanation.
-		gui:AddControl(id, "Checkbox",   0, 6, "stat.histogram.precision", _TRANS('SHTG_Interface_DisplayPrecision') )--Display Precision
-		gui:AddTip(id, _TRANS('SHTG_HelpTooltip_DisplayPrecision') )--Toggle display of \'precision\' calculation in tooltips on or off
-		gui:AddControl(id, "Note",       0, 1, nil, nil, " ")
-		gui:AddControl(id, "Checkbox",   0, 4, "stat.histogram.quantmul", _TRANS('SHTG_Interface_MultiplyStack') )--Multiply by Stack Size
-		gui:AddTip(id, _TRANS('SHTG_HelpTooltip_MultiplyStack') )--Multiplies by current Stack Size if on
-
-		gui:AddHelp(id, "what median",
-			_TRANS('SHTG_Help_WhatMedian') ,--What is the median?
-			_TRANS('SHTG_Help_WhatMedianAnswer') )--The median value is the value where half of the prices seen are above, and half are below.
-		gui:AddHelp(id, "what IQR",
-			_TRANS('SHTG_Help_WhatIQR') ,--What is the IQR?
-			_TRANS('SHTG_Help_WhatIQRAnswer') )--The IQR is a measure of spread.  The middle half of the prices seen is confined with the range of IQR. An item with median 100g, and IQR 10g, has very consistent data.  If the IQR was 100g, the prices are all over the place.
-		gui:AddControl(id, "Note",       0, 1, nil, nil, " ")
-	end
-	--This is the Tooltip tab provided by aucadvnced so all tooltip configuration is in one place
-	local tooltipID = AucAdvanced.Settings.Gui.tooltipID
-
-	--now we create a duplicate of these in the tooltip frame
-	private.addTooltipControls(id)
-	if tooltipID then private.addTooltipControls(tooltipID) end
-
+	frame:SetHeight((frame:GetHeight() or 220) + 310)
 	gui:MakeScrollable(id)
-
-	gui:AddControl(id, "Subhead",    0,    _TRANS('SHTG_Interface_ItemDataViewer') )--Item Data Viewer
 
 end
 

@@ -26,13 +26,13 @@
 --]]
 
 local LIBRARY_VERSION_MAJOR = "PanelScroller"
-local LIBRARY_VERSION_MINOR = 5
+local LIBRARY_VERSION_MINOR = 6
 local lib = LibStub:NewLibrary(LIBRARY_VERSION_MAJOR, LIBRARY_VERSION_MINOR)
 if not lib then return end
 
 local kit = {
-	hPos = 0, hSize = 0, hWin = 0, hType = "AUTO",
-	vPos = 0, vSize = 0, vWin = 0, vType = "YES",
+	hPos = 0, hSize = 0, hWin = 0, hType = "NO",
+	vPos = 0, vSize = 0, vWin = 0, vType = "AUTO",
 }
 local abs = abs
 

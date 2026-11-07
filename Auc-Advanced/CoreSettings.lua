@@ -139,6 +139,7 @@ local settingDefaults = {
 	["core.marketvalue.tolerance"] = .08,
 	["ShowPurchaseDebug"] = true,
 	["SelectedLocale"] = GetLocale(),
+	["uselocale"] = GetLocale(),
 	["ModTTShow"] = "always",
 	["post.clearonclose"] = true,
 	["post.confirmonclose"] = true,
@@ -357,7 +358,7 @@ local function setter(setting, value, silent)
 		end
 	end
 	if setting == "uselocale" then--Stores the last user choosen locale so it can be used next time
-		lib.SetSetting("SelectedLocale", value)
+		lib.SetSetting("SelectedLocale", callbackValue, true)
 	end
 
 	if silent then
@@ -388,6 +389,9 @@ local function getter(setting)
 	-- than a setting in the Control definition.
 	if type(setting)=="function" then
 		return setting("getsetting")
+	end
+	if setting == "uselocale" then
+		setting = "SelectedLocale"
 	end
 
 	local a, b, c = strsplit(".", setting, 3)
@@ -570,6 +574,7 @@ function private._MakeGuiConfig() -- Name mangled to block gui creation at first
 
 
 	id = gui:AddTab("Scanner")
+	gui:MakeScrollable(id)
 	gui:AddControl(id, "Header", 0, _TRANS("ADV_Interface_ScanOptions"))--"Scanning Options"
 
 	gui:AddControl(id, "Subhead", 0, _TRANS("ADV_Interface_Displays"))--"Displays and Reports"
@@ -633,6 +638,7 @@ function private._MakeGuiConfig() -- Name mangled to block gui creation at first
 
 	-- Data Maintenance tab under development - do not localize yet
 	id = gui:AddTab("Data Maintenance")
+	gui:MakeScrollable(id)
 	gui:AddControl(id, "Header", 0, "Database Options and Maintenance")
 
 	gui:AddControl(id, "Subhead", 0, "ScanData Settings")

@@ -26,7 +26,7 @@
 --]]
 
 local LIBRARY_VERSION_MAJOR = "SelectBox"
-local LIBRARY_VERSION_MINOR = 7
+local LIBRARY_VERSION_MINOR = 8
 local lib = LibStub:NewLibrary(LIBRARY_VERSION_MAJOR, LIBRARY_VERSION_MINOR)
 if not lib then return end
 
@@ -55,6 +55,7 @@ function kit:GetItems(setMenu)
 
 	if type(items) == "table" then
 		local key, value
+		local trans = AucAdvanced and AucAdvanced.localizations
 		for _, item in ipairs(items) do
 			if type(item) == "table" then
 				key = item[1]
@@ -62,6 +63,9 @@ function kit:GetItems(setMenu)
 			else
 				key = item
 				value = item
+			end
+			if type(value) == "string" and value ~= "" and trans then
+				value = trans(value)
 			end
 			if key then
 				if setMenu then

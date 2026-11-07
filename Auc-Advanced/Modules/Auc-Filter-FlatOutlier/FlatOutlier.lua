@@ -213,6 +213,7 @@ function private.SetupConfigGui(gui)
 	private.SetupConfigGui = nil
 	-- The defaults for the following settings are set in the lib.OnLoad function
 	local id = gui:AddTab(libName, libType.." Modules")
+	gui:MakeScrollable(id)
 
 	gui:AddHelp(id, "what flatoutlier filter",
 		"What is this FlatOutlier Filter?",
@@ -244,38 +245,38 @@ function private.SetupConfigGui(gui)
 
 	gui:AddControl(id, "Subhead",    0,    "Settings per quality:")
 
-	local enabletemplate = "Enable filtering |c%s%s|r quality items"
-	local tooltiptemplate = "Ticking this box will enable filtering on %s quality items"
-	local capgrowth = "Cap growth to: %d%%"
-	local maxpct = "Set the maximum percentage that an item's price can grow before being filtered"
+	local enabletemplate = L"Enable filtering |c%s%s|r quality items"
+	local tooltiptemplate = L"Ticking this box will enable filtering on %s quality items"
+	local capgrowth = L"Cap growth to: %d%%"
+	local maxpct = L"Set the maximum percentage that an item's price can grow before being filtered"
 
 	local _,_,_, hex = GetItemQualityColor(0)
-	gui:AddControl(id, "Checkbox",   0, 1, "filter.flatoutlier.poor_enabled", format(enabletemplate, hex, "poor"))
-	gui:AddTip(id, format(tooltiptemplate, "poor"))
+	gui:AddControl(id, "Checkbox",   0, 1, "filter.flatoutlier.poor_enabled", format(enabletemplate, hex, L"poor"))
+	gui:AddTip(id, format(tooltiptemplate, L"poor"))
 	gui:AddControl(id, "WideSlider", 0, 1, "filter.flatoutlier.poor_level", 100, 5000, 25, capgrowth)
 	gui:AddTip(id, maxpct)
 
 	local _,_,_, hex = GetItemQualityColor(1)
-	gui:AddControl(id, "Checkbox",   0, 1, "filter.flatoutlier.common_enabled", format(enabletemplate, hex, "common"))
-	gui:AddTip(id, format(tooltiptemplate, "common"))
+	gui:AddControl(id, "Checkbox",   0, 1, "filter.flatoutlier.common_enabled", format(enabletemplate, hex, L"common"))
+	gui:AddTip(id, format(tooltiptemplate, L"common"))
 	gui:AddControl(id, "WideSlider", 0, 1, "filter.flatoutlier.common_level", 100, 5000, 25, capgrowth)
 	gui:AddTip(id, maxpct)
 
 	local _,_,_, hex = GetItemQualityColor(2)
-	gui:AddControl(id, "Checkbox",   0, 1, "filter.flatoutlier.uncommon_enabled", format(enabletemplate, hex, "uncommon"))
-	gui:AddTip(id, format(tooltiptemplate, "uncommon"))
+	gui:AddControl(id, "Checkbox",   0, 1, "filter.flatoutlier.uncommon_enabled", format(enabletemplate, hex, L"uncommon"))
+	gui:AddTip(id, format(tooltiptemplate, L"uncommon"))
 	gui:AddControl(id, "WideSlider", 0, 1, "filter.flatoutlier.uncommon_level", 100, 5000, 25, capgrowth)
 	gui:AddTip(id, maxpct)
 
 	local _,_,_, hex = GetItemQualityColor(3)
-	gui:AddControl(id, "Checkbox",   0, 1, "filter.flatoutlier.rare_enabled", format(enabletemplate, hex, "rare"))
-	gui:AddTip(id, format(tooltiptemplate, "rare"))
+	gui:AddControl(id, "Checkbox",   0, 1, "filter.flatoutlier.rare_enabled", format(enabletemplate, hex, L"rare"))
+	gui:AddTip(id, format(tooltiptemplate, L"rare"))
 	gui:AddControl(id, "WideSlider", 0, 1, "filter.flatoutlier.rare_level", 100, 5000, 25, capgrowth)
 	gui:AddTip(id, maxpct)
 
 	local _,_,_, hex = GetItemQualityColor(4)
-	gui:AddControl(id, "Checkbox",   0, 1, "filter.flatoutlier.epic_enabled", format(enabletemplate, hex, "epic"))
-	gui:AddTip(id, format(tooltiptemplate, "epic"))
+	gui:AddControl(id, "Checkbox",   0, 1, "filter.flatoutlier.epic_enabled", format(enabletemplate, hex, L"epic"))
+	gui:AddTip(id, format(tooltiptemplate, L"epic"))
 	gui:AddControl(id, "WideSlider", 0, 1, "filter.flatoutlier.epic_level", 100, 5000, 25, capgrowth)
 	gui:AddTip(id, maxpct)
 

@@ -758,6 +758,7 @@ AuctioneerLocalizations.enUS = {
 		["SHTG_Interface_DisplayPrecision"]	= "Display Precision";
 		["SHTG_Interface_EnableHistogram"]	= "Enable Histogram Stats";
 		["SHTG_Interface_HistogramOptions"]	= "Histogram Options";
+		["SHTG_Interface_GraphKey"]	= "|cff3fff3fRaw Data   |cffff3f3fMedian   |cff3f3fffPrice Probability";
 		["SHTG_Interface_InsertItemStart"]	= "Insert or Alt-Click Item to start";
 		["SHTG_Interface_ItemDataViewer"]	= "Item Data Viewer";
 		["SHTG_Interface_MultiplyStack"]	= "Multiply by Stack Size";

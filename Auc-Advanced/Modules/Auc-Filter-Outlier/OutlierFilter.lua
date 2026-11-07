@@ -151,6 +151,7 @@ end
 function private.SetupConfigGui(gui)
 	-- The defaults for the following settings are set in the lib.OnLoad function
 	local id = gui:AddTab(libName, libType.." Modules")
+	gui:MakeScrollable(id)
 
 	gui:AddHelp(id, "what outlier filter",
 		_TRANS('OUTL_Help_WhatOutlierFilter') ,--What is this Outlier Filter?

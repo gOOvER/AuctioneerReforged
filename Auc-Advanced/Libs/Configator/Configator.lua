@@ -54,9 +54,16 @@ USAGE:
 ]]
 
 local LIBRARY_VERSION_MAJOR = "Configator"
-local LIBRARY_VERSION_MINOR = 37
+local LIBRARY_VERSION_MINOR = 38
 local lib = LibStub:NewLibrary(LIBRARY_VERSION_MAJOR, LIBRARY_VERSION_MINOR)
 if not lib then return end
+
+local function T(text)
+	if type(text) == "string" and text ~= "" and AucAdvanced and AucAdvanced.localizations then
+		return AucAdvanced.localizations(text)
+	end
+	return text
+end
 
 -- ============================================================================
 -- Gatherer Reforged Modern Dark-Gold UIStyle Helpers
@@ -795,16 +802,16 @@ function kit:RenderTabs()
 				else
 					button:SetArrowDirection("RIGHT")
 				end
-				button:SetText(self.config.cats[catId].name or catId)
+				button:SetText(T(self.config.cats[catId].name or catId))
 				button.catId = catId
 				button.tabName = nil
 			else
 				button:SetArrowDirection("NONE")
 				if catId == self.config.selectedCat
 				and tabName == self.config.selectedTab then
-					button:SetText(tabName, true)
+					button:SetText(T(tabName), true)
 				else
-					button:SetText(tabName)
+					button:SetText(T(tabName))
 				end
 				button.catId = catId
 				button.tabName = tabName
@@ -867,6 +874,7 @@ function kit:ZeroFrame()
 	frame:SetPoint("TOPLEFT", self, "TOPLEFT", 10, -10)
 	frame:SetPoint("BOTTOMRIGHT", self.Done, "TOPRIGHT", 0, 5)
 	UIStyle.StylePanel(frame)
+	if frame.SetClipsChildren then frame:SetClipsChildren(true) end
 
 	content:SetPoint("TOPLEFT", frame, "TOPLEFT", 5,-5)
 	content:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -5,5)
@@ -1046,6 +1054,7 @@ function kit:AddTab(tabName, catId, gapWidth, gapHeight, topOffset, leftOffset)
 	frame:SetPoint("TOPLEFT", self, "TOPLEFT", 160+leftOffset, -10-topOffset)
 	frame:SetPoint("BOTTOMRIGHT", self.Done, "TOPRIGHT", 0-gapWidth, 5+gapHeight)
 	UIStyle.StylePanel(frame)
+	if frame.SetClipsChildren then frame:SetClipsChildren(true) end
 	frame:SetFrameLevel(10)
 
 	frame.fullsize = CreateFrame("Button", nil, frame)
@@ -1221,6 +1230,9 @@ function kit:MakeScrollable(id)
 	local frame = self.tabs[id].frame
 	local content = self.tabs[id].content
 	local oldwidth = content:GetWidth()
+	if not oldwidth or oldwidth <= 0 then
+		oldwidth = (frame:GetWidth() or 620) - 30
+	end
 	content:ClearAllPoints()
 	content:SetWidth(oldwidth)
 	content:SetHeight(250)
@@ -1229,6 +1241,8 @@ function kit:MakeScrollable(id)
 	scroll:SetPoint("TOPLEFT", frame, "TOPLEFT", 5,-7)
 	scroll:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -25,9)
 	scroll:SetScrollChild(content)
+	scroll:SetScrollBarVisible("HORIZONTAL", "NO")
+	scroll:SetScrollBarVisible("VERTICAL", "AUTO")
 	scroll:UpdateScrollChildRect()
 	self.tabs[id].scroll = scroll
 	self.tabs[id][4] = scroll
@@ -1238,6 +1252,7 @@ end
 -- this is a helper function for the tooltip addition
 local function AddTipControl(self, control, tip)
 	if not self or not control or not tip then return end
+	if type(tip) == "string" then tip = T(tip) end
 	local old_enter = control:GetScript("OnEnter")
 	local old_leave = control:GetScript("OnLeave")
 	local function help_enter(self, ...)
@@ -1332,10 +1347,10 @@ function kit:AddHelp(id, qid, question, answer)
 	if question and answer then
 		if content and not content.HelpButton then
 			content.HelpButton = CreateFrame("Button", content:GetName().."HelpButton", content, "UIPanelButtonTemplate")
-			content.HelpButton:SetPoint("TOPRIGHT", content, "TOPRIGHT", -10, -4)
-			content.HelpButton:SetWidth(54)
+			content.HelpButton:SetPoint("TOPRIGHT", content, "TOPRIGHT", -26, -6)
+			content.HelpButton:SetWidth(58)
 			content.HelpButton:SetHeight(20)
-			content.HelpButton:SetText("? Help")
+			content.HelpButton:SetText("? " .. (HELP_LABEL or "Help"))
 			UIStyle.StyleButton(content.HelpButton, "default")
 			content.HelpButton:SetScript("OnClick", lib.help.Activate)
 			content.HelpButton.text = content.HelpButton:GetFontString()
@@ -1343,8 +1358,8 @@ function kit:AddHelp(id, qid, question, answer)
 			content.HelpButton.faq = {}
 			content.HelpButton.faa = {}
 		end
-		content.HelpButton.faq[qid] = question
-		content.HelpButton.faa[qid] = answer
+		content.HelpButton.faq[qid] = T(question)
+		content.HelpButton.faa[qid] = T(answer)
 
 		for i = 1, #content.HelpButton.qlist do
 			if content.HelpButton.qlist[i] == qid then
@@ -1398,31 +1413,31 @@ function kit:AddControl(id, cType, column, ...)
 	if (cType == "Header") then
 		el = content:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
 		local fontFile = el:GetFont()
-		el:SetFont(fontFile, 15)
+		el:SetFont(fontFile, 14)
 		el:SetTextColor(1, 0.85, 0.25)
 		kpos = kpos+1 kids[kpos] = el
-		anchorPoint(content, el, last, nil, nil, nil, -4)
+		anchorPoint(content, el, last, nil, nil, nil, -2)
 		local text = ...
-		el:SetText(text)
+		el:SetText(T(text))
 		local underline = content:CreateTexture(nil, "ARTWORK")
 		underline:SetHeight(1)
-		underline:SetPoint("TOPLEFT", el, "BOTTOMLEFT", 10, -5)
-		underline:SetPoint("TOPRIGHT", el, "BOTTOMRIGHT", -10, -5)
+		underline:SetPoint("TOPLEFT", el, "BOTTOMLEFT", 10, -3)
+		underline:SetPoint("TOPRIGHT", el, "BOTTOMRIGHT", -10, -3)
 		underline:SetColorTexture(0.79, 0.64, 0.15, 0.45)
 		kpos = kpos+1 kids[kpos] = underline
-		el.clearance = 10
+		el.clearance = 4
 		last = el
 	elseif (cType == "Subhead") then
 		el = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 		local fontFile = el:GetFont()
-		el:SetFont(fontFile, 13)
+		el:SetFont(fontFile, 12)
 		el:SetTextColor(0.92, 0.78, 0.30)
 		el:SetJustifyH("LEFT")
 		kpos = kpos+1 kids[kpos] = el
-		anchorPoint(content, el, last, column+15, colwidth, nil, -12)
+		anchorPoint(content, el, last, column+15, colwidth, nil, -6)
 		local text = ...
-		el:SetText(text)
-		el.clearance = 4
+		el:SetText(T(text))
+		el.clearance = 1
 		last = el
 	elseif (cType == "Note") then
 		local level, width, height, text = ...
@@ -1434,7 +1449,7 @@ function kit:AddControl(id, cType, column, ...)
 		el:SetJustifyV("TOP")
 		kpos = kpos+1 kids[kpos] = el
 		anchorPoint(content, el, last, column+indent+15, width, height, nil)
-		el:SetText(text)
+		el:SetText(T(text))
 		control = el
 		last = el
 	elseif (cType == "Label") then
@@ -1444,7 +1459,7 @@ function kit:AddControl(id, cType, column, ...)
 		el:SetJustifyH("LEFT")
 		kpos = kpos+1 kids[kpos] = el
 		anchorPoint(content, el, last, column+indent+15, colwidth)
-		el:SetText(text)
+		el:SetText(T(text))
 		if (setting) then
 			el.hit = CreateFrame("Button", nil, content)
 			el.hit.parent = el
@@ -1474,8 +1489,8 @@ function kit:AddControl(id, cType, column, ...)
 		el = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 		el:SetJustifyH("LEFT")
 		kpos = kpos+1 kids[kpos] = el
-		anchorPoint(content, el, last, 15 + column + indent, nil, nil, -2)
-		el:SetText(label)
+		anchorPoint(content, el, last, 15 + column + indent, nil, nil, -1)
+		el:SetText(T(label))
 		last = el
 		-- Editbox
 		el = CreateFrame("EditBox", lib.CreateAnonName(), content, "InputBoxTemplate")
@@ -1483,8 +1498,8 @@ function kit:AddControl(id, cType, column, ...)
 		lib:TabLink(frame, el)
 
 		kpos = kpos+1 kids[kpos] = el
-		anchorPoint(content, el, last, 15 + column + indent, colwidth or 180, 22, 0)
-		el. clearance = 4
+		anchorPoint(content, el, last, 15 + column + indent, colwidth or 180, 20, 1)
+		el.clearance = 3
 		el.setting = setting
 		el.stype = "EditBox"
 		el:SetAutoFocus(false)
@@ -1529,11 +1544,11 @@ function kit:AddControl(id, cType, column, ...)
 		local SelectBox = LibStub:GetLibrary("SelectBox")
 		el = SelectBox:Create(tmpName, content, width, function(...) self:ChangeSetting(...) end, list, "Default")
 		kpos = kpos+1 kids[kpos] = el
-		anchorPoint(content, el, last, column+indent - 1, colwidth or width, 24, 0)
+		anchorPoint(content, el, last, column+indent - 1, colwidth or width, 22, 0)
 		el.list = list
 		el.setting = setting
 		el.stype = "SelectBox";
-		el.clearance = 6
+		el.clearance = 2
 		self.elements[setting] = el
 		self:GetSetting(el)
 		control = el
@@ -1542,9 +1557,9 @@ function kit:AddControl(id, cType, column, ...)
 			el = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 			el:SetJustifyH("LEFT")
 			kpos = kpos+1 kids[kpos] = el
-			if (colwidth) then colwidth = colwidth - 15 end
-			anchorPoint(content, el, last, (colwidth or width)+35+column+indent, (colwidth or maxLabelLength), 14, -3)
-			el:SetText(text)
+			el:SetPoint("LEFT", control.button or control, "RIGHT", 8, 0)
+			el:SetPoint("RIGHT", content, "RIGHT", -5, 0)
+			el:SetText(T(text))
 			control.textEl = el
 		end
 		last = control
@@ -1555,17 +1570,18 @@ function kit:AddControl(id, cType, column, ...)
 		el = CreateFrame("Button", nil, content, "UIPanelButtonTemplate")
 		UIStyle.StyleButton(el, "default")
 		kpos = kpos+1 kids[kpos] = el
-		anchorPoint(content, el, last, 15 + column + indent, colwidth or 100, 24, 0)
+		anchorPoint(content, el, last, 15 + column + indent, colwidth or 100, 22, 0)
 		el.clearance = 2
 		el.setting = setting
 		el.stype = "Button";
 		el:SetScript("OnClick", function(...) self:ChangeSetting(...) end)
-		el:SetText(text)
+		el:SetText(T(text))
 		el:SetWidth(math.max(el:GetWidth(), el:GetFontString():GetStringWidth() + 24))
 		control = el
 		last = el
 	elseif (cType == "Checkbox") then
 		local level, setting, text, singleLine, maxLabelLength = ...
+		text = T(text)
 		if ( maxLabelLength and maxLabelLength <= 1 ) then
 			maxLabelLength = maxLabelLength * framewidth - 25
 		end
@@ -1573,7 +1589,7 @@ function kit:AddControl(id, cType, column, ...)
 		-- CheckButton
 		el = CreateFrame("CheckButton", nil, content, "OptionsBaseCheckButtonTemplate")
 		kpos = kpos+1 kids[kpos] = el
-		anchorPoint(content, el, last, 12 + column + indent, 18, 18, 0)
+		anchorPoint(content, el, last, 13 + column + indent, 16, 16, 0)
 		el.setting = setting
 		el.stype = "CheckButton"
 		self:GetSetting(el)
@@ -1585,9 +1601,9 @@ function kit:AddControl(id, cType, column, ...)
 		el:SetJustifyH("LEFT")
 		kpos = kpos+1 kids[kpos] = el
 		if (colwidth) then colwidth = colwidth - 15 end
-		anchorPoint(content, el, last, 34+column+indent, (colwidth or maxLabelLength), (singleLine and 16), -1)
+		anchorPoint(content, el, last, 33+column+indent, (colwidth or maxLabelLength), (singleLine and 14), 0)
 		el:SetText(text)
-		el.clearance = 6
+		el.clearance = 1
 		local textWidth = el:GetStringWidth()+25
 		control:SetHitRectInsets(-2,-textWidth, -2,-2)
 		control.textEl = el
@@ -1605,6 +1621,7 @@ function kit:AddControl(id, cType, column, ...)
 		end
 
 		local level, setting, min, max, step, text, fmtfunc = ...
+		text = T(text)
 		local indent = 10 * (level or 1)
 		-- FontString
 		el = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
@@ -1612,13 +1629,13 @@ function kit:AddControl(id, cType, column, ...)
 		kpos = kpos+1 kids[kpos] = el
 		anchorPoint(content, el, last, swidth+nwidth + 22 + column+indent, nil, nil, -2)
 		el:SetText(text)
-		el.clearance = 10
+		el.clearance = 3
 		local textElement = el
 		-- Slider
 		local tmpName = lib.CreateAnonName()
 		el = CreateFrame("Slider", tmpName, content, "OptionsSliderTemplate")
 		kpos = kpos+1 kids[kpos] = el
-		anchorPoint(content, el, last, 14 + column + indent, swidth, 16, 0)
+		anchorPoint(content, el, last, 14 + column + indent, swidth, 15, -1)
 		_G[tmpName.."Low"]:SetText("")
 		_G[tmpName.."High"]:SetText("")
 		el.setting = setting
@@ -1707,8 +1724,8 @@ function kit:AddControl(id, cType, column, ...)
 		el = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 		el:SetJustifyH("LEFT")
 		kpos = kpos+1 kids[kpos] = el
-		anchorPoint(content, el, last, 15+column+indent, nil, nil, -2)
-		el:SetText(label)
+		anchorPoint(content, el, last, 15+column+indent, nil, nil, -1)
+		el:SetText(T(label))
 		last = el
 		-- Editbox
 		el = CreateFrame("EditBox", lib.CreateAnonName(), content, "InputBoxTemplate")
@@ -1716,7 +1733,7 @@ function kit:AddControl(id, cType, column, ...)
 		lib:TabLink(frame, el)
 		kpos = kpos+1 kids[kpos] = el
 		anchorPoint(content, el, last, 15+column+indent, colwidth or defWidth, 20, 1)
-		el.clearance = 6
+		el.clearance = 3
 		el.setting = setting
 		el.stype = "EditBox"
 		el:SetAutoFocus(false)
@@ -1749,8 +1766,8 @@ function kit:AddControl(id, cType, column, ...)
 			el = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 			el:SetJustifyH("LEFT")
 			kpos = kpos+1 kids[kpos] = el
-			anchorPoint(content, el, last, 15+column+indent, nil, nil, -2)
-			el:SetText(label)
+			anchorPoint(content, el, last, 15+column+indent, nil, nil, -1)
+			el:SetText(T(label))
 			last = el
 		end
 		-- MoneyFrame
@@ -1773,11 +1790,11 @@ function kit:AddControl(id, cType, column, ...)
 		local MoneyInputFrame_SetOnValueChangedFunc = MoneyInputFrame_SetOnvalueChangedFunc or MoneyInputFrame_SetOnValueChangedFunc -- WotLK Hack
 		MoneyInputFrame_SetOnValueChangedFunc(el, function() self:ChangeSetting(cur) end);
 		kpos = kpos+1 kids[kpos] = el
-		anchorPoint(content, el, last, 15+column+indent, colwidth or 170, 22, 1)
+		anchorPoint(content, el, last, 15+column+indent, colwidth or 170, 20, 1)
 		el.frameName = frameName;
 		el.setting = setting;
 		el.stype = cType
-		el.clearance = 6
+		el.clearance = 3
 		el.minValue = minVal;
 		el.maxValue = maxVal;
 		self:GetSetting(el)
@@ -1787,6 +1804,7 @@ function kit:AddControl(id, cType, column, ...)
 		last = el
 	elseif (cType == "ColorSelect" or cType == "ColorSelectAlpha") then
 		local level, setting, text = ...
+		text = T(text)
 		local indent = 10 * (level or 1)
 		-- ColorSelect
 		el = CreateFrame("Button", nil, content)
@@ -1865,7 +1883,7 @@ function kit:AddControl(id, cType, column, ...)
 		if (colwidth) then colwidth = colwidth - 15 end
 		anchorPoint(content, el, last, 40+column+indent, colwidth, 16, 0)
 		el:SetText(text)
-		el.clearance = 5
+		el.clearance = 2
 		local textWidth = el:GetStringWidth()+25
 		control:SetHitRectInsets(-2,-textWidth, -2,-2)
 		control.textEl = el
