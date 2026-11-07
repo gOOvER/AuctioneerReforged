@@ -54,7 +54,7 @@ USAGE:
 ]]
 
 local LIBRARY_VERSION_MAJOR = "Configator"
-local LIBRARY_VERSION_MINOR = 41
+local LIBRARY_VERSION_MINOR = 42
 local lib = LibStub:NewLibrary(LIBRARY_VERSION_MAJOR, LIBRARY_VERSION_MINOR)
 if not lib then return end
 
@@ -1274,6 +1274,10 @@ function kit:AddTab(tabName, catId, gapWidth, gapHeight, topOffset, leftOffset)
 	if not gapHeight then gapHeight = self.gapHeight or 0 end
 	if not topOffset then topOffset = self.topOffset or 0 end
 	if not leftOffset then leftOffset = self.leftOffset or 0 end
+	gapWidth = tonumber(gapWidth) or 0
+	gapHeight = tonumber(gapHeight) or 0
+	topOffset = tonumber(topOffset) or 0
+	leftOffset = tonumber(leftOffset) or 0
 
 	local expandGap = 0
 	if self.expandGap then expandGap = self.expandGap end
@@ -1370,9 +1374,12 @@ end
 
 local function anchorPoint(frame, el, last, indent, width, height, yofs)
 	local clearance = 0
-	if (last and last.clearance) then clearance = last.clearance end
+	if (last and type(last.clearance) == "number") then clearance = last.clearance end
+	local h = (type(height) == "number") and height or 18
+	local y = (type(yofs) == "number") and yofs or 0
+	local ind = (type(indent) == "number") and indent or 15
 
-	el:SetPoint("LEFT", frame, "LEFT", indent or 15, 0)
+	el:SetPoint("LEFT", frame, "LEFT", ind, 0)
 	if (width == nil) then
 		el:SetPoint("RIGHT", frame, "RIGHT", -5, 0)
 	elseif (type(width) == "number") then
@@ -1382,11 +1389,11 @@ local function anchorPoint(frame, el, last, indent, width, height, yofs)
 		el:SetHeight(height)
 	end
 	if (last) then
-		el:SetPoint("TOP", last, "BOTTOM", 0, -5 + (yofs or 0) - clearance)
-		frame._estHeight = (frame._estHeight or 10) + (height or 18) + 5 - (yofs or 0) + clearance
+		el:SetPoint("TOP", last, "BOTTOM", 0, -5 + y - clearance)
+		frame._estHeight = (frame._estHeight or 10) + h + 5 - y + clearance
 	else
 		el:SetPoint("TOP", frame, "TOP", 0, -5 - clearance)
-		frame._estHeight = 10 + (height or 18) + clearance
+		frame._estHeight = 10 + h + clearance
 	end
 end
 
@@ -1680,6 +1687,7 @@ function kit:AddControl(id, cType, column, ...)
 		underline:SetColorTexture(0.79, 0.64, 0.15, 0.45)
 		kpos = kpos+1 kids[kpos] = underline
 		el.clearance = 4
+		control = el
 		last = el
 	elseif (cType == "Subhead") then
 		el = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
@@ -1692,6 +1700,7 @@ function kit:AddControl(id, cType, column, ...)
 		local text = ...
 		el:SetText(T(text))
 		el.clearance = 1
+		control = el
 		last = el
 	elseif (cType == "Note") then
 		local level, width, height, text = ...

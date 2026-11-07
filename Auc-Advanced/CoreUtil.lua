@@ -373,6 +373,44 @@ end
 -- Retail tab tracking (since AuctionFrameTab1..N globals don't exist in retail)
 private.RetailTabs = {}
 private.RetailTabFrames = {} -- maps tab button to its content frame
+private.HiddenBuiltinFrames = {}
+
+local function SetRetailTabChecked(tab, checked)
+	if not tab then return end
+	tab._checked = checked and true or false
+	if checked then
+		if PanelTemplates_SelectTab then pcall(PanelTemplates_SelectTab, tab) end
+	else
+		if PanelTemplates_DeselectTab then pcall(PanelTemplates_DeselectTab, tab) end
+	end
+	if tab.LeftActive then tab.LeftActive:SetShown(checked) end
+	if tab.MiddleActive then tab.MiddleActive:SetShown(checked) end
+	if tab.RightActive then tab.RightActive:SetShown(checked) end
+	if tab.Left then tab.Left:SetShown(not checked) end
+	if tab.Middle then tab.Middle:SetShown(not checked) end
+	if tab.Right then tab.Right:SetShown(not checked) end
+	if tab.SelectedTexture then tab.SelectedTexture:SetShown(checked) end
+end
+
+local function ResizeRetailTab(tab)
+	if not tab then return end
+	local fs = tab:GetFontString()
+	local textWidth = (fs and fs.GetStringWidth and fs:GetStringWidth()) or 0
+	if textWidth <= 0 then
+		local txt = tab:GetText() or ""
+		textWidth = #txt * 7
+	end
+	local width = math.max(76, math.ceil(textWidth + 30))
+	tab:SetWidth(width)
+	if fs then
+		fs:SetWidth(0)
+	end
+	if tab.Middle then tab.Middle:SetWidth(math.max(20, width - 30)) end
+	if tab.MiddleActive then tab.MiddleActive:SetWidth(math.max(20, width - 30)) end
+	if PanelTemplates_TabResize then
+		pcall(PanelTemplates_TabResize, tab, 0, nil, 36)
+	end
+end
 
 function lib.GetAHTabTemplate()
 	if AucAdvanced.IsRetailAH then
@@ -384,6 +422,7 @@ end
 
 function lib.HideAllRetailTabs()
 	for _, tab in ipairs(private.RetailTabs) do
+		SetRetailTabChecked(tab, false)
 		local frame = private.RetailTabFrames[tab]
 		if frame then frame:Hide() end
 	end
@@ -396,14 +435,42 @@ function lib.HideBuiltinAHContent()
 		"CommoditiesBuyFrame", "ItemBuyFrame", "WoWTokenResults",
 		"CommoditiesSellFrame", "CommoditiesSellList",
 		"ItemSellFrame", "ItemSellList", "WoWTokenSellFrame",
-		"AuctionsFrame",
+		"AuctionsFrame", "MoneyFrameBorder", "MoneyFrameInset",
 	}
 	for _, name in ipairs(builtInFrames) do
 		local frame = AuctionHouseFrame[name]
 		if frame and frame:IsShown() then
+			private.HiddenBuiltinFrames[name] = frame
 			pcall(frame.Hide, frame)
 		end
 	end
+end
+
+function lib.RestoreBuiltinAHContent()
+	if not AuctionHouseFrame then return end
+	for name, frame in pairs(private.HiddenBuiltinFrames) do
+		if frame and frame.Show then
+			pcall(frame.Show, frame)
+		end
+		private.HiddenBuiltinFrames[name] = nil
+	end
+end
+
+local function EnsureTabFrameSurface(tabFrame, ahFrame)
+	tabFrame:ClearAllPoints()
+	tabFrame:SetParent(ahFrame)
+	tabFrame:SetPoint("TOPLEFT", ahFrame, "TOPLEFT", 6, -26)
+	tabFrame:SetPoint("BOTTOMRIGHT", ahFrame, "BOTTOMRIGHT", -6, 6)
+	tabFrame:EnableMouse(true)
+	if not tabFrame._aucSurface then
+		local bg = tabFrame:CreateTexture(nil, "BACKGROUND", nil, -7)
+		bg:SetAllPoints(tabFrame)
+		bg:SetColorTexture(0.07, 0.08, 0.10, 0.98)
+		tabFrame._aucSurface = bg
+	end
+	local baseLevel = math.max(15, (ahFrame:GetFrameLevel() or 1) + 10)
+	tabFrame:SetFrameLevel(baseLevel)
+	private.relevelFrame(tabFrame)
 end
 
 function lib.AddTab(tabButton, tabFrame)
@@ -423,117 +490,115 @@ function lib.AddTab(tabButton, tabFrame)
 		table.insert(private.RetailTabs, tabButton)
 		private.RetailTabFrames[tabButton] = tabFrame
 
-		-- Content frame: parent to ahFrame, inset from the NineSlice border
-		-- so custom tabs stay inside the Auction House window on retail.
-		tabFrame:SetParent(ahFrame)
-		tabFrame:SetPoint("TOPLEFT", ahFrame, "TOPLEFT", 12, -12)
-		tabFrame:SetPoint("BOTTOMRIGHT", ahFrame, "BOTTOMRIGHT", -12, 0)
+		EnsureTabFrameSurface(tabFrame, ahFrame)
 		tabFrame:Hide()
-		private.relevelFrame(tabFrame)
 
 		-- Tab button: parent to ahFrame
 		tabButton:SetParent(ahFrame)
 		tabButton:SetScript("OnShow", nil)
 		tabButton:SetScript("OnEvent", nil)
-		-- Retail: template provides the visual, just ensure size/font
-		if isRetail then
-			tabButton:SetWidth(120)
-			tabButton:SetHeight(24)
-			tabButton:SetNormalFontObject(GameFontNormalSmall)
-			tabButton:SetHighlightFontObject(GameFontHighlightSmall)
-			tabButton:SetText(tabButton:GetText() or "")
-			-- Disable text truncation on the font string
-			local fs = tabButton:GetFontString()
-			if fs then
-				fs:SetMaxLines(1)
-				fs:SetWidth(110)
-			end
+		tabButton:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+		tabButton:SetNormalFontObject(GameFontNormalSmall)
+		tabButton:SetHighlightFontObject(GameFontHighlightSmall)
+		tabButton:SetDisabledFontObject(GameFontHighlightSmall)
+		tabButton:SetText(tabButton:GetText() or "")
+		tabButton:SetFrameStrata(ahFrame:GetFrameStrata())
+		tabButton:SetFrameLevel((ahFrame:GetFrameLevel() or 1) + 5)
 
-			-- Keep tabs at the same level as the AH frame
-			tabButton:SetFrameStrata(ahFrame:GetFrameStrata())
-			tabButton:SetFrameLevel(ahFrame:GetFrameLevel() + 5)
-		else
-		-- Set deselected texture state with proper tex coords
-		tabButton.Left:SetTexture("Interface\\Buttons\\UI-Panel-Tab-Up-Left")
-		tabButton.Left:SetTexCoord(0, 0.25, 0, 0.5)
-		tabButton.Middle:SetTexture("Interface\\Buttons\\UI-Panel-Tab-Up-Middle")
-		tabButton.Middle:SetTexCoord(0.25, 0.75, 0, 0.5)
-		tabButton.Right:SetTexture("Interface\\Buttons\\UI-Panel-Tab-Up-Right")
-		tabButton.Right:SetTexCoord(0.75, 1, 0, 0.5)
-		end
-
-		-- Custom checked state (LibSideTabFrame approach)
+		-- Custom checked state
 		tabButton._checked = false
 		tabButton.GetChecked = function(self) return self._checked end
-		tabButton.SetChecked = function(self, checked) self._checked = checked end
+		tabButton.SetChecked = function(self, checked) SetRetailTabChecked(self, checked) end
+
+		-- Initialize deselected & properly sized to match native AH tabs
+		ResizeRetailTab(tabButton)
+		SetRetailTabChecked(tabButton, false)
 
 		-- Preserve the module's original OnClick handler
-		local moduleOnClick = tabButton:GetScript("OnClick")
-
-		-- Helper to manage tab visual state manually (PanelTemplates_SetChecked doesn't exist in WoW Forever)
-		local function SetRetailTabChecked(tab, checked)
-			if not tab then return end
-			tab._checked = checked
-			-- Show/hide active textures
-			if tab.LeftActive then tab.LeftActive:SetShown(checked) end
-			if tab.MiddleActive then tab.MiddleActive:SetShown(checked) end
-			if tab.RightActive then tab.RightActive:SetShown(checked) end
-			-- Show/hide normal textures
-			if tab.Left then tab.Left:SetShown(not checked) end
-			if tab.Middle then tab.Middle:SetShown(not checked) end
-			if tab.Right then tab.Right:SetShown(not checked) end
-		end
+		local moduleOnClick = tabButton:GetScript("OnClick") or tabButton.OnClick
 
 		-- Tab click handler: manages tab selection and hides built-in content
-		tabButton:SetScript("OnClick", function(self)
-			-- Deselect previous custom tab
-			if ahFrame.currentCustomTab and ahFrame.currentCustomTab ~= self then
-				SetRetailTabChecked(ahFrame.currentCustomTab, false)
+		tabButton:SetScript("OnClick", function(self, button, ...)
+			if button == "RightButton" and moduleOnClick then
+				moduleOnClick(self, button, ...)
+				return
 			end
+
+			-- Hide all custom tab frames and deselect all custom tabs
+			lib.HideAllRetailTabs()
+
+			-- Hide all built-in AH subframes
+			lib.HideBuiltinAHContent()
+
 			-- Deselect all built-in tabs
-			ahFrame.selectedTab = nil
 			if ahFrame.Tabs then
 				for _, tab in ipairs(ahFrame.Tabs) do
-					PanelTemplates_DeselectTab(tab)
+					SetRetailTabChecked(tab, false)
 				end
 			end
-			-- Play the same tab click sound Blizzard uses
-			PlaySound(SOUNDKIT.IG_CHARACTER_INFO_TAB)
+
+			PlaySound(SOUNDKIT and SOUNDKIT.IG_CHARACTER_INFO_TAB or 841)
 			ahFrame.currentCustomTab = self
 			SetRetailTabChecked(self, true)
-			-- Let Blizzard handle hiding built-in content
-			pcall(function() ahFrame:SetDisplayMode("") end)
-			-- Call the module's original OnClick handler
+
+			-- Re-ensure surface & bounds before module shows frame
+			EnsureTabFrameSurface(tabFrame, ahFrame)
+
+			-- Call the module's original OnClick handler while tabFrame is still hidden
+			-- so module `if not frame:IsShown()` initialization runs properly
 			if moduleOnClick then
-				moduleOnClick(self)
+				moduleOnClick(self, button, ...)
 			end
+
+			EnsureTabFrameSurface(tabFrame, ahFrame)
+			tabFrame:Show()
 		end)
 
-		-- Hook SetDisplayMode to re-show built-in content and hide custom content
-		-- when a built-in tab is clicked
+		-- Hook SetDisplayMode and built-in Tabs OnClick to re-show built-in content
+		-- and hide custom content when any built-in tab is clicked
 		if not private.displayModeHooked then
 			private.displayModeHooked = true
 			hooksecurefunc(ahFrame, "SetDisplayMode", function(_, mode)
-				if mode and #mode > 0 then
-					-- A built-in display mode was selected, hide all custom content
+				if mode and type(mode) == "table" and #mode > 0 then
 					lib.HideAllRetailTabs()
-					if ahFrame.currentCustomTab then
-						SetRetailTabChecked(ahFrame.currentCustomTab, false)
-						ahFrame.currentCustomTab = nil
-					end
+					lib.RestoreBuiltinAHContent()
+					ahFrame.currentCustomTab = nil
 				end
 			end)
+			if ahFrame.Tabs then
+				for idx, builtinTab in ipairs(ahFrame.Tabs) do
+					builtinTab:HookScript("OnClick", function(self)
+						local wasCustom = ahFrame.currentCustomTab ~= nil
+						lib.HideAllRetailTabs()
+						lib.RestoreBuiltinAHContent()
+						ahFrame.currentCustomTab = nil
+						if wasCustom and self.displayMode and ahFrame.SetDisplayMode then
+							pcall(ahFrame.SetDisplayMode, ahFrame, self.displayMode)
+						end
+						if PanelTemplates_SetTab then
+							pcall(PanelTemplates_SetTab, ahFrame, idx)
+						end
+						SetRetailTabChecked(self, true)
+					end)
+				end
+			end
 		end
 
-		-- Position at bottom of frame after built-in tabs
+		-- Position cleanly in the same row right after the built-in tabs
 		local tabCount = #private.RetailTabs
+		tabButton:ClearAllPoints()
 		if tabCount > 1 then
 			local prevTab = private.RetailTabs[tabCount - 1]
-			tabButton:SetPoint("LEFT", prevTab, "RIGHT", 2, 0)
+			tabButton:SetPoint("LEFT", prevTab, "RIGHT", -3, 0)
 		else
-			tabButton:SetPoint("BOTTOMLEFT", ahFrame, "BOTTOMLEFT", 256, -22)
+			local lastBuiltin = ahFrame.Tabs and ahFrame.Tabs[#ahFrame.Tabs]
+			if lastBuiltin then
+				tabButton:SetPoint("LEFT", lastBuiltin, "RIGHT", -3, 0)
+			else
+				tabButton:SetPoint("BOTTOMLEFT", ahFrame, "BOTTOMLEFT", 285, -30)
+			end
 		end
-		tabButton:SetID(tabCount)
+		tabButton:SetID((ahFrame.Tabs and #ahFrame.Tabs or 3) + tabCount)
 		tabButton:Show()
 
 		-- Hook ahFrame show/hide to manage custom tabs
@@ -541,11 +606,14 @@ function lib.AddTab(tabButton, tabFrame)
 			private.closeHooked = true
 			ahFrame:HookScript("OnShow", function()
 				for _, tab in ipairs(private.RetailTabs) do
+					ResizeRetailTab(tab)
+					SetRetailTabChecked(tab, false)
 					tab:Show()
 				end
 			end)
 			ahFrame:HookScript("OnHide", function()
 				lib.HideAllRetailTabs()
+				lib.RestoreBuiltinAHContent()
 				for _, tab in ipairs(private.RetailTabs) do
 					SetRetailTabChecked(tab, false)
 					tab:Hide()

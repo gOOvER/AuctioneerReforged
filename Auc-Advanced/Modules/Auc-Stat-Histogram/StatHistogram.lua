@@ -403,11 +403,12 @@ function private.SetupConfigGui(gui)
 	private.addTooltipControls(id)
 	if tooltipID then private.addTooltipControls(tooltipID) end
 
-	local viewerSubhead = gui:AddControl(id, "Subhead", 0, _TRANS('SHTG_Interface_ItemDataViewer') )--Item Data Viewer
+	gui:AddControl(id, "Subhead", 0, _TRANS('SHTG_Interface_ItemDataViewer') )--Item Data Viewer
 
+	local slotY = -((frame._estHeight or 230) + 6)
 	frame.slot = frame:CreateTexture(nil, "BORDER")
 	frame.slot:SetDrawLayer("Artwork") -- or the border shades it
-	frame.slot:SetPoint("TOPLEFT", viewerSubhead, "BOTTOMLEFT", 14, -8)
+	frame.slot:SetPoint("TOPLEFT", frame, "TOPLEFT", 14, slotY)
 	frame.slot:SetWidth(42)
 	frame.slot:SetHeight(42)
 	frame.slot:SetTexCoord(0.17, 0.83, 0.17, 0.83)
@@ -426,10 +427,16 @@ function private.SetupConfigGui(gui)
 		lib.SetWorkingItem(link)
 	end
 	hooksecurefunc("HandleModifiedItemClick", frame.ClickHook)
-	frame.icon = CreateFrame("Button", nil, frame)
+	frame.icon = CreateFrame("Button", nil, frame, BackdropTemplateMixin and "BackdropTemplate")
 	frame.icon:SetPoint("TOPLEFT", frame.slot, "TOPLEFT", 2, -2)
 	frame.icon:SetPoint("BOTTOMRIGHT", frame.slot, "BOTTOMRIGHT", -2, 2)
 	frame.icon:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square.blp")
+	if gui.UIStyle and gui.UIStyle.StyleItemSlot then
+		frame.slot:SetTexture(nil)
+		frame.icon:ClearAllPoints()
+		frame.icon:SetPoint("TOPLEFT", frame.slot, "TOPLEFT", 0, 0)
+		gui.UIStyle.StyleItemSlot(frame.icon, 42)
+	end
 	frame.icon:SetScript("OnClick", frame.IconClicked)
 	frame.icon:SetScript("OnReceiveDrag", frame.IconClicked)
 	frame.icon:SetScript("OnEnter", function() --set mouseover tooltip
@@ -440,8 +447,8 @@ function private.SetupConfigGui(gui)
 	frame.icon:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
 	frame.name = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-	frame.name:SetPoint("TOPLEFT", frame.slot, "TOPRIGHT", 8, -2)
-	frame.name:SetPoint("RIGHT", frame, "RIGHT", -15)
+	frame.name:SetPoint("TOPLEFT", frame.slot, "TOPRIGHT", 10, -2)
+	frame.name:SetWidth(420)
 	frame.name:SetHeight(20)
 	frame.name:SetJustifyH("LEFT")
 	frame.name:SetJustifyV("TOP")
@@ -450,9 +457,16 @@ function private.SetupConfigGui(gui)
 
 	frame.bargraph = CreateFrame("Frame", nil, frame, BackdropTemplateMixin and "BackdropTemplate")
 	frame.bargraph:SetPoint("TOPLEFT", frame.slot, "BOTTOMLEFT", 0, -10)
-	frame.bargraph:SetPoint("RIGHT", frame, "RIGHT", -30, 0)
-	frame.bargraph:SetWidth(math.max(300, (frame:GetWidth() or 580) - 60))
+	frame.bargraph:SetWidth(math.max(480, (frame:GetWidth() or 580) - 50))
 	frame.bargraph:SetHeight(220)
+	frame._estHeight = (-slotY) + 280
+	if gui.MakeScrollable then
+		frame:SetHeight(math.max(frame:GetHeight() or 0, frame._estHeight))
+		if gui.tabs[id] and gui.tabs[id].scroll then
+			gui.tabs[id].scroll:UpdateScrollChildRect()
+			gui.tabs[id].scroll:Update()
+		end
+	end
 	if gui.UIStyle and gui.UIStyle.ApplyBox then
 		gui.UIStyle.ApplyBox(frame.bargraph)
 	else

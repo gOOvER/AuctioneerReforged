@@ -1131,36 +1131,52 @@ function private.CreateFrames()
 	frame:SetPoint("BOTTOMRIGHT", AuctionFrame, "BOTTOMRIGHT")
 	frame:SetScript("OnUpdate", private.OnUpdate)
 
-	frame.title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	frame.title:SetPoint("TOP", frame,  "TOP", 15, -20)
+	frame.title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+	frame.title:SetPoint("TOPLEFT", frame, "TOPLEFT", 16, -12)
 	frame.title:SetText(_TRANS("Simple Auction - Simplified auction posting interface"))
 	frame.title:SetTextColor(1, 0.85, 0.25)
 
-	frame.slot = frame:CreateTexture(nil, "BORDER")
-	frame.slot:SetPoint("TOPLEFT", frame, "TOPLEFT", 80, -45)
-	frame.slot:SetWidth(46)
-	frame.slot:SetHeight(46)
+	frame.leftPanel = CreateFrame("Frame", nil, frame, BackdropTemplateMixin and "BackdropTemplate")
+	frame.leftPanel:SetPoint("TOPLEFT", frame, "TOPLEFT", 8, -38)
+	frame.leftPanel:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 8, 38)
+	frame.leftPanel:SetWidth(190)
+	if UIStyle then
+		UIStyle.StylePanel(frame.leftPanel)
+	end
+
+	frame.topPanel = CreateFrame("Frame", nil, frame, BackdropTemplateMixin and "BackdropTemplate")
+	frame.topPanel:SetPoint("TOPLEFT", frame, "TOPLEFT", 204, -38)
+	frame.topPanel:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -8, -38)
+	frame.topPanel:SetHeight(54)
+	if UIStyle then
+		UIStyle.StylePanel(frame.topPanel)
+	end
+
+	frame.slot = frame.topPanel:CreateTexture(nil, "BORDER")
+	frame.slot:SetPoint("TOPLEFT", frame.topPanel, "TOPLEFT", 8, -6)
+	frame.slot:SetWidth(42)
+	frame.slot:SetHeight(42)
 	frame.slot:SetTexCoord(0.15, 0.85, 0.15, 0.85)
 	frame.slot:SetTexture("Interface\\Buttons\\UI-EmptySlot")
 
-	frame.name = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-	frame.name:SetPoint("TOPLEFT", frame.slot, "TOPRIGHT", 10, -2)
+	frame.name = frame.topPanel:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+	frame.name:SetPoint("TOPLEFT", frame.slot, "TOPRIGHT", 10, 0)
 	frame.name:SetJustifyV("TOP")
 	frame.name:SetText(_TRANS("Drop item onto slot"))
 
-	frame.info = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-	frame.info:SetPoint("TOPLEFT", frame.name, "BOTTOMLEFT", 0, -3)
+	frame.info = frame.topPanel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+	frame.info:SetPoint("TOPLEFT", frame.name, "BOTTOMLEFT", 0, -2)
 	frame.info:SetJustifyV("TOP")
 	frame.info:SetTextColor(0.0,1,1)
 	frame.info:SetText(_TRANS("To auction an item, drag it from your bag."))
 
-	frame.err = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-	frame.err:SetPoint("TOPLEFT", frame.info, "BOTTOMLEFT", 0, 0)
+	frame.err = frame.topPanel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+	frame.err:SetPoint("TOPLEFT", frame.info, "BOTTOMLEFT", 0, -1)
 	frame.err:SetJustifyV("TOP")
 	frame.err:SetTextColor(1,0.2,0,1)
 	frame.err:SetText(_TRANS("-- No item selected --"))
 
-	frame.icon = CreateFrame("Button", nil, frame, BackdropTemplateMixin and "BackdropTemplate")
+	frame.icon = CreateFrame("Button", nil, frame.topPanel, BackdropTemplateMixin and "BackdropTemplate")
 	frame.icon:SetPoint("TOPLEFT", frame.slot, "TOPLEFT", 3, -3)
 	frame.icon:SetWidth(42)
 	frame.icon:SetHeight(42)
@@ -1169,7 +1185,7 @@ function private.CreateFrames()
 		frame.slot:SetTexture(nil)
 		frame.icon:ClearAllPoints()
 		frame.icon:SetPoint("TOPLEFT", frame.slot, "TOPLEFT", 0, 0)
-		UIStyle.StyleItemSlot(frame.icon, 46)
+		UIStyle.StyleItemSlot(frame.icon, 42)
 	end
 	frame.icon:SetScript("OnClick", private.IconClicked)
 	frame.icon:SetScript("OnReceiveDrag", private.IconClicked)
@@ -1186,25 +1202,25 @@ function private.CreateFrames()
 	frame.icon.count = frame.icon:CreateFontString(nil, "OVERLAY", "AucAdvSimpleNumberFontLarge")
 	frame.icon.count:SetPoint("BOTTOMLEFT", frame.icon, "BOTTOMLEFT", 3, 5)
 
-	frame.minprice = CreateFrame("Frame", "AucAdvSimpFrameStart", frame, "MoneyInputFrameTemplate")
+	frame.minprice = CreateFrame("Frame", "AucAdvSimpFrameStart", frame.leftPanel, "MoneyInputFrameTemplate")
 	frame.minprice.isMoneyFrame = true
-	frame.minprice:SetPoint("TOPLEFT", frame, "TOPLEFT", 20, -120)
+	frame.minprice:SetPoint("TOPLEFT", frame.leftPanel, "TOPLEFT", 12, -26)
 	MoneyInputFrame_SetOnValueChangedFunc(frame.minprice, function()
 			frame.CurItem.valuechanged = true
 		end)
 	frame.minprice.label = frame.minprice:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-	frame.minprice.label:SetPoint("BOTTOMLEFT", frame.minprice, "TOPLEFT", 0, 0)
+	frame.minprice.label:SetPoint("BOTTOMLEFT", frame.minprice, "TOPLEFT", 0, 2)
 	frame.minprice.label:SetText(_TRANS("Starting price:"))
 	AucAdvSimpFrameStartGold:SetWidth(50)
 
-	frame.buyout = CreateFrame("Frame", "AucAdvSimpFrameBuyout", frame, "MoneyInputFrameTemplate")
+	frame.buyout = CreateFrame("Frame", "AucAdvSimpFrameBuyout", frame.leftPanel, "MoneyInputFrameTemplate")
 	frame.buyout.isMoneyFrame = true
-	frame.buyout:SetPoint("TOPLEFT", frame.minprice, "BOTTOMLEFT", 0, -20)
+	frame.buyout:SetPoint("TOPLEFT", frame.minprice, "BOTTOMLEFT", 0, -22)
 	MoneyInputFrame_SetOnValueChangedFunc(frame.buyout, function()
 			frame.CurItem.valuechanged = true
 		end)
 	frame.buyout.label = frame.buyout:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-	frame.buyout.label:SetPoint("BOTTOMLEFT", frame.buyout, "TOPLEFT", 0, 0)
+	frame.buyout.label:SetPoint("BOTTOMLEFT", frame.buyout, "TOPLEFT", 0, 2)
 	frame.buyout.label:SetText(_TRANS("Buyout price:"))
 	AucAdvSimpFrameBuyoutGold:SetWidth(50)
 	if UIStyle then
@@ -1216,12 +1232,12 @@ function private.CreateFrames()
 		UIStyle.StyleEditBox(AucAdvSimpFrameBuyoutCopper)
 	end
 
-	frame.duration = CreateFrame("Frame", "AucAdvSimpFrameDuration", frame)
-	frame.duration:SetPoint("TOPLEFT", frame.buyout, "BOTTOMLEFT", 0, -20)
-	frame.duration:SetWidth(140)
+	frame.duration = CreateFrame("Frame", "AucAdvSimpFrameDuration", frame.leftPanel)
+	frame.duration:SetPoint("TOPLEFT", frame.buyout, "BOTTOMLEFT", 0, -22)
+	frame.duration:SetWidth(165)
 	frame.duration:SetHeight(20)
 	frame.duration.label = frame.duration:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-	frame.duration.label:SetPoint("BOTTOMLEFT", frame.duration, "TOPLEFT", 0, 0)
+	frame.duration.label:SetPoint("BOTTOMLEFT", frame.duration, "TOPLEFT", 0, 2)
 	frame.duration.label:SetText(_TRANS("Duration:"));
 
 	frame.duration.time = {
@@ -1248,10 +1264,13 @@ function private.CreateFrames()
 	local t = frame.duration.time
 	for pos, dur in ipairs(t.intervals) do
 		t[pos] = CreateFrame("CheckButton", "AucAdvSimpFrameDuration"..dur, frame.duration, "UICheckButtonTemplate")
-		t[pos]:SetPoint("TOPLEFT", frame.duration, "TOPLEFT", (pos-1)*53,0)
+		t[pos]:SetPoint("TOPLEFT", frame.duration, "TOPLEFT", (pos-1)*53, -2)
 		t[pos]:SetHitRectInsets(-1, -25, -1, -1)
+		if UIStyle and UIStyle.StyleCheckBox then
+			UIStyle.StyleCheckBox(t[pos], 18)
+		end
 		t[pos].label = t[pos]:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-		t[pos].label:SetPoint("LEFT", t[pos], "RIGHT", 0, 0)
+		t[pos].label:SetPoint("LEFT", t[pos], "RIGHT", 4, 0)
 		t[pos].label:SetText(dur.."h")
 		t[pos].dur = dur
 		t[pos]:SetScript("OnClick", t.OnClick)
@@ -1262,16 +1281,16 @@ function private.CreateFrames()
 		end
 	end
 
-	frame.stacks = CreateFrame("Frame", "AucAdvSimpFrameStacks", frame)
-	frame.stacks:SetPoint("TOPLEFT", frame.duration, "BOTTOMLEFT", 0, -20)
-	frame.stacks:SetWidth(140)
+	frame.stacks = CreateFrame("Frame", "AucAdvSimpFrameStacks", frame.leftPanel)
+	frame.stacks:SetPoint("TOPLEFT", frame.duration, "BOTTOMLEFT", 0, -24)
+	frame.stacks:SetWidth(165)
 	frame.stacks:SetHeight(20)
 	frame.stacks.label = frame.duration:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-	frame.stacks.label:SetPoint("BOTTOMLEFT", frame.stacks, "TOPLEFT", 0, 0)
+	frame.stacks.label:SetPoint("BOTTOMLEFT", frame.stacks, "TOPLEFT", 0, 2)
 	frame.stacks.label:SetText(_TRANS("Stacks: (number x size)"));
 
 	frame.stacks.num = CreateFrame("EditBox", "AucAdvSimpFrameStackNum", frame.stacks, "InputBoxTemplate")
-	frame.stacks.num:SetPoint("TOPLEFT", frame.stacks, "TOPLEFT", 5, 0)
+	frame.stacks.num:SetPoint("TOPLEFT", frame.stacks, "TOPLEFT", 2, -2)
 	frame.stacks.num:SetAutoFocus(false)
 	frame.stacks.num:SetHeight(18)
 	frame.stacks.num:SetWidth(40)
@@ -1279,14 +1298,14 @@ function private.CreateFrames()
 	frame.stacks.num:SetScript("OnTextChanged", function() frame.CurItem.valuechanged = true end)
 
 	frame.stacks.mult = frame.duration:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-	frame.stacks.mult:SetPoint("BOTTOMLEFT", frame.stacks.num, "BOTTOMRIGHT", 5, 0)
+	frame.stacks.mult:SetPoint("LEFT", frame.stacks.num, "RIGHT", 5, 0)
 	frame.stacks.mult:SetText("x")
 
 	frame.stacks.size = CreateFrame("EditBox", "AucAdvSimpFrameStackSize", frame.stacks, "InputBoxTemplate")
-	frame.stacks.size:SetPoint("TOPLEFT", frame.stacks.num, "TOPRIGHT", 20, 0)
+	frame.stacks.size:SetPoint("LEFT", frame.stacks.mult, "RIGHT", 5, 0)
 	frame.stacks.size:SetAutoFocus(false)
 	frame.stacks.size:SetHeight(18)
-	frame.stacks.size:SetWidth(30)
+	frame.stacks.size:SetWidth(36)
 	frame.stacks.size:SetNumeric(true)
 	frame.stacks.size:SetScript("OnTextChanged", function() frame.CurItem.valuechanged = true end)
 	if UIStyle then
@@ -1295,35 +1314,34 @@ function private.CreateFrames()
 	end
 
 	frame.stacks.equals = frame.duration:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-	frame.stacks.equals:SetPoint("BOTTOMLEFT", frame.stacks.size, "BOTTOMRIGHT", 5, 0)
+	frame.stacks.equals:SetPoint("LEFT", frame.stacks.size, "RIGHT", 5, 0)
 	frame.stacks.equals:SetText("= 0")
 
-	frame.fees = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	frame.fees:SetPoint("TOP", frame.stacks, "BOTTOM", 10, -2)
-	frame.fees:SetWidth(150)
-	frame.fees:SetJustifyV("TOP")
+	frame.fees = frame.leftPanel:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+	frame.fees:SetPoint("BOTTOM", frame.leftPanel, "BOTTOM", 0, 10)
+	frame.fees:SetWidth(170)
+	frame.fees:SetJustifyV("BOTTOM")
 	frame.fees:SetJustifyH("CENTER")
 	frame.fees:SetText("")
 	frame.fees:SetTextColor(0,1,1)
 
-	frame.options = CreateFrame("Frame", "AucAdvSimpFrameOptions", frame)
-	frame.options:SetPoint("TOPLEFT", frame.stacks, "BOTTOMLEFT", 0, -40)
-	frame.options:SetWidth(140)
-	frame.options:SetHeight(300)
+	frame.options = CreateFrame("Frame", "AucAdvSimpFrameOptions", frame.leftPanel)
+	frame.options:SetPoint("TOPLEFT", frame.stacks, "BOTTOMLEFT", 0, -24)
+	frame.options:SetWidth(165)
+	frame.options:SetHeight(110)
 	frame.options.label = frame.options:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-	frame.options.label:SetPoint("BOTTOMLEFT", frame.options, "TOPLEFT", 0, 0)
+	frame.options.label:SetPoint("BOTTOMLEFT", frame.options, "TOPLEFT", 0, 3)
 	frame.options.label:SetText(_TRANS("Options:"))
 
 	frame.create = CreateFrame("Button", "AucAdvSimpFrameCreate", frame, "UIPanelButtonTemplate")
-	frame.create:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -370, 15)
-	frame.create:SetWidth(160)
+	frame.create:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 204, 8)
+	frame.create:SetSize(140, 22)
 	frame.create:SetText(_TRANS("Create Auction"))
 	frame.create:SetScript("OnClick", private.PostAuction)
 	frame.create:Disable()
 
 	frame.clear = CreateFrame("Button", "AucAdvSimpFrameRemember", frame, "UIPanelButtonTemplate")
-	frame.clear:SetPoint("TOPLEFT", frame, "TOPLEFT", 585, -13)
-	frame.clear:SetWidth(110)
+	frame.clear:SetSize(110, 22)
 	frame.clear:SetText(_TRANS("Clear Settings"))
 	frame.clear:SetScript("OnClick", function() private.ClearSetting() private.RemoveConfig() end)
 
@@ -1336,10 +1354,13 @@ function private.CreateFrames()
 
 	function frame.options:AddOption(option, text)
 		local item = CreateFrame("CheckButton", "AucAdvSimpFrameOption_"..option, self, "UICheckButtonTemplate")
+		if UIStyle and UIStyle.StyleCheckBox then
+			UIStyle.StyleCheckBox(item, 18)
+		end
 		if self.last then
-			item:SetPoint("TOPLEFT", self.last, "BOTTOMLEFT", 0,7)
+			item:SetPoint("TOPLEFT", self.last, "BOTTOMLEFT", 0, -5)
 		else
-			item:SetPoint("TOPLEFT", self, "TOPLEFT", 0,0)
+			item:SetPoint("TOPLEFT", self, "TOPLEFT", 2, -2)
 		end
 		self.last = item
 
@@ -1347,8 +1368,10 @@ function private.CreateFrames()
 		item:SetScript("OnClick", function() frame.CurItem.valuechanged = true end)
 
 
-		item.label = item:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-		item.label:SetPoint("LEFT", item, "RIGHT", 0, 0)
+		item.label = item:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+		item.label:SetPoint("LEFT", item, "RIGHT", 5, 0)
+		item.label:SetWidth(145)
+		item.label:SetJustifyH("LEFT")
 		item.label:SetText(_TRANS(text))
 
 		self[option] = item
@@ -1458,9 +1481,8 @@ function private.CreateFrames()
 		})
 		frame.imageview:SetBackdropColor(0, 0, 0, 1)
 	end
-	frame.imageview:SetPoint("TOPLEFT", frame, "TOPLEFT", 185, -100)
-	frame.imageview:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -5, 0)
-	frame.imageview:SetPoint("BOTTOM", frame, "BOTTOM", 0, 35)
+	frame.imageview:SetPoint("TOPLEFT", frame, "TOPLEFT", 204, -96)
+	frame.imageview:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -8, 38)
 	--records the column width changes
 	--store width by header name, that way if column reorginizing is added we apply size to proper column
 	function private.onResize(self, column, width)
@@ -1616,13 +1638,14 @@ function private.CreateFrames()
 	frame.imageview.sheet:EnableSelect(true)
 
 	frame.config = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-	frame.config:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -25, -13)
+	frame.config:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -10, -10)
 	frame.config:SetText(_TRANS("Configure"))
-	frame.config:SetWidth(80)
+	frame.config:SetSize(90, 22)
 	frame.config:SetScript("OnClick", function()
 		AucAdvanced.Settings.Show()
 		private.gui:ActivateTab(private.guiId)
 	end)
+	frame.clear:SetPoint("RIGHT", frame.config, "LEFT", -6, 0)
 
 	if AuctionFrameBrowse then
 		frame.scanbutton = CreateFrame("Button", "AucAdvScanButton", AuctionFrameBrowse, "UIPanelButtonTemplate")
@@ -1638,29 +1661,29 @@ function private.CreateFrames()
 		end)
 	end
 
-	frame.refresh = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-	frame.refresh:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -167,15)
-	frame.refresh:SetText(_TRANS("Refresh"))
-	frame.refresh:SetWidth(80)
-	frame.refresh:SetScript("OnClick", private.Refresh)
+	frame.buy = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+	frame.buy:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -8, 8)
+	frame.buy:SetSize(80, 22)
+	frame.buy:SetText(_TRANS("Buy"))--Buy
+	frame.buy:SetScript("OnClick", private.BuyAuction)
+	frame.buy:Disable()
 
 	frame.bid = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-	frame.bid:SetPoint("TOPLEFT", frame.refresh, "TOPRIGHT", 1, 0)
-	frame.bid:SetWidth(80)
+	frame.bid:SetPoint("RIGHT", frame.buy, "LEFT", -6, 0)
+	frame.bid:SetSize(80, 22)
 	frame.bid:SetText(_TRANS("Bid"))--Bid
 	frame.bid:SetScript("OnClick", private.BidAuction)
 	frame.bid:Disable()
 
-	frame.buy = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-	frame.buy:SetPoint("TOPLEFT", frame.bid, "TOPRIGHT", 1, 0)
-	frame.buy:SetWidth(80)
-	frame.buy:SetText(_TRANS("Buy"))--Buy
-	frame.buy:SetScript("OnClick", private.BuyAuction)
-	frame.buy:Disable()
-	
+	frame.refresh = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+	frame.refresh:SetPoint("RIGHT", frame.bid, "LEFT", -6, 0)
+	frame.refresh:SetText(_TRANS("Refresh"))
+	frame.refresh:SetSize(90, 22)
+	frame.refresh:SetScript("OnClick", private.Refresh)
+
 	frame.ignore = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-	frame.ignore:SetPoint("TOPLEFT", frame.buy, "TOPRIGHT", -360, 0)
-	frame.ignore:SetWidth(80)
+	frame.ignore:SetPoint("LEFT", frame.create, "RIGHT", 6, 0)
+	frame.ignore:SetSize(85, 22)
 	frame.ignore:SetText(_TRANS("Ignore"))--Buy
 	frame.ignore:SetScript("OnClick", private.Ignore)
 	if UIStyle then

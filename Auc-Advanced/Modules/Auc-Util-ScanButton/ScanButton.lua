@@ -70,7 +70,7 @@ function private.HookAH()
 
 	private.buttons = CreateFrame("Frame", nil, parentFrame)
 	if isRetail then
-		private.buttons:SetPoint("TOPRIGHT", AuctionHouseFrame, "TOPRIGHT", -30, -1)
+		private.buttons:SetPoint("TOPLEFT", AuctionHouseFrame, "TOPLEFT", 68, -3)
 		private.buttons:SetFrameStrata("DIALOG")
 		private.buttons:SetFrameLevel(100)
 	else
@@ -146,7 +146,14 @@ function private.HookAH()
 	private.buttons.pause.tex:SetVertexColor(1.0, 0.9, 0.1)
 
 	private.buttons.getall = CreateFrame("Button", nil, private.buttons, "UIPanelButtonTemplate")
-	private.buttons.getall:SetPoint("TOPLEFT", private.buttons.pause, "TOPRIGHT", -230, 0)
+	if isRetail then
+		private.buttons.getall:SetPoint("TOPLEFT", private.buttons.pause, "TOPRIGHT", 2, 0)
+		private.buttons.stop.count:ClearAllPoints()
+		private.buttons.stop.count:SetPoint("LEFT", private.buttons.getall, "RIGHT", 6, 0)
+		private.buttons.stop.count:SetJustifyH("LEFT")
+	else
+		private.buttons.getall:SetPoint("TOPLEFT", private.buttons.pause, "TOPRIGHT", -230, 0)
+	end
 	private.buttons.getall:SetWidth(22)
 	private.buttons.getall:SetHeight(18)
 	private.buttons.getall:SetScript("OnClick", private.getall)

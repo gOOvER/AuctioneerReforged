@@ -1039,13 +1039,17 @@ function lib.AttachToAH()
 	if private.isAttached then return end
 	local height, width = 410, 830
 	-- The Configator dialog is a fixed width designed for the classic AH frame.
-	-- On retail, clamp it to the actual content-frame width so the results
-	-- sheet, saves bar and scrollbar stay inside the Auction House window.
+	-- On retail, clamp it to the actual content-frame width/height so the results
+	-- sheet, saves bar and scrollbar fill the Auction House window cleanly.
 	local parent = gui.AuctionFrame
 	if AucAdvanced.IsRetailAH and parent then
 		local parentWidth = parent:GetWidth()
+		local parentHeight = parent:GetHeight()
 		if parentWidth and parentWidth > 200 then
 			width = math.min(width, math.floor(parentWidth) - 10)
+		end
+		if parentHeight and parentHeight > 250 then
+			height = math.max(410, math.floor(parentHeight) - 36)
 		end
 	end
 	gui.buttonTop = -30
@@ -1153,6 +1157,9 @@ function private.CreateAuctionFrames()
 	frame.money = frame:CreateTexture(nil, "ARTWORK")
 	frame.money:SetTexture("Interface\\AddOns\\Auc-Advanced\\Textures\\GoldMoney")
 	frame.money:SetPoint("TOPLEFT", frame, "BOTTOMLEFT", 0, 34)
+	if isRetail then
+		frame.money:Hide()
+	end
 	frame.money:SetWidth(256)
 	frame.money:SetHeight(32)
 

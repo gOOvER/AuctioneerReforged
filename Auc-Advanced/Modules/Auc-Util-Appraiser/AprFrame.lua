@@ -1932,12 +1932,11 @@ function private.CreateFrames()
 	local UIStyle = LibStub("Configator").UIStyle
 
 	local title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-	title:SetPoint("TOPLEFT", frame, "TOPLEFT", 80, -16)
+	title:SetPoint("TOPLEFT", frame, "TOPLEFT", 16, -12)
 	title:SetTextColor(1, 0.85, 0.25)
 	title:SetText(_TRANS('APPR_Interface_AppraiserAuctionPostingInterface') )--Appraiser: Auction posting interface
 
 	frame.toggleManifest = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-	frame.toggleManifest:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -126, -13)
 	frame.toggleManifest:SetScript("OnClick", function()
 		if frame.manifest:IsShown() then
 			frame.toggleManifest:SetText(_TRANS("Open Sidebar"))
@@ -1949,25 +1948,27 @@ function private.CreateFrames()
 	end)
 	frame.toggleManifest:SetScript("OnEnter", function(self) return frame.SetButtonTooltip(self, _TRANS('APPR_HelpTooltip_SidebarINF_Tooltip_AdditionalInfo') ) end)--Open/Close sidebar with additional price info
 	frame.toggleManifest:SetScript("OnLeave", function() return GameTooltip:Hide() end)
-	frame.toggleManifest:SetSize(116, 20)
+	frame.toggleManifest:SetSize(116, 22)
 	frame.toggleManifest:SetText(_TRANS("Close Sidebar"))
 	UIStyle.StyleButton(frame.toggleManifest, "default")
 	frame.toggleManifest:Disable()
 	frame.toggleManifest:Show()
 
 	frame.config = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-	frame.config:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -25, -13)
+	frame.config:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -10, -10)
 	frame.config:SetText(_TRANS('APPR_Interface_Configure') )--Configure
-	frame.config:SetSize(84, 20)
+	frame.config:SetSize(90, 22)
 	UIStyle.StyleButton(frame.config, "default")
 	frame.config:SetScript("OnClick", function()
 		AucAdvanced.Settings.Show()
 		private.gui:ActivateTab(private.guiId)
 	end)
+	frame.toggleManifest:SetPoint("RIGHT", frame.config, "LEFT", -6, 0)
 
 	frame.itembox = CreateFrame("Frame", nil, frame, BackdropTemplateMixin and "BackdropTemplate")
 	UIStyle.StylePanel(frame.itembox)
 	frame.itembox:SetPoint("TOPLEFT", frame, "TOPLEFT", 13, -71)
+	frame.itembox:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 13, 38)
 	frame.itembox:SetWidth(240)
 	frame.itembox:SetHeight(340)
 
@@ -2156,11 +2157,17 @@ function private.CreateFrames()
 	frame.salebox.slot:SetTexCoord(0.15, 0.85, 0.15, 0.85)
 	frame.salebox.slot:SetTexture("Interface\\Buttons\\UI-EmptySlot")
 
-	frame.salebox.icon = CreateFrame("Button", nil, frame.salebox)
+	frame.salebox.icon = CreateFrame("Button", nil, frame.salebox, BackdropTemplateMixin and "BackdropTemplate")
 	frame.salebox.icon:SetPoint("TOPLEFT", frame.salebox.slot, "TOPLEFT", 3, -3)
 	frame.salebox.icon:SetWidth(32)
 	frame.salebox.icon:SetHeight(32)
 	frame.salebox.icon:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square.blp")
+	if UIStyle and UIStyle.StyleItemSlot then
+		frame.salebox.slot:SetTexture(nil)
+		frame.salebox.icon:ClearAllPoints()
+		frame.salebox.icon:SetPoint("TOPLEFT", frame.salebox.slot, "TOPLEFT", 0, 0)
+		UIStyle.StyleItemSlot(frame.salebox.icon, 40)
+	end
 	frame.salebox.icon:SetScript("OnClick", frame.IconClicked)
 	frame.salebox.icon:SetScript("OnReceiveDrag", frame.IconClicked)
 	frame.salebox.icon:SetScript("OnEnter", function(self) frame.DoTooltip(self) end)
@@ -2614,7 +2621,7 @@ function private.CreateFrames()
 
 
 	frame.go = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-	frame.go:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -7,15)
+	frame.go:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -7, 8)
 	frame.go:SetText(_TRANS('APPR_Interface_PostItems') )--Post items
 	frame.go:SetSize(80, 22)
 	UIStyle.StyleButton(frame.go, "primary")
@@ -2625,7 +2632,7 @@ function private.CreateFrames()
 	frame.go:Disable()
 
 	frame.gobatch = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-	frame.gobatch:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -87,15)
+	frame.gobatch:SetPoint("RIGHT", frame.go, "LEFT", -6, 0)
 	frame.gobatch:SetText(_TRANS('APPR_Interface_BatchPost') )--Batch post
 	frame.gobatch:SetSize(80, 22)
 	UIStyle.StyleButton(frame.gobatch, "default")
@@ -2637,7 +2644,7 @@ function private.CreateFrames()
 	frame.gobatch:Enable()
 
 	frame.refresh = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-	frame.refresh:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -167,15)
+	frame.refresh:SetPoint("RIGHT", frame.gobatch, "LEFT", -6, 0)
 	frame.refresh:SetText(_TRANS("Refresh"))
 	frame.refresh:SetSize(80, 22)
 	UIStyle.StyleButton(frame.refresh, "default")
@@ -2653,7 +2660,7 @@ function private.CreateFrames()
 	--frame.age:SetJustifyV("BOTTOM")
 
 	frame.cancel = CreateFrame("Button", "AucAdvAppraiserCancelButton", frame, "UIPanelButtonTemplate")
-	frame.cancel:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 180, 15)
+	frame.cancel:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 180, 8)
 	frame.cancel:SetWidth(22)
 	frame.cancel:SetHeight(18)
 	frame.cancel:Disable()
@@ -2922,7 +2929,7 @@ function private.CreateFrames()
 	frame.imageview.purchase.buy.price:SetJustifyV("MIDDLE")
 
 	frame.imageview.purchase.bid = CreateFrame("Button", nil, frame.imageview.purchase, "UIPanelButtonTemplate")
-	frame.imageview.purchase.bid:SetPoint("TOPLEFT", frame.imageview.purchase.buy, "TOPLEFT", 120, 0)
+	frame.imageview.purchase.bid:SetPoint("TOPLEFT", frame.imageview.purchase, "TOPLEFT", 220, -1)
 	frame.imageview.purchase.bid:SetSize(38, 18)
 	frame.imageview.purchase.bid:SetText(_TRANS('APPR_Interface_Bid') )--Bid
 	UIStyle.StyleButton(frame.imageview.purchase.bid, "default")

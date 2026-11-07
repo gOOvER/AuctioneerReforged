@@ -153,9 +153,15 @@ function private.displayGUI( action )
 			frame:SetAllPoints(BeanCounterBaseFrame)
 		end
 	elseif action == "ShowAHGUI" then
+		local ahParent = (AucAdvanced and AucAdvanced.IsRetailAH and AuctionHouseFrame) or AuctionFrame
 		frame:ClearAllPoints()
-		frame:SetParent(AuctionFrame)
-		frame:SetAllPoints("AuctionFrame")
+		frame:SetParent(ahParent)
+		if AucAdvanced and AucAdvanced.IsRetailAH and AuctionHouseFrame then
+			frame:SetPoint("TOPLEFT", AuctionHouseFrame, "TOPLEFT", 6, -26)
+			frame:SetPoint("BOTTOMRIGHT", AuctionHouseFrame, "BOTTOMRIGHT", -6, 6)
+		else
+			frame:SetAllPoints("AuctionFrame")
+		end
 		private.relevelFrame(frame)--make sure our frame stays in proper order
 		BeanCounterBaseFrame:Hide()
 		frame:Show()
