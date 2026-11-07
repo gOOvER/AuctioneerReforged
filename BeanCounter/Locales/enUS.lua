@@ -154,5 +154,6 @@ BeanCounterLocalizations.enUS = {
 		["UiWealth"]	= "Wealth";
 		["UiWononBid"]	= "Won on Bid";
 		["UiWononBuyout"]	= "Won on Buyout";
+		["UiAucSuccessful"]	= "Successful Auctions";
 
 }

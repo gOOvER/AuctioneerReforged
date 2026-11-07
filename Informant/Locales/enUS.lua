@@ -277,5 +277,17 @@ InformantLocalizations.enUS = {
 		["INF_Tooltip_SpecialBindGuild"]	= "Bind on Guild";
 		["INF_Tooltip_StackSize"]	= "Stacks in lots of %d";
 		["INF_Tooltip_Use"]	= "Used for: %s";
+		["INF_Tooltip_Crafts"]	= "Crafts: %s";
+		["INF_Tooltip_CraftsItem"]	= "Crafts item: ";
+		["INF_Tooltip_AucAdv"]	= "AucAdv: ";
+		["INF_Tooltip_Disenchant"]	= "Disenchant: ";
+		["INF_Tooltip_Vendor"]	= "Vendor: ";
+		["INF_Help_CmdShowQuest"]	= "show-quest";
+		["INF_Help_CmdShowMerchant"]	= "show-merchant";
+		["INF_Help_CmdShowZeroMerchants"]	= "show-zero-merchants";
+		["INF_Help_Disable"]	= "Stops Informant from automatically loading next time you log in";
+		["INF_HelpToolTip_ShowBindingitTT"]	= "Show an item's Soulbound/Bind status in the tooltip";
+		["INF_Interface_SetupProfile"]	= "Setup, Configure and Edit Profiles";
+		["about"]	= "Displays version and locale information";
 
 }

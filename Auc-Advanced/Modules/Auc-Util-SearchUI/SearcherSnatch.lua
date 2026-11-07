@@ -115,28 +115,33 @@ function lib:MakeGuiConfig(gui)
 
 	local SelectBox = LibStub:GetLibrary("SelectBox")
 	local ScrollSheet = LibStub:GetLibrary("ScrollSheet")
+	local Configator = LibStub:GetLibrary("Configator", true)
+	local UIStyle = Configator and Configator.UIStyle
 	--Add Drag slot / Item icon
 	frame = gui.tabs[id].content
 	private.frame = frame
 
 	--Create the snatch list results frame
 	frame.snatchlist = CreateFrame("Frame", nil, frame, BackdropTemplateMixin and "BackdropTemplate")
-	frame.snatchlist:SetBackdrop({
-		bgFile = "Interface/Tooltips/UI-Tooltip-Background",
-		edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
-		tile = true, tileSize = 32, edgeSize = 16,
-		insets = { left = 5, right = 5, top = 5, bottom = 5 }
-	})
-
-	frame.snatchlist:SetBackdropColor(0, 0, 0.0, 0.5)
+	if UIStyle then
+		UIStyle.StylePanel(frame.snatchlist)
+	else
+		frame.snatchlist:SetBackdrop({
+			bgFile = "Interface/Tooltips/UI-Tooltip-Background",
+			edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
+			tile = true, tileSize = 32, edgeSize = 16,
+			insets = { left = 5, right = 5, top = 5, bottom = 5 }
+		})
+		frame.snatchlist:SetBackdropColor(0, 0, 0.0, 0.5)
+	end
 	frame.snatchlist:SetPoint("TOPLEFT", frame, "TOPLEFT", 275, 2) --Anchor to left side. The GUI is resized from the right when we embed in AH
 	frame.snatchlist:SetPoint("BOTTOM", frame, "BOTTOM", 0, -100)
 	frame.snatchlist:SetWidth(380)
 
 	frame.slot = frame:CreateTexture(nil, "ARTWORK")
 	frame.slot:SetPoint("TOPLEFT", frame, "TOPLEFT", 8, 0)
-	frame.slot:SetWidth(45)
-	frame.slot:SetHeight(45)
+	frame.slot:SetWidth(42)
+	frame.slot:SetHeight(42)
 	frame.slot:SetTexCoord(0.17, 0.83, 0.17, 0.83)
 	frame.slot:SetTexture("Interface\\Buttons\\UI-EmptySlot")
 
@@ -148,10 +153,16 @@ function lib:MakeGuiConfig(gui)
 			lib.SetWorkingItem(link)
 		end
 	end
-	frame.icon = CreateFrame("Button", nil, frame)
+	frame.icon = CreateFrame("Button", nil, frame, BackdropTemplateMixin and "BackdropTemplate")
 	frame.icon:SetPoint("TOPLEFT", frame.slot, "TOPLEFT", 2, -2)
 	frame.icon:SetPoint("BOTTOMRIGHT", frame.slot, "BOTTOMRIGHT", -2, 2)
 	frame.icon:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square.blp")
+	if UIStyle and UIStyle.StyleItemSlot then
+		frame.slot:SetTexture(nil)
+		frame.icon:ClearAllPoints()
+		frame.icon:SetPoint("TOPLEFT", frame.slot, "TOPLEFT", 0, 0)
+		UIStyle.StyleItemSlot(frame.icon, 42)
+	end
 	frame.icon:SetScript("OnClick", frame.IconClicked)
 	frame.icon:SetScript("OnReceiveDrag", frame.IconClicked)
 	frame.icon:SetScript("OnEnter", function() --set mouseover tooltip
@@ -175,9 +186,9 @@ function lib:MakeGuiConfig(gui)
 	end)
 
 	frame.slot.help = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	frame.slot.help:SetPoint("LEFT", frame.slot, "RIGHT", 2, 0)
-	frame.slot.help:SetText(("Drop item into box")) --"Drop item into box to search."
-	frame.slot.help:SetWidth(220)
+	frame.slot.help:SetPoint("LEFT", frame.slot, "RIGHT", 6, 0)
+	frame.slot.help:SetText(_TRANS("Drop item into box")) --"Drop item into box to search."
+	frame.slot.help:SetWidth(215)
 	frame.slot.help:SetJustifyH("LEFT")
 
 	frame.snatchlist.sheet = ScrollSheet:Create(frame.snatchlist, {
@@ -270,47 +281,56 @@ function lib:MakeGuiConfig(gui)
 
 
 	frame.pctBox.help = frame.pctBox:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	frame.pctBox.help:SetPoint("LEFT", frame.pctBox, "RIGHT", 0, 0)
+	frame.pctBox.help:SetPoint("LEFT", frame.pctBox, "RIGHT", 4, 0)
 	frame.pctBox.help:SetWidth(130)
 	frame.pctBox.help:SetJustifyH("LEFT")
-	frame.pctBox.help:SetText("Buy as percent of selected statistic")
+	frame.pctBox.help:SetText(_TRANS("Buy as percent of selected statistic"))
 
 
 	--Add Item to list button
 	frame.additem = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
 	frame.additem:SetPoint("LEFT", frame.money, "RIGHT", -10, 0)
-	frame.additem:SetText(('Add Item'))
+	frame.additem:SetText(_TRANS('Add Item'))
 	frame.additem:SetScript("OnClick", function()
 								local copper = MoneyInputFrame_GetCopper(frame.money)
 								local percent = frame.pctBox:GetNumber()
 								lib.AddSnatch(private.workingItemLink, copper, percent)
 							end)
-	frame.additem:SetScript("OnEnter", function() lib.buttonTooltips( frame.additem, "Click to add current selection to the snatch list") end)
+	frame.additem:SetScript("OnEnter", function() lib.buttonTooltips( frame.additem, _TRANS("Click to add current selection to the snatch list")) end)
 	frame.additem:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
 	--Remove Item from list button
 	frame.removeitem = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
 	frame.removeitem:SetPoint("TOP", frame.additem, "BOTTOM", 0, -10)
-	frame.removeitem:SetText(('Remove Item'))
+	frame.removeitem:SetText(_TRANS('Remove Item'))
 	frame.removeitem:SetScript("OnClick", function() lib.RemoveSnatch(private.workingItemLink) end)
-	frame.removeitem:SetScript("OnEnter", function() lib.buttonTooltips( frame.removeitem, "Click to remove current selection from the snatch list") end)
+	frame.removeitem:SetScript("OnEnter", function() lib.buttonTooltips( frame.removeitem, _TRANS("Click to remove current selection from the snatch list")) end)
 	frame.removeitem:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
 	--Reset snatch list
 	frame.resetList = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
 	frame.resetList:SetPoint("TOP", frame.snatchlist, "BOTTOM", 0, -15)
-	frame.resetList:SetText(("Clear List"))
+	frame.resetList:SetText(_TRANS("Clear List"))
 	frame.resetList:SetScript("OnClick", function()
 								if ( IsAltKeyDown() and IsShiftKeyDown() and IsControlKeyDown() )then
 									private.snatchList = {}
 									set("snatch.itemsList", private.snatchList)
 									private.refreshDisplay()
 								else
-									aucPrint("This will clear the snatch list permanently. To use hold ALT+CTRL+SHIFT while clicking this button")
+									aucPrint(_TRANS("This will clear the snatch list permanently. To use hold ALT+CTRL+SHIFT while clicking this button"))
 								end
 							end)
-	frame.resetList:SetScript("OnEnter", function() lib.buttonTooltips( frame.resetList, "Shift+Ctrl+Alt Click to remove all items from the snatch list") end)
+	frame.resetList:SetScript("OnEnter", function() lib.buttonTooltips( frame.resetList, _TRANS("Shift+Ctrl+Alt Click to remove all items from the snatch list")) end)
 	frame.resetList:SetScript("OnLeave", function() GameTooltip:Hide() end)
+	if UIStyle then
+		UIStyle.StyleEditBox(AucSearchUISearcherSnatchMoneyGold)
+		UIStyle.StyleEditBox(AucSearchUISearcherSnatchMoneySilver)
+		UIStyle.StyleEditBox(AucSearchUISearcherSnatchMoneyCopper)
+		UIStyle.StyleEditBox(frame.pctBox)
+		UIStyle.StyleButton(frame.additem, "primary")
+		UIStyle.StyleButton(frame.removeitem, "default")
+		UIStyle.StyleButton(frame.resetList, "default")
+	end
 
 	-- Normal GUI controls
 	-- Anchored to the hidden "Note" control we added earlier
@@ -538,7 +558,7 @@ end
 --set UI for next item choice
 function private.finishedItem()
 	--reset UI
-	frame.slot.help:SetText(("Drop item into box"))
+	frame.slot.help:SetText(_TRANS("Drop item into box"))
 	frame.icon:SetNormalTexture("")
 	frame.pctBox:SetText("")
 	private.setMoneyFrame()

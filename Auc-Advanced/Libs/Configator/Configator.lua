@@ -54,7 +54,7 @@ USAGE:
 ]]
 
 local LIBRARY_VERSION_MAJOR = "Configator"
-local LIBRARY_VERSION_MINOR = 40
+local LIBRARY_VERSION_MINOR = 41
 local lib = LibStub:NewLibrary(LIBRARY_VERSION_MAJOR, LIBRARY_VERSION_MINOR)
 if not lib then return end
 
@@ -70,6 +70,41 @@ end
 -- ============================================================================
 local UIStyle = lib.UIStyle or {}
 lib.UIStyle = UIStyle
+
+UIStyle._fontListeners = UIStyle._fontListeners or {}
+
+function UIStyle.GetFontSize()
+	local sz = (_G.AucAdvancedData and tonumber(_G.AucAdvancedData.UtilUiFontSize)) or 13
+	return math.min(math.max(math.floor(sz), 10), 18)
+end
+
+function UIStyle.SetFontSize(size)
+	size = math.min(math.max(math.floor(tonumber(size) or 13), 10), 18)
+	_G.AucAdvancedData = _G.AucAdvancedData or {}
+	_G.AucAdvancedData.UtilUiFontSize = size
+	for _, fn in ipairs(UIStyle._fontListeners) do
+		pcall(fn, size)
+	end
+	return size
+end
+
+function UIStyle.RegisterFontListener(fn)
+	if type(fn) == "function" then
+		table.insert(UIStyle._fontListeners, fn)
+	end
+end
+
+function UIStyle.ApplyFont(fontString, delta, overrideFlags)
+	if not fontString or not fontString.GetFont or not fontString.SetFont then return end
+	local fontPath, _, fontFlags = fontString:GetFont()
+	if not fontPath then
+		fontPath, _, fontFlags = GameFontNormal:GetFont()
+	end
+	if fontPath then
+		local targetSize = math.max(9, UIStyle.GetFontSize() + (delta or 0))
+		fontString:SetFont(fontPath, targetSize, overrideFlags ~= nil and overrideFlags or (fontFlags or ""))
+	end
+end
 
 UIStyle.FLAT_BACKDROP = {
 	bgFile = "Interface\\Buttons\\WHITE8X8",
@@ -118,9 +153,16 @@ function UIStyle.StyleCheckBox(check, size)
 	local fs = (name and _G[name.."Text"]) or (check.GetFontString and check:GetFontString()) or check.Text or check.text
 	if fs then
 		fs:SetFontObject("GameFontHighlightSmall")
+		UIStyle.ApplyFont(fs, 0)
 		fs:ClearAllPoints()
 		fs:SetPoint("LEFT", check, "RIGHT", 4, 0)
 		fs:SetJustifyH("LEFT")
+		if not check._uiFontHooked then
+			check._uiFontHooked = true
+			UIStyle.RegisterFontListener(function()
+				UIStyle.ApplyFont(fs, 0)
+			end)
+		end
 	end
 end
 
@@ -192,14 +234,15 @@ function UIStyle.StyleButton(btn, variant)
 	UIStyle.ApplyBox(btn, 0.15, 0.18, 0.23, 1, 0.27, 0.31, 0.39, 1)
 
 	local fs = btn:GetFontString()
+	btn._minWidth = btn._minWidth or (btn:GetWidth() or 60)
 	local function EnsureButtonTextFits(self)
 		local fontStr = self:GetFontString()
 		if not fontStr then return end
 		fontStr:SetFontObject("GameFontHighlightSmall")
+		UIStyle.ApplyFont(fontStr, 0)
 		local textW = fontStr:GetStringWidth() or 0
-		local curW = self:GetWidth() or 0
-		if textW > 0 and curW < (textW + 16) then
-			self:SetWidth(math.ceil(textW + 20))
+		if textW > 0 then
+			self:SetWidth(math.max(self._minWidth or 60, math.ceil(textW + 24)))
 		end
 	end
 	if fs then
@@ -208,6 +251,9 @@ function UIStyle.StyleButton(btn, variant)
 
 	if not btn._uiHooked then
 		btn._uiHooked = true
+		UIStyle.RegisterFontListener(function()
+			if btn then EnsureButtonTextFits(btn) end
+		end)
 		if btn.SetText then
 			hooksecurefunc(btn, "SetText", EnsureButtonTextFits)
 		end
@@ -470,6 +516,49 @@ function lib:Create(setter, getter, dialogWidth, dialogHeight, gapWidth, gapHeig
 	gui.Done:SetScript("OnClick", function() gui:Hide() end)
 	gui.Done:SetText(DONE)
 	UIStyle.StyleButton(gui.Done, "primary")
+
+	gui.FontPlus = CreateFrame("Button", nil, gui.Backdrop, "UIPanelButtonTemplate")
+	gui.FontPlus:SetSize(30, 22)
+	gui.FontPlus:SetPoint("RIGHT", gui.Done, "LEFT", -8, 0)
+	gui.FontPlus:SetText("A+")
+	UIStyle.StyleButton(gui.FontPlus, "default")
+
+	gui.FontLabelFrame = CreateFrame("Frame", nil, gui.Backdrop, BackdropTemplateMixin and "BackdropTemplate" or nil)
+	gui.FontLabelFrame:SetSize(38, 22)
+	gui.FontLabelFrame:SetPoint("RIGHT", gui.FontPlus, "LEFT", -3, 0)
+	UIStyle.ApplyBox(gui.FontLabelFrame, 0.08, 0.10, 0.13, 1, 0.22, 0.25, 0.32, 1)
+	local fontLabel = gui.FontLabelFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+	fontLabel:SetPoint("CENTER", 0, 0)
+	fontLabel:SetTextColor(0.95, 0.80, 0.28)
+	fontLabel:SetText(UIStyle.GetFontSize() .. "pt")
+	gui.FontLabel = fontLabel
+
+	gui.FontMinus = CreateFrame("Button", nil, gui.Backdrop, "UIPanelButtonTemplate")
+	gui.FontMinus:SetSize(30, 22)
+	gui.FontMinus:SetPoint("RIGHT", gui.FontLabelFrame, "LEFT", -3, 0)
+	gui.FontMinus:SetText("A-")
+	UIStyle.StyleButton(gui.FontMinus, "default")
+
+	gui.FontMinus:SetScript("OnClick", function()
+		UIStyle.SetFontSize(UIStyle.GetFontSize() - 1)
+	end)
+	gui.FontPlus:SetScript("OnClick", function()
+		UIStyle.SetFontSize(UIStyle.GetFontSize() + 1)
+	end)
+	UIStyle.RegisterFontListener(function(newSize)
+		if gui.FontLabel then
+			gui.FontLabel:SetText(newSize .. "pt")
+		end
+		if gui.elements then
+			for _, el in pairs(gui.elements) do
+				if el and el.GetFont and el.SetFont then
+					UIStyle.ApplyFont(el, 0)
+				elseif el and el.text and el.text.GetFont then
+					UIStyle.ApplyFont(el.text, 0)
+				end
+			end
+		end
+	end)
 
 	gui.DragTop = CreateFrame("Button", nil, gui.Backdrop)
 	gui.DragTop:SetPoint("TOPLEFT", gui.Backdrop, "TOPLEFT", 10,-5)

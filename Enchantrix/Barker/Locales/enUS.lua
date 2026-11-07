@@ -221,4 +221,6 @@ EnchantrixBarkerLocalizations.enUS = {
 		["BarkerOptionsTab1Title"]	= "Profit and Price Priorities";
 		["BarkerCannotBeAppliedHigher"] = ". cannot be applied to items higher than level %d+.";	-- NEW
 		["BarkerAddionalPointsOf"] = " additional points- of ";	-- NEW
+		["ShowGuessBaseline"]	= "Baseline Value";
+		["MesgNotloaded"]	= "Enchantrix is not loaded. Type /enchantrix load to load it.";
 }

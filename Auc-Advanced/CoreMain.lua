@@ -389,7 +389,7 @@ local function OnTooltip(calltype, tip, hyperlink, quantity, name, quality)
 	local L = AucAdvanced.localizations
 
 	if serverKey ~= AucAdvanced.Resources.ServerKeyHome or AucAdvanced.Settings.GetSetting("core.tooltip.showfactionhome") then
-		tooltip:AddLine(format("Using data for |cff1fff00%s|r", AucAdvanced.GetServerKeyText(serverKey) or "Unknown"))
+		tooltip:AddLine(format(L("Using data for |cff1fff00%s|r"), AucAdvanced.GetServerKeyText(serverKey) or L("Unknown")))
 	end
 
 	if AucAdvanced.Settings.GetSetting("tooltip.marketprice.show") then
@@ -779,10 +779,11 @@ end
 
 function AuctioneerReforged_OnAddonCompartmentEnter(_, menuButtonFrame)
 	if not GameTooltip then return end
+	local L = AucAdvanced.localizations
 	GameTooltip:SetOwner(menuButtonFrame or UIParent, "ANCHOR_LEFT")
 	GameTooltip:SetText("Auctioneer Reforged", 1, 0.82, 0)
-	GameTooltip:AddLine("Left-Click: Open Configuration", 1, 1, 1)
-	GameTooltip:AddLine("Right-Click: Toggle SearchUI", 1, 1, 1)
+	GameTooltip:AddLine(L("Left-Click: Open Configuration"), 1, 1, 1)
+	GameTooltip:AddLine(L("Right-Click: Toggle SearchUI"), 1, 1, 1)
 	GameTooltip:Show()
 end
 

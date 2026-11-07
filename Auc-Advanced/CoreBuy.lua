@@ -571,14 +571,14 @@ function private.PromptPurchase(thisAuction)
 	private.CurRequest = thisAuction
 	private.Prompt:Show()
 	if thisAuction.isbid then
-		private.Prompt.Text:SetText("Are you sure you want to bid on")
+		private.Prompt.Text:SetText(L("Are you sure you want to bid on"))
 	else
-		private.Prompt.Text:SetText("Are you sure you want to buyout")
+		private.Prompt.Text:SetText(L("Are you sure you want to buyout"))
 	end
 	if thisAuction.count == 1 then
-		private.Prompt.Value:SetText(thisAuction.link.." for "..AucAdvanced.Coins(thisAuction.price,true).."?")
+		private.Prompt.Value:SetText(thisAuction.link.." "..L("for").." "..AucAdvanced.Coins(thisAuction.price,true).."?")
 	else
-		private.Prompt.Value:SetText(thisAuction.count.."x "..thisAuction.link.." for "..AucAdvanced.Coins(thisAuction.price,true).."?")
+		private.Prompt.Value:SetText(thisAuction.count.."x "..thisAuction.link.." "..L("for").." "..AucAdvanced.Coins(thisAuction.price,true).."?")
 	end
 	private.Prompt.Item.tex:SetTexture(thisAuction.texture)
 	private.Prompt.Reason:SetText(thisAuction.reason)
@@ -1051,17 +1051,17 @@ private.Prompt.Reason:SetText("")
 private.Prompt.Reason.Label = private.Prompt.Reason:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 private.Prompt.Reason.Label:SetPoint("TOPRIGHT", private.Prompt.Reason, "TOPLEFT", 0, 0)
 private.Prompt.Reason.Label:SetPoint("TOPLEFT", private.Prompt, "TOPLEFT", 52, -55)
-private.Prompt.Reason.Label:SetText("Reason:")
+private.Prompt.Reason.Label:SetText(L("Reason:"))
 private.Prompt.Reason.Label:SetHeight(15)
 
 private.Prompt.Yes = CreateFrame("Button", "AucAdvancedBuyPromptYes", private.Prompt, "UIPanelButtonTemplate")
-private.Prompt.Yes:SetText("Yes")
+private.Prompt.Yes:SetText(L("Yes"))
 private.Prompt.Yes:SetSize(90, 24)
 private.Prompt.Yes:SetPoint("BOTTOMRIGHT", private.Prompt, "BOTTOMRIGHT", -10, 10)
 private.Prompt.Yes:SetScript("OnClick", private.PerformPurchase)
 
 private.Prompt.No = CreateFrame("Button", "AucAdvancedBuyPromptNo", private.Prompt, "UIPanelButtonTemplate")
-private.Prompt.No:SetText("Cancel")
+private.Prompt.No:SetText(L("Cancel"))
 private.Prompt.No:SetSize(90, 24)
 private.Prompt.No:SetPoint("BOTTOMRIGHT", private.Prompt.Yes, "BOTTOMLEFT", -10, 0)
 private.Prompt.No:SetScript("OnClick", private.CancelPurchase)

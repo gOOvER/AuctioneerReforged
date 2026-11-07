@@ -154,5 +154,6 @@ BeanCounterLocalizations.deDE = {
 		["UiWealth"]	= "Vermögen";
 		["UiWononBid"]	= "Gebotskauf";
 		["UiWononBuyout"]	= "Sofortkauf";
+		["UiAucSuccessful"]	= "Erfolgreiche Auktionen";
 
 }

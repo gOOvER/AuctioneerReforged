@@ -1262,9 +1262,9 @@ function private.ShowPrompt(request)
 	private.promptRequest = request
 	request.prompt = true
 	private.Prompt:Show()
-	private.Prompt.Text1:SetText("Ready to post "..private.RequestDisplayString(request))
-	private.Prompt.Text2:SetText("Min Bid "..AucAdvanced.Coins(request.bid, true)..", Buyout "..AucAdvanced.Coins(request.buy, true))
-	private.Prompt.Text3:SetText("Deposit "..AucAdvanced.Coins(request.depositB, true))
+	private.Prompt.Text1:SetText(_TRANS("Ready to post ")..private.RequestDisplayString(request))
+	private.Prompt.Text2:SetText(_TRANS("Min Bid ")..AucAdvanced.Coins(request.bid, true).._TRANS(", Buyout ")..AucAdvanced.Coins(request.buy, true))
+	private.Prompt.Text3:SetText(_TRANS("Deposit ")..AucAdvanced.Coins(request.depositB, true))
 	private.Prompt.Item.tex:SetTexture(request.texture)
 	local headwidth = (private.Prompt.Heading:GetStringWidth() or 0) + 70
 	local width1 = (private.Prompt.Text1:GetStringWidth() or 0) + 70
@@ -1576,7 +1576,7 @@ private.Prompt.Item.tex:SetPoint("BOTTOMRIGHT", private.Prompt.Item, "BOTTOMRIGH
 
 private.Prompt.Heading = private.Prompt:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 private.Prompt.Heading:SetPoint("CENTER", private.Prompt.Frame, "CENTER", 20, 38)
-private.Prompt.Heading:SetText("Auctioneer needs a confirmation to continue posting")
+private.Prompt.Heading:SetText(_TRANS("Auctioneer needs a confirmation to continue posting"))
 
 private.Prompt.Text1 = private.Prompt:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 private.Prompt.Text1:SetPoint("CENTER", private.Prompt.Frame, "CENTER", 20, 18)

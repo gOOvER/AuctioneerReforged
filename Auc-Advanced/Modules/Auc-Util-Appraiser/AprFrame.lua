@@ -1301,8 +1301,8 @@ function private.CreateFrames()
 	function frame.ChangeUI()
 		if get("util.appraiser.classic") then
 			--Show per stack
-			frame.switchToStack:SetText("Bid per Stack")
-			frame.switchToStack2:SetText("Buy per Stack")
+			frame.switchToStack:SetText(_TRANS("Bid per Stack"))
+			frame.switchToStack2:SetText(_TRANS("Buy per Stack"))
 
 			frame.salebox.bid:Hide()
 			frame.salebox.buy:Hide()
@@ -1940,17 +1940,17 @@ function private.CreateFrames()
 	frame.toggleManifest:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -126, -13)
 	frame.toggleManifest:SetScript("OnClick", function()
 		if frame.manifest:IsShown() then
-			frame.toggleManifest:SetText("Open Sidebar")
+			frame.toggleManifest:SetText(_TRANS("Open Sidebar"))
 			frame.manifest:Hide()
 		else
-			frame.toggleManifest:SetText("Close Sidebar")
+			frame.toggleManifest:SetText(_TRANS("Close Sidebar"))
 			frame.manifest:Show()
 		end
 	end)
 	frame.toggleManifest:SetScript("OnEnter", function(self) return frame.SetButtonTooltip(self, _TRANS('APPR_HelpTooltip_SidebarINF_Tooltip_AdditionalInfo') ) end)--Open/Close sidebar with additional price info
 	frame.toggleManifest:SetScript("OnLeave", function() return GameTooltip:Hide() end)
 	frame.toggleManifest:SetSize(116, 20)
-	frame.toggleManifest:SetText("Close Sidebar")
+	frame.toggleManifest:SetText(_TRANS("Close Sidebar"))
 	UIStyle.StyleButton(frame.toggleManifest, "default")
 	frame.toggleManifest:Disable()
 	frame.toggleManifest:Show()
@@ -2180,8 +2180,6 @@ function private.CreateFrames()
 	frame.salebox.info:SetHeight(20)
 	frame.salebox.info:SetJustifyH("LEFT")
 	frame.salebox.info:SetJustifyV("BOTTOM")
-	frame.salebox.info:SetText("APPR_Interface_SelectItemLeftAuctioning")--Select an item to the left to begin auctioning...
-	frame.salebox.info:SetText(_TRANS('APPR_Interface_SelectItemLeftAuctioning') )--Select an item to the left to begin auctioning...
 	frame.salebox.info:SetText(_TRANS('APPR_Interface_SelectItemLeftAuctioning') )--Select an item from the list in the left column or drop an item in the square to begin auctioning.
 	frame.salebox.info:SetTextColor(0.5, 0.5, 0.7)
 
@@ -2640,7 +2638,7 @@ function private.CreateFrames()
 
 	frame.refresh = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
 	frame.refresh:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -167,15)
-	frame.refresh:SetText("Refresh")
+	frame.refresh:SetText(_TRANS("Refresh"))
 	frame.refresh:SetSize(80, 22)
 	UIStyle.StyleButton(frame.refresh, "default")
 	frame.refresh:SetScript("OnClick", frame.SmartRefresh)
@@ -2685,7 +2683,7 @@ function private.CreateFrames()
 		--display a progress bar
 		if postnum > lastPostProgress then lastPostProgress = postnum end
 		local value = (100 - postnum * 100 / lastPostProgress) or 0
-		AucAdvanced.API.ProgressBars("AppraiserBar", value, true, "Appraiser has "..postnum.." more items to post", progressBarOptions)
+		AucAdvanced.API.ProgressBars("AppraiserBar", value, true, format(_TRANS("Appraiser has %d more items to post"), postnum), progressBarOptions)
 
 		if (postnum > 0) and not frame.cancel:IsEnabled() then
 			frame.cancel:Enable()
@@ -2717,7 +2715,7 @@ function private.CreateFrames()
 	frame.manifest.close:SetHeight(26)
 	frame.manifest.close:SetScript("OnClick", function()
 		frame.manifest:Hide()
-		frame.toggleManifest:SetText("Open Sidebar")
+		frame.toggleManifest:SetText(_TRANS("Open Sidebar"))
 	end)
 
 	local function lineHide(obj)
@@ -2878,7 +2876,8 @@ function private.CreateFrames()
 	end
 
 	function private.onClick(button, row, index)
-		if (IsAltKeyDown()) and frame.imageview.sheet.labels[index]:GetText() == "Seller" then
+		local colText = frame.imageview.sheet.labels[index]:GetText()
+		if (IsAltKeyDown()) and (colText == "Seller" or colText == _TRANS('APPR_Interface_Seller')) then
 			local seller = frame.imageview.sheet.rows[row][index]:GetText()
 			if AucAdvanced.Modules.Filter.Basic then
 				AucAdvanced.Modules.Filter.Basic.PromptSellerIgnore(seller, frame.imageview.sheet.panel, "TOPLEFT", button, "BOTTOM")

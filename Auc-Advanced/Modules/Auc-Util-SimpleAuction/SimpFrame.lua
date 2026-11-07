@@ -33,7 +33,7 @@ if not AucAdvanced then return end
 local lib = AucAdvanced.Modules.Util.SimpleAuction
 if not lib then return end
 local private = lib.Private
-local aucPrint,decode,_,_,replicate,_,get,set,default,debugPrint,fill = AucAdvanced.GetModuleLocals()
+local aucPrint,decode,_,_,replicate,_,get,set,default,debugPrint,fill,_TRANS = AucAdvanced.GetModuleLocals()
 local Const = AucAdvanced.Const
 local Resources = AucAdvanced.Resources
 
@@ -283,7 +283,7 @@ function private.UpdateDisplay()
 	local priceType = "auto"
 	if dBid >= 1 or dBuy >= 1 then
 		priceType = "fixed"
-		frame.err:SetText("Manual pricing on item")
+		frame.err:SetText(_TRANS("Manual pricing on item"))
 	end
 
 	if priceType == "auto" and cStack ~= oStack then
@@ -301,13 +301,13 @@ function private.UpdateDisplay()
 		MoneyInputFrame_SetCopper(frame.buyout, cBuy)
 		frame.CurItem.buy = cBuy
 		frame.CurItem.buyper = cBuy/frame.CurItem.stack
-		frame.err:SetText("Adjusted price to new stack size")
+		frame.err:SetText(_TRANS("Adjusted price to new stack size"))
 	end
 
 	if GetSellValue then
 		local vendor = GetSellValue(oLink) or 0
 		if vendor > cBid / cStack then
-			frame.err:SetText("Warning: Bid is below vendor price")
+			frame.err:SetText(_TRANS("Warning: Bid is below vendor price"))
 		end
 	end
 
@@ -319,14 +319,14 @@ function private.UpdateDisplay()
 	else
 		coinsBid = "no"
 		coinsBidEa = "no"
-		frame.err:SetText("Error: No bid price set")
+		frame.err:SetText(_TRANS("Error: No bid price set"))
 		flagenable = false
 	end
 	if cBuy > 0 then
 		coinsBuy = coins(cBuy)
 		coinsBuyEa = coins(cBuy/cStack)
 		if cBuy < cBid then
-			frame.err:SetText("Error: Buyout cannot be less than bid price")
+			frame.err:SetText(_TRANS("Error: Buyout cannot be less than bid price"))
 			flagenable = false
 		end
 	else
@@ -334,27 +334,27 @@ function private.UpdateDisplay()
 		coinsBuyEa = "no"
 	end
 
-	local lots = "lot"
-	if cNum > 1 then lots = "lots" end
+	local lots = _TRANS("lot")
+	if cNum > 1 then lots = _TRANS("lots") end
 
 	local text
 	if (cStack > 1) then
-		text = format("Auctioning %d %s of %d sized stacks at %s bid/%s buyout per stack (%s/%s ea)", cNum, lots, cStack, coinsBid, coinsBuy, coinsBidEa, coinsBuyEa)
+		text = format(_TRANS("Auctioning %d %s of %d sized stacks at %s bid/%s buyout per stack (%s/%s ea)"), cNum, lots, cStack, coinsBid, coinsBuy, coinsBidEa, coinsBuyEa)
 	else
-		text = format("Auctioning %d %s of this item at %s bid/%s buyout each", cNum, lots, coinsBid, coinsBuy)
+		text = format(_TRANS("Auctioning %d %s of this item at %s bid/%s buyout each"), cNum, lots, coinsBid, coinsBuy)
 	end
 	frame.info:SetText(text)
 
 	duration = GetDurationCode(duration)
 	local deposit = GetDepositCost(oLink, duration, Resources.IsNeutralZone, cStack, 1)
 	if not deposit then
-		frame.fees:SetText("Unknown deposit cost")
+		frame.fees:SetText(_TRANS("Unknown deposit cost"))
 	elseif cNum > 1 then
-		frame.fees:SetText(("Deposit: %s, %s/stack \n~%s/ea"):format(coins(deposit*cNum), coins(deposit), coins(ceil(deposit/cStack))))
+		frame.fees:SetText((_TRANS("Deposit: %s, %s/stack \n~%s/ea")):format(coins(deposit*cNum), coins(deposit), coins(ceil(deposit/cStack))))
 	elseif cStack > 1 then
-		frame.fees:SetText(("Deposit: %s/stack \n~%s/ea"):format(coins(deposit), coins(ceil(deposit/cStack))))
+		frame.fees:SetText((_TRANS("Deposit: %s/stack \n~%s/ea")):format(coins(deposit), coins(ceil(deposit/cStack))))
 	else
-		frame.fees:SetText(("Deposit: %s"):format(coins(deposit)))
+		frame.fees:SetText((_TRANS("Deposit: %s")):format(coins(deposit)))
 	end
 	frame.stacks.equals:SetText("= "..(cStack * cNum))
 	if flagenable then
@@ -471,13 +471,13 @@ function private.UpdatePricing()
 	if frame.CurItem.manual then
 		buy = frame.CurItem.buyper
 		bid = frame.CurItem.bidper
-		reason = "Manual pricing on item"
+		reason = _TRANS("Manual pricing on item")
 	end
 	if not buy then
 		--Check for undercut first
 		if frame.options.undercut:GetChecked() then
 			if lowBuy and lowBuy > 0 then
-				local underBuy, underBid, by = 1,1, "default 1c"
+				local underBuy, underBid, by = 1,1, _TRANS("default 1c")
 
 				local model = get("util.simpleauc.undercut")
 				local fixed = get("util.simpleauc.undercut.fixed")
@@ -486,7 +486,7 @@ function private.UpdatePricing()
 				if model == "fixed" then
 					underBuy = fixed
 					underBid = fixed
-					by = "fixed amount: "..coins(fixed)
+					by = _TRANS("fixed amount: ")..coins(fixed)
 				else
 					underBuy = lowBuy*pct
 					underBid = (lowBid or 0)*pct
@@ -499,7 +499,7 @@ function private.UpdatePricing()
 				else
 					bid = buy * 0.8
 				end
-				reason = "Undercutting market by "..by
+				reason = _TRANS("Undercutting market by ")..by
 			end
 		--then matching current
 		elseif frame.options.matchmy:GetChecked() then
@@ -510,7 +510,7 @@ function private.UpdatePricing()
 				else
 					bid = buy * 0.8
 				end
-				reason = "Matching your prices"
+				reason = _TRANS("Matching your prices")
 			end
 		end
 		--if no buy price yet, look for marketprice
@@ -519,14 +519,14 @@ function private.UpdatePricing()
 			if market and (market > 0) and (seen > 5 or aSeen < 3) then
 				buy = market
 				bid = market * 0.8
-				reason = "Using market value"
+				reason = _TRANS("Using market value")
 			end
 		end
 		--look for average of current competition
 		if not buy and aveBuy and aveBuy > 0 then
 			buy = aveBuy
 			bid = buy * 0.8
-			reason = "Using current market data"
+			reason = _TRANS("Using current market data")
 		end
 		--Vendor markup
 		if not buy and GetSellValue then
@@ -534,7 +534,7 @@ function private.UpdatePricing()
 			if vendor and vendor > 0 then
 				buy = vendor * 3
 				bid = buy * 0.8
-				reason = "Marking up vendor"
+				reason = _TRANS("Marking up vendor")
 			end
 		end
 	end
@@ -551,11 +551,11 @@ function private.UpdatePricing()
 	if bid == 0 then
 		bid = 1
 		buy = 0
-		reason = "Unable to calculate price"
+		reason = _TRANS("Unable to calculate price")
 	end
 
 	if (stack * num) > total then
-		reason = "Error: You don't have that many"
+		reason = _TRANS("Error: You don't have that many")
 	end
 	bid, buy = ceil(tonumber(bid) or 1), ceil(tonumber(buy) or 0)
 
@@ -733,12 +733,12 @@ function private.LoadItemLink(itemLink, size)
 		frame.icon.itemLink = nil
 		frame.icon:ClearNormalTexture()
 		frame.icon.count:SetText("")
-		frame.name:SetText("Drop item onto slot")
+		frame.name:SetText(_TRANS("Drop item onto slot"))
 		frame.create:Disable()
 	end
-	frame.info:SetText("To auction an item, drag it from your bag.")
+	frame.info:SetText(_TRANS("To auction an item, drag it from your bag."))
 	frame.fees:SetText("")
-	frame.err:SetText("-- No item selected --")
+	frame.err:SetText(_TRANS("-- No item selected --"))
 	frame.stacks.equals:SetText("= 0")
 	private.ClearSetting() -- calls private.UpdatePricing()
 	private.LoadConfig() -- calls private.UpdatePricing() again if settings were loaded
@@ -1133,38 +1133,44 @@ function private.CreateFrames()
 
 	frame.title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 	frame.title:SetPoint("TOP", frame,  "TOP", 15, -20)
-	frame.title:SetText("Simple Auction - Simplified auction posting interface")
+	frame.title:SetText(_TRANS("Simple Auction - Simplified auction posting interface"))
 	frame.title:SetTextColor(1, 0.85, 0.25)
 
 	frame.slot = frame:CreateTexture(nil, "BORDER")
 	frame.slot:SetPoint("TOPLEFT", frame, "TOPLEFT", 80, -45)
-	frame.slot:SetWidth(50)
-	frame.slot:SetHeight(50)
+	frame.slot:SetWidth(46)
+	frame.slot:SetHeight(46)
 	frame.slot:SetTexCoord(0.15, 0.85, 0.15, 0.85)
 	frame.slot:SetTexture("Interface\\Buttons\\UI-EmptySlot")
 
 	frame.name = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 	frame.name:SetPoint("TOPLEFT", frame.slot, "TOPRIGHT", 10, -2)
 	frame.name:SetJustifyV("TOP")
-	frame.name:SetText("Drop item onto slot")
+	frame.name:SetText(_TRANS("Drop item onto slot"))
 
 	frame.info = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 	frame.info:SetPoint("TOPLEFT", frame.name, "BOTTOMLEFT", 0, -3)
 	frame.info:SetJustifyV("TOP")
 	frame.info:SetTextColor(0.0,1,1)
-	frame.info:SetText("To auction an item, drag it from your bag.")
+	frame.info:SetText(_TRANS("To auction an item, drag it from your bag."))
 
 	frame.err = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 	frame.err:SetPoint("TOPLEFT", frame.info, "BOTTOMLEFT", 0, 0)
 	frame.err:SetJustifyV("TOP")
 	frame.err:SetTextColor(1,0.2,0,1)
-	frame.err:SetText("-- No item selected --")
+	frame.err:SetText(_TRANS("-- No item selected --"))
 
-	frame.icon = CreateFrame("Button", nil, frame)
+	frame.icon = CreateFrame("Button", nil, frame, BackdropTemplateMixin and "BackdropTemplate")
 	frame.icon:SetPoint("TOPLEFT", frame.slot, "TOPLEFT", 3, -3)
 	frame.icon:SetWidth(42)
 	frame.icon:SetHeight(42)
 	frame.icon:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square.blp")
+	if UIStyle and UIStyle.StyleItemSlot then
+		frame.slot:SetTexture(nil)
+		frame.icon:ClearAllPoints()
+		frame.icon:SetPoint("TOPLEFT", frame.slot, "TOPLEFT", 0, 0)
+		UIStyle.StyleItemSlot(frame.icon, 46)
+	end
 	frame.icon:SetScript("OnClick", private.IconClicked)
 	frame.icon:SetScript("OnReceiveDrag", private.IconClicked)
 	frame.icon:SetScript("OnEnter", private.DoTooltip)
@@ -1188,7 +1194,7 @@ function private.CreateFrames()
 		end)
 	frame.minprice.label = frame.minprice:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 	frame.minprice.label:SetPoint("BOTTOMLEFT", frame.minprice, "TOPLEFT", 0, 0)
-	frame.minprice.label:SetText("Starting price:")
+	frame.minprice.label:SetText(_TRANS("Starting price:"))
 	AucAdvSimpFrameStartGold:SetWidth(50)
 
 	frame.buyout = CreateFrame("Frame", "AucAdvSimpFrameBuyout", frame, "MoneyInputFrameTemplate")
@@ -1199,7 +1205,7 @@ function private.CreateFrames()
 		end)
 	frame.buyout.label = frame.buyout:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 	frame.buyout.label:SetPoint("BOTTOMLEFT", frame.buyout, "TOPLEFT", 0, 0)
-	frame.buyout.label:SetText("Buyout price:")
+	frame.buyout.label:SetText(_TRANS("Buyout price:"))
 	AucAdvSimpFrameBuyoutGold:SetWidth(50)
 	if UIStyle then
 		UIStyle.StyleEditBox(AucAdvSimpFrameStartGold)
@@ -1216,7 +1222,7 @@ function private.CreateFrames()
 	frame.duration:SetHeight(20)
 	frame.duration.label = frame.duration:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 	frame.duration.label:SetPoint("BOTTOMLEFT", frame.duration, "TOPLEFT", 0, 0)
-	frame.duration.label:SetText("Duration:");
+	frame.duration.label:SetText(_TRANS("Duration:"));
 
 	frame.duration.time = {
         intervals = {12, 24, 48},
@@ -1262,7 +1268,7 @@ function private.CreateFrames()
 	frame.stacks:SetHeight(20)
 	frame.stacks.label = frame.duration:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 	frame.stacks.label:SetPoint("BOTTOMLEFT", frame.stacks, "TOPLEFT", 0, 0)
-	frame.stacks.label:SetText("Stacks: (number x size)");
+	frame.stacks.label:SetText(_TRANS("Stacks: (number x size)"));
 
 	frame.stacks.num = CreateFrame("EditBox", "AucAdvSimpFrameStackNum", frame.stacks, "InputBoxTemplate")
 	frame.stacks.num:SetPoint("TOPLEFT", frame.stacks, "TOPLEFT", 5, 0)
@@ -1306,19 +1312,19 @@ function private.CreateFrames()
 	frame.options:SetHeight(300)
 	frame.options.label = frame.options:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 	frame.options.label:SetPoint("BOTTOMLEFT", frame.options, "TOPLEFT", 0, 0)
-	frame.options.label:SetText("Options:")
+	frame.options.label:SetText(_TRANS("Options:"))
 
 	frame.create = CreateFrame("Button", "AucAdvSimpFrameCreate", frame, "UIPanelButtonTemplate")
 	frame.create:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -370, 15)
 	frame.create:SetWidth(160)
-	frame.create:SetText("Create Auction")
+	frame.create:SetText(_TRANS("Create Auction"))
 	frame.create:SetScript("OnClick", private.PostAuction)
 	frame.create:Disable()
 
 	frame.clear = CreateFrame("Button", "AucAdvSimpFrameRemember", frame, "UIPanelButtonTemplate")
 	frame.clear:SetPoint("TOPLEFT", frame, "TOPLEFT", 585, -13)
 	frame.clear:SetWidth(110)
-	frame.clear:SetText("Clear Settings")
+	frame.clear:SetText(_TRANS("Clear Settings"))
 	frame.clear:SetScript("OnClick", function() private.ClearSetting() private.RemoveConfig() end)
 
 	MoneyInputFrame_SetPreviousFocus(frame.minprice, frame.stacks.size)
@@ -1343,7 +1349,7 @@ function private.CreateFrames()
 
 		item.label = item:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 		item.label:SetPoint("LEFT", item, "RIGHT", 0, 0)
-		item.label:SetText(text)
+		item.label:SetText(_TRANS(text))
 
 		self[option] = item
 	end
@@ -1388,7 +1394,7 @@ function private.CreateFrames()
 	local tabTemplate = AucAdvanced.GetAHTabTemplate()
 	local tabParent = AucAdvanced.IsRetailAH and (AuctionHouseFrame or UIParent) or AuctionFrame
 	frame.tab = CreateFrame("Button", "AuctionFrameTabUtilSimple", tabParent, tabTemplate)
-	frame.tab:SetText(TAB_NAME)
+	frame.tab:SetText(_TRANS(TAB_NAME))
 	frame.tab:Show()
 	if not AucAdvanced.IsRetailAH then
 		PanelTemplates_DeselectTab(frame.tab)
@@ -1458,11 +1464,12 @@ function private.CreateFrames()
 	--records the column width changes
 	--store width by header name, that way if column reorginizing is added we apply size to proper column
 	function private.onResize(self, column, width)
+		local colKey = self.labels[column].origText or self.labels[column]:GetText()
 		if not width then
-			set("util.simpleauc.columnwidth."..self.labels[column]:GetText(), "default") --reset column if no width is passed. We use CTRL+rightclick to reset column
-			self.labels[column].button:SetWidth(get("util.simpleauc.columnwidth."..self.labels[column]:GetText()))
+			set("util.simpleauc.columnwidth."..colKey, "default") --reset column if no width is passed. We use CTRL+rightclick to reset column
+			self.labels[column].button:SetWidth(get("util.simpleauc.columnwidth."..colKey))
 		else
-			set("util.simpleauc.columnwidth."..self.labels[column]:GetText(), width)
+			set("util.simpleauc.columnwidth."..colKey, width)
 		end
 	end
 	function private.onClick(button, row, index)
@@ -1610,7 +1617,7 @@ function private.CreateFrames()
 
 	frame.config = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
 	frame.config:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -25, -13)
-	frame.config:SetText("Configure")
+	frame.config:SetText(_TRANS("Configure"))
 	frame.config:SetWidth(80)
 	frame.config:SetScript("OnClick", function()
 		AucAdvanced.Settings.Show()
@@ -1619,7 +1626,7 @@ function private.CreateFrames()
 
 	if AuctionFrameBrowse then
 		frame.scanbutton = CreateFrame("Button", "AucAdvScanButton", AuctionFrameBrowse, "UIPanelButtonTemplate")
-		frame.scanbutton:SetText("Scan")
+		frame.scanbutton:SetText(_TRANS("Scan"))
 		frame.scanbutton:SetWidth(60)
 		frame.scanbutton:SetParent(AuctionFrameBrowse)
 		frame.scanbutton:SetPoint("LEFT", "AuctionFrameMoneyFrame", "RIGHT", -164, 336)
@@ -1633,28 +1640,28 @@ function private.CreateFrames()
 
 	frame.refresh = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
 	frame.refresh:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -167,15)
-	frame.refresh:SetText("Refresh")
+	frame.refresh:SetText(_TRANS("Refresh"))
 	frame.refresh:SetWidth(80)
 	frame.refresh:SetScript("OnClick", private.Refresh)
 
 	frame.bid = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
 	frame.bid:SetPoint("TOPLEFT", frame.refresh, "TOPRIGHT", 1, 0)
 	frame.bid:SetWidth(80)
-	frame.bid:SetText("Bid")--Bid
+	frame.bid:SetText(_TRANS("Bid"))--Bid
 	frame.bid:SetScript("OnClick", private.BidAuction)
 	frame.bid:Disable()
 
 	frame.buy = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
 	frame.buy:SetPoint("TOPLEFT", frame.bid, "TOPRIGHT", 1, 0)
 	frame.buy:SetWidth(80)
-	frame.buy:SetText("Buy")--Buy
+	frame.buy:SetText(_TRANS("Buy"))--Buy
 	frame.buy:SetScript("OnClick", private.BuyAuction)
 	frame.buy:Disable()
 	
 	frame.ignore = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
 	frame.ignore:SetPoint("TOPLEFT", frame.buy, "TOPRIGHT", -360, 0)
 	frame.ignore:SetWidth(80)
-	frame.ignore:SetText("Ignore")--Buy
+	frame.ignore:SetText(_TRANS("Ignore"))--Buy
 	frame.ignore:SetScript("OnClick", private.Ignore)
 	if UIStyle then
 		UIStyle.StyleButton(frame.create, "primary")

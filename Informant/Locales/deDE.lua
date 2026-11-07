@@ -277,5 +277,17 @@ InformantLocalizations.deDE = {
 		["INF_Tooltip_SpecialBindGuild"]	= "An Gilde gebunden";
 		["INF_Tooltip_StackSize"]	= "Stapelbar in Größen von %d";
 		["INF_Tooltip_Use"]	= "Benutzt für: %s";
+		["INF_Tooltip_Crafts"]	= "Stellt her: %s";
+		["INF_Tooltip_CraftsItem"]	= "Stellt Gegenstand her: ";
+		["INF_Tooltip_AucAdv"]	= "AucAdv: ";
+		["INF_Tooltip_Disenchant"]	= "Entzaubern: ";
+		["INF_Tooltip_Vendor"]	= "Händler: ";
+		["INF_Help_CmdShowQuest"]	= "show-quest";
+		["INF_Help_CmdShowMerchant"]	= "show-merchant";
+		["INF_Help_CmdShowZeroMerchants"]	= "show-zero-merchants";
+		["INF_Help_Disable"]	= "Verhindert das automatische Laden von Informant beim nächsten Login";
+		["INF_HelpToolTip_ShowBindingitTT"]	= "Zeigt den Bindungsstatus eines Gegenstands im Tooltip an";
+		["INF_Interface_SetupProfile"]	= "Profile einrichten, konfigurieren und bearbeiten";
+		["about"]	= "Zeigt Versions- und Sprachinformationen an";
 
 }

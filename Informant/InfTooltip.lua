@@ -223,16 +223,16 @@ function Informant.TooltipHandler(frame, item, count, name, link, quality)
 
 		-- show item that this recipe teaches, in quality color
 		if (itemLink) then	-- sometimes GetInfo fails
-			tooltip:AddLine( ("Crafts: %s"):format(itemLink), nil, embedded)
+			tooltip:AddLine( (_TRANS('INF_Tooltip_Crafts')):format(itemLink), nil, embedded)
 		else
-			tooltip:AddLine( "Crafts item: "..crafted_item, nil, embedded)
+			tooltip:AddLine( _TRANS('INF_Tooltip_CraftsItem')..crafted_item, nil, embedded)
 		end
 
 		-- show AucAdv value
 		if (itemLink and AucAdvanced) then
 			local price5 = AucAdvanced.API.GetMarketValue( itemLink );
 			if (price5) then
-				tooltip:AddLine( "        AucAdv: ", item_craft_count*price5, embedded)
+				tooltip:AddLine( "        ".._TRANS('INF_Tooltip_AucAdv'), item_craft_count*price5, embedded)
 			end
 		end
 
@@ -241,13 +241,13 @@ function Informant.TooltipHandler(frame, item, count, name, link, quality)
 			local _, _, baseline, aucadv = Enchantrix.Storage.GetItemDisenchantTotals( crafted_item )
 			if (aucadv or baseline) then
 				-- this can be disenchanted
-				tooltip:AddLine( "        Disenchant: ", item_craft_count*(aucadv or baseline), embedded)
+				tooltip:AddLine( "        ".._TRANS('INF_Tooltip_Disenchant'), item_craft_count*(aucadv or baseline), embedded)
 			end
 		end
 
 		-- show vendor value if non-zero
 		if (sellPrice) then
-			tooltip:AddLine( "        Vendor: ", item_craft_count*sellPrice, embedded)
+			tooltip:AddLine( "        ".._TRANS('INF_Tooltip_Vendor'), item_craft_count*sellPrice, embedded)
 		end
 	end
 

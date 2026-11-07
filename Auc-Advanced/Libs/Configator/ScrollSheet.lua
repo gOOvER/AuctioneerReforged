@@ -26,9 +26,16 @@
 --]]
 
 local LIBRARY_VERSION_MAJOR = "ScrollSheet"
-local LIBRARY_VERSION_MINOR = 25
+local LIBRARY_VERSION_MINOR = 26
 local lib = LibStub:NewLibrary(LIBRARY_VERSION_MAJOR, LIBRARY_VERSION_MINOR)
 if not lib then return end
+
+local function T(text)
+	if type(text) == "string" and text ~= "" and AucAdvanced and AucAdvanced.localizations then
+		return AucAdvanced.localizations(text)
+	end
+	return text
+end
 
 local GSC_GOLD="ffd100"
 local GSC_SILVER="e6e6e6"
@@ -561,7 +568,8 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize, onSelect
 		end
 
 		local label = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-		label:SetText(layout[i][1])
+		label.origText = layout[i][1]
+		label:SetText(T(layout[i][1]))
 		local colWidth = layout[i][3] or 30 --Never us a nil width, causes issues with overlay highlight
 
 		totalWidth = totalWidth + colWidth

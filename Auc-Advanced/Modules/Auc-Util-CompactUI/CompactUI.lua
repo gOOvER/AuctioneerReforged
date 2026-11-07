@@ -516,7 +516,7 @@ function private.HookAH()
 
 	local text = AuctionFrameBrowse:CreateFontString(nil,nil,"GameFontNormal")
 	text:SetPoint("LEFT", check, "LEFT", 30, 0)
-	text:SetText("Show stacks as price per unit")
+	text:SetText(_TRANS("Show stacks as price per unit"))
 	tinsert(private.candy, text)
 
 	text = AuctionFrameBrowse:CreateFontString(nil,nil,"GameFontNormal")
@@ -920,7 +920,7 @@ end
 private.switchUI = CreateFrame("Button", nil, UIParent, "UIPanelButtonTemplate")
 private.switchUI:SetWidth(100)
 private.switchUI:SetHeight(15)
-private.switchUI:SetText("Configure")
+private.switchUI:SetText(_TRANS("Configure"))
 private.switchUI:SetScript("OnClick", function()
 	if private.gui and private.gui:IsShown() then
 		AucAdvanced.Settings.Hide()
@@ -929,7 +929,7 @@ private.switchUI:SetScript("OnClick", function()
 		private.gui:ActivateTab(private.guiID)
 	end
 end)
-private.switchUI:SetScript("OnEnter", function()  private.buttonTooltips(private.switchUI, "Open the configuration options for the CompactUI window.") end)
+private.switchUI:SetScript("OnEnter", function()  private.buttonTooltips(private.switchUI, _TRANS("Open the configuration options for the CompactUI window.")) end)
 private.switchUI:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
 function private.SetupConfigGui(gui)

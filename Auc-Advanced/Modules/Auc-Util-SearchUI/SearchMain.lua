@@ -1470,11 +1470,12 @@ function private.MakeGuiConfig()
 	--records the column width changes
 	--store width by header name, that way if column reorginizing is added we apply size to proper column
 	function private.OnResizeSheet(self, column, width)
+		local colKey = self.labels[column].origText or self.labels[column]:GetText()
 		if not width then
-			lib.SetSetting("columnwidth."..self.labels[column]:GetText(), "default") --reset column if no width is passed. We use CTRL+rightclick to reset column
-			self.labels[column].button:SetWidth(lib.GetSetting("columnwidth."..self.labels[column]:GetText()))
+			lib.SetSetting("columnwidth."..colKey, "default") --reset column if no width is passed. We use CTRL+rightclick to reset column
+			self.labels[column].button:SetWidth(lib.GetSetting("columnwidth."..colKey))
 		else
-			lib.SetSetting("columnwidth."..self.labels[column]:GetText(), width)
+			lib.SetSetting("columnwidth."..colKey, width)
 		end
 	end
 
@@ -1922,7 +1923,7 @@ function private.MakeGuiConfig()
 
 	gui.frame.progressbar.text = gui.frame.progressbar:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 	gui.frame.progressbar.text:SetPoint("CENTER", gui.frame.progressbar, "CENTER")
-	gui.frame.progressbar.text:SetText("AucAdv SearchUI: Searching")
+	gui.frame.progressbar.text:SetText(_TRANS("AucAdv SearchUI: Searching"))
 	gui.frame.progressbar.text:SetTextColor(1,1,1)
 
 	gui.frame.progressbar.cancel = CreateFrame("Button", nil, gui.frame.progressbar, "UIPanelButtonTemplate")

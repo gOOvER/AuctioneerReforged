@@ -104,6 +104,8 @@ EnchantrixBarkerLocalizations.deDE = {
 		["TwoHandWeapon"]	= "Zweihandwaffe";
 		["Undercity"]	= "Unterstadt";
 		["Weapon"]	= "Waffe";
+		["Dalaran"]	= "Dalaran";
+		["ShortDalaran"]	= "Dal";
 
 		-- Section: Generic Messages
 		["BarkerLoaded"]	= "Enchantrix Barker geladen...";
@@ -140,6 +142,7 @@ EnchantrixBarkerLocalizations.deDE = {
 		["SPI"]	= "WIL";
 		["STA"]	= "AUS";
 		["STR"]	= "STÄ";
+		["Other"]	= "Sonstige";
 
 		-- Section: Tooltip Messages
 		["FrmtBarkerPrice"]	= "Barker Preis (%d%% Gewinn)";
@@ -216,5 +219,9 @@ EnchantrixBarkerLocalizations.deDE = {
 		["BarkerOptionsStrengthPriority"]	= "Stärke";
 		["BarkerOptionsStrengthPriorityTooltip"]	= "Die Prioritätsstufe für Stärkeverzauberungen.";
 		["BarkerOptionsTab1Title"]	= "Gewinn und Preisprioritäten";
+		["BarkerCannotBeAppliedHigher"]	= "%. kann nicht auf Gegenstände über Stufe %d+ angewendet werden%.";
+		["BarkerAddionalPointsOf"]	= " zusätzliche Punkte in ";
+		["ShowGuessBaseline"]	= "Basiswert";
+		["MesgNotloaded"]	= "Enchantrix ist nicht geladen. Gib /enchantrix load ein, um es zu laden.";
 
 }

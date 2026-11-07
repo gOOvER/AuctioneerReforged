@@ -203,16 +203,22 @@ function private.MakeGuiConfig(gui)
 	end
 
 	local content = gui.tabs[id].content
+	local Configator = LibStub:GetLibrary("Configator", true)
+	local UIStyle = Configator and Configator.UIStyle
 	private.ignorelistGUI = CreateFrame("Frame", nil, content, BackdropTemplateMixin and "BackdropTemplate")
 	private.ignorelistGUI:SetPoint("BOTTOMRIGHT", content, "TOPRIGHT", -50, -295)
 	private.ignorelistGUI:SetPoint("TOPLEFT", content, "TOPRIGHT", -350, -20)
-	private.ignorelistGUI:SetBackdrop({
-		bgFile = "Interface/Tooltips/ChatBubble-Background",
-		edgeFile = "Interface/Tooltips/ChatBubble-BackDrop",
-		tile = true, tileSize = 32, edgeSize = 32,
-		insets = { left = 32, right = 32, top = 32, bottom = 32 }
-	})
-	private.ignorelistGUI:SetBackdropColor(0, 0, 0, 1)
+	if UIStyle then
+		UIStyle.StylePanel(private.ignorelistGUI)
+	else
+		private.ignorelistGUI:SetBackdrop({
+			bgFile = "Interface/Tooltips/ChatBubble-Background",
+			edgeFile = "Interface/Tooltips/ChatBubble-BackDrop",
+			tile = true, tileSize = 32, edgeSize = 32,
+			insets = { left = 32, right = 32, top = 32, bottom = 32 }
+		})
+		private.ignorelistGUI:SetBackdropColor(0, 0, 0, 1)
+	end
 	private.ignorelistGUI:SetScript("OnShow", function() private.UpdateSheet(true) end)
 
 	private.ignorelistGUI.sheet = ScrollSheet:Create(private.ignorelistGUI, {
@@ -223,17 +229,21 @@ function private.MakeGuiConfig(gui)
 
 	private.removebutton = CreateFrame("Button", nil, gui.tabs[id].content, "UIPanelButtonTemplate")
 	private.removebutton:SetPoint("TOPRIGHT", private.ignorelistGUI, "TOPLEFT", -5, -20)
-	private.removebutton:SetText("Remove Selected")
+	private.removebutton:SetText(_TRANS("Remove Selected"))
 	private.removebutton:SetWidth(150)
 	private.removebutton:SetScript("OnClick", private.remove)
 	private.removebutton:Disable()
 
 	private.removeallbutton = CreateFrame("Button", nil, gui.tabs[id].content, "UIPanelButtonTemplate")
 	private.removeallbutton:SetPoint("TOPLEFT", private.removebutton, "BOTTOMLEFT", 0, -5)
-	private.removeallbutton:SetText("Remove All")
+	private.removeallbutton:SetText(_TRANS("Remove All"))
 	private.removeallbutton:SetWidth(150)
 	private.removeallbutton:SetScript("OnClick", private.removeall)
 	private.removeallbutton:Enable()
+	if UIStyle then
+		UIStyle.StyleButton(private.removebutton, "default")
+		UIStyle.StyleButton(private.removeallbutton, "default")
+	end
 
 end
 
