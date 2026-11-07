@@ -227,7 +227,7 @@ function lib:DoUpdate()
 	end
 
 	local height = 50
-	height = max(height, 42 + (total * 12))
+	height = max(height, 36 + (total * 18))
 
 	lib.menu:SetHeight(height)
 end
@@ -327,7 +327,7 @@ if not lib.menu then
 		local hl = l:CreateTexture(nil, "HIGHLIGHT")
 		hl:SetAllPoints(l)
 		hl:SetColorTexture(0.85, 0.68, 0.18, 0.22)
-		l:SetHeight(12)
+		l:SetHeight(18)
 		l:SetText("Line "..i)
 		l:SetScript("OnEnter", lib.MouseIn)
 		l:SetScript("OnLeave", lib.MouseOut)
@@ -372,8 +372,8 @@ function lib:CreateTemplate(name, parent)
 	right:SetAlpha(0)
 
 	local box = CreateFrame("Frame", nil, frame, BackdropTemplateMixin and "BackdropTemplate")
-	box:SetPoint("TOPLEFT", left, "TOPLEFT", 16, -18)
-	box:SetPoint("BOTTOMRIGHT", right, "TOPLEFT", -16, -40)
+	box:SetPoint("TOPLEFT", left, "TOPLEFT", 16, -16)
+	box:SetPoint("BOTTOMRIGHT", right, "TOPRIGHT", -14, -40)
 	box:SetFrameLevel(math.max(1, frame:GetFrameLevel()))
 	box:SetBackdrop({
 		bgFile = "Interface\\Buttons\\WHITE8X8",
@@ -385,32 +385,47 @@ function lib:CreateTemplate(name, parent)
 	box:SetBackdropBorderColor(0.26, 0.30, 0.38, 1)
 	frame.box = box
 
-	local text = frame:CreateFontString(name.."Text", "OVERLAY", "GameFontHighlightSmall")
-	text:SetWidth(0)
-	text:SetHeight(10)
-	text:SetPoint("RIGHT", right, "RIGHT", -43, 1)
-	text:SetJustifyH("RIGHT")
-
 	-- Button
-	local button = CreateFrame("Button", name.."Button", frame)
-	button:SetWidth(22)
-	button:SetHeight(22)
-	button:SetPoint("TOPRIGHT", right, "TOPRIGHT", -16, -18)
-	button:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIcon-ScrollDown-Up")
-	button:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIcon-ScrollDown-Down")
-	button:SetDisabledTexture("Interface\\ChatFrame\\UI-ChatIcon-ScrollDown-Disabled")
-	button:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight", "ADD")
+	local button = CreateFrame("Button", name.."Button", frame, BackdropTemplateMixin and "BackdropTemplate")
+	button:SetWidth(20)
+	button:SetHeight(20)
+	button:SetPoint("RIGHT", box, "RIGHT", -1, 0)
+	button:SetBackdrop({
+		bgFile = "Interface\\Buttons\\WHITE8X8",
+		edgeFile = "Interface\\Buttons\\WHITE8X8",
+		tile = false, edgeSize = 1,
+		insets = { left = 0, right = 0, top = 0, bottom = 0 }
+	})
+	button:SetBackdropColor(0.14, 0.17, 0.22, 1)
+	button:SetBackdropBorderColor(0.26, 0.30, 0.38, 1)
+	local arrow = button:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+	arrow:SetPoint("CENTER", button, "CENTER", 0, 0)
+	arrow:SetText("v")
+	arrow:SetTextColor(0.92, 0.78, 0.30)
+	button.arrow = arrow
 	button:SetScript("OnClick", OnClick)
 	button:HookScript("OnEnter", function()
 		if frame.box and frame.box.SetBackdropBorderColor then
 			frame.box:SetBackdropBorderColor(0.83, 0.68, 0.21, 1)
 		end
+		button:SetBackdropColor(0.22, 0.26, 0.34, 1)
+		button:SetBackdropBorderColor(0.83, 0.68, 0.21, 1)
+		arrow:SetTextColor(1, 0.92, 0.45)
 	end)
 	button:HookScript("OnLeave", function()
 		if frame.box and frame.box.SetBackdropBorderColor then
 			frame.box:SetBackdropBorderColor(0.26, 0.30, 0.38, 1)
 		end
+		button:SetBackdropColor(0.14, 0.17, 0.22, 1)
+		button:SetBackdropBorderColor(0.26, 0.30, 0.38, 1)
+		arrow:SetTextColor(0.92, 0.78, 0.30)
 	end)
+
+	local text = frame:CreateFontString(name.."Text", "OVERLAY", "GameFontHighlightSmall")
+	text:SetHeight(14)
+	text:SetPoint("LEFT", box, "LEFT", 8, 0)
+	text:SetPoint("RIGHT", button, "LEFT", -4, 0)
+	text:SetJustifyH("LEFT")
 
 	return frame
 end
