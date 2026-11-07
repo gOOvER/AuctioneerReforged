@@ -379,6 +379,17 @@ local function SetRetailTabChecked(tab, checked)
 	if not tab then return end
 	checked = checked and true or false
 	tab._checked = checked
+
+	if checked then
+		if PanelTemplates_SelectTab then
+			pcall(PanelTemplates_SelectTab, tab)
+		end
+	else
+		if PanelTemplates_DeselectTab then
+			pcall(PanelTemplates_DeselectTab, tab)
+		end
+	end
+
 	local name = tab:GetName()
 	local leftActive = tab.LeftActive or tab.LeftDisabled or (name and _G[name.."LeftDisabled"])
 	local middleActive = tab.MiddleActive or tab.MiddleDisabled or (name and _G[name.."MiddleDisabled"])
@@ -394,62 +405,28 @@ local function SetRetailTabChecked(tab, checked)
 	if middle then middle:SetShown(not checked) end
 	if right then right:SetShown(not checked) end
 	if tab.SelectedTexture then tab.SelectedTexture:SetShown(checked) end
+	if tab._aucActiveBar then tab._aucActiveBar:Hide() end
 
 	if tab._isCustomRetailTab then
-		if not tab._aucActiveBar then
-			local bar = tab:CreateTexture(nil, "OVERLAY")
-			bar:SetHeight(2)
-			bar:SetPoint("BOTTOMLEFT", tab, "BOTTOMLEFT", 6, 1)
-			bar:SetPoint("BOTTOMRIGHT", tab, "BOTTOMRIGHT", -6, 1)
-			bar:SetColorTexture(1.0, 0.82, 0.15, 0.95)
-			tab._aucActiveBar = bar
+		if tab.Enable then
+			pcall(tab.Enable, tab)
 		end
-		tab._aucActiveBar:SetShown(checked)
+		tab:SetNormalFontObject(checked and GameFontHighlightSmall or GameFontNormalSmall)
 	elseif not checked and tab.Enable then
 		pcall(tab.Enable, tab)
-	end
-
-	local fs = tab:GetFontString() or (name and _G[name.."Text"])
-	if fs then
-		if checked then
-			fs:SetFontObject(GameFontHighlightSmall)
-			fs:SetTextColor(1.0, 1.0, 1.0)
-		else
-			fs:SetFontObject(GameFontNormalSmall)
-			fs:SetTextColor(1.0, 0.82, 0.0)
-		end
 	end
 end
 
 local function ResizeRetailTab(tab)
 	if not tab then return end
-	local name = tab:GetName()
-	local fs = tab:GetFontString() or (name and _G[name.."Text"])
-	local textWidth = (fs and fs.GetStringWidth and fs:GetStringWidth()) or 0
-	if textWidth <= 0 then
-		local txt = tab:GetText() or ""
-		textWidth = #txt * 7
-	end
-	local width = math.max(92, math.ceil(textWidth + 26))
-	tab:SetWidth(width)
-	tab:SetHeight(24)
-	if fs then
-		fs:SetMaxLines(1)
-		fs:SetWidth(width - 10)
-	end
-	local middle = tab.Middle or (name and _G[name.."Middle"])
-	local middleActive = tab.MiddleActive or tab.MiddleDisabled or (name and _G[name.."MiddleDisabled"])
-	if middle and middle:GetNumPoints() == 1 then
-		middle:SetWidth(math.max(20, width - 32))
-	end
-	if middleActive and middleActive:GetNumPoints() == 1 then
-		middleActive:SetWidth(math.max(20, width - 32))
+	if PanelTemplates_TabResize then
+		pcall(PanelTemplates_TabResize, tab, 20, nil, 70)
 	end
 end
 
 function lib.GetAHTabTemplate()
 	if AucAdvanced.IsRetailAH then
-		return "AuctionHouseFrameTabTemplate"
+		return "AuctionHouseFrameDisplayModeTabTemplate"
 	else
 		return "AuctionTabTemplate"
 	end
@@ -523,12 +500,14 @@ local function SetupRetailAHWindowControls(ahFrame)
 	ahFrame._aucWindowControlsSetup = true
 
 	pcall(ahFrame.SetMovable, ahFrame, true)
-	pcall(ahFrame.SetResizable, ahFrame, true)
-	if ahFrame.SetResizeBounds then
-		pcall(ahFrame.SetResizeBounds, ahFrame, 828, 538, 1600, 950)
-	else
-		if ahFrame.SetMinResize then pcall(ahFrame.SetMinResize, ahFrame, 828, 538) end
-		if ahFrame.SetMaxResize then pcall(ahFrame.SetMaxResize, ahFrame, 1600, 950) end
+	-- Ensure AuctionHouseFrame is at its native 800x538 geometry so all internal frames fill 100% of the window
+	ahFrame._aucBaseWidth = 800
+	ahFrame._aucBaseHeight = 538
+	pcall(ahFrame.SetSize, ahFrame, ahFrame._aucBaseWidth, ahFrame._aucBaseHeight)
+
+	local savedScale = tonumber(lib.Settings and lib.Settings.GetSetting and lib.Settings.GetSetting("core.general.ahWindowScale"))
+	if savedScale and savedScale >= 0.75 and savedScale <= 1.75 then
+		pcall(ahFrame.SetScale, ahFrame, savedScale)
 	end
 
 	local Configator = LibStub and LibStub("Configator", true)
@@ -579,7 +558,7 @@ local function SetupRetailAHWindowControls(ahFrame)
 		ahFrame._aucFontBar = fontBar
 	end
 
-	-- Bottom-right window resize grip
+	-- Bottom-right window scale-resize grip (scales the window AND all contents proportionally)
 	if not ahFrame._aucResizer then
 		local resizer = CreateFrame("Button", "AucRetailAHResizer", ahFrame)
 		resizer._aucKeepVisible = true
@@ -591,15 +570,55 @@ local function SetupRetailAHWindowControls(ahFrame)
 		resizer:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
 		resizer:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
 		resizer:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
+
+		local isScaling = false
+		local startScale, uipLeft, uipTop, startCursorX, startCursorY, uiEffScale
+
 		resizer:SetScript("OnMouseDown", function(_, button)
 			if button == "LeftButton" then
-				pcall(ahFrame.StartSizing, ahFrame, "BOTTOMRIGHT")
+				isScaling = true
+				startScale = ahFrame:GetScale() or 1
+				uipLeft = (ahFrame:GetLeft() or 100) * startScale
+				uipTop = (ahFrame:GetTop() or 600) * startScale
+				startCursorX, startCursorY = GetCursorPosition()
+				uiEffScale = UIParent:GetEffectiveScale() or 1
 			end
 		end)
+
+		resizer:SetScript("OnUpdate", function()
+			if not isScaling then return end
+			local curX, curY = GetCursorPosition()
+			local dx = (curX - startCursorX) / uiEffScale
+			local dy = (startCursorY - curY) / uiEffScale
+			local baseW = ahFrame._aucBaseWidth or 800
+			local baseH = ahFrame._aucBaseHeight or 538
+			local scaleX = ((baseW * startScale) + dx) / baseW
+			local scaleY = ((baseH * startScale) + dy) / baseH
+			local newScale = math.max(0.75, math.min(1.75, (scaleX + scaleY) * 0.5))
+			ahFrame:SetScale(newScale)
+			ahFrame:ClearAllPoints()
+			ahFrame:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", uipLeft / newScale, uipTop / newScale)
+		end)
+
 		resizer:SetScript("OnMouseUp", function(_, button)
-			pcall(ahFrame.StopMovingOrSizing, ahFrame)
+			if isScaling then
+				isScaling = false
+				local curScale = math.floor((ahFrame:GetScale() or 1) * 100 + 0.5) / 100
+				if lib.Settings and lib.Settings.SetSetting then
+					pcall(lib.Settings.SetSetting, "core.general.ahWindowScale", curScale)
+				end
+			end
 			if button == "RightButton" then
-				ahFrame:SetSize(828, 538)
+				local oldScale = ahFrame:GetScale() or 1
+				local leftPos = (ahFrame:GetLeft() or 100) * oldScale
+				local topPos = (ahFrame:GetTop() or 600) * oldScale
+				ahFrame:SetSize(ahFrame._aucBaseWidth or 800, ahFrame._aucBaseHeight or 538)
+				ahFrame:SetScale(1.0)
+				ahFrame:ClearAllPoints()
+				ahFrame:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", leftPos, topPos)
+				if lib.Settings and lib.Settings.SetSetting then
+					pcall(lib.Settings.SetSetting, "core.general.ahWindowScale", 1.0)
+				end
 			end
 		end)
 		resizer:SetScript("OnEnter", function(self)
@@ -687,6 +706,11 @@ function lib.AddTab(tabButton, tabFrame)
 				return
 			end
 
+			if ahFrame.SetDisplayMode then
+				pcall(ahFrame.SetDisplayMode, ahFrame, {})
+				ahFrame.displayMode = nil
+			end
+
 			-- Hide all custom tab frames and deselect all custom tabs
 			lib.HideAllRetailTabs()
 
@@ -747,25 +771,19 @@ function lib.AddTab(tabButton, tabFrame)
 			end
 		end
 
-		-- Position cleanly in the same row right after the built-in tabs
+		-- Position cleanly in the same row right after the built-in tabs (matching LibAHTab)
 		local tabCount = #private.RetailTabs
 		tabButton:ClearAllPoints()
 		if tabCount > 1 then
 			local prevTab = private.RetailTabs[tabCount - 1]
-			tabButton:SetPoint("LEFT", prevTab, "RIGHT", 2, 0)
+			tabButton:SetPoint("TOPLEFT", prevTab, "TOPRIGHT", 3, 0)
 		else
-			local offsetX = 316
-			if ahFrame.Tabs and ahFrame:GetLeft() then
-				for _, bTab in ipairs(ahFrame.Tabs) do
-					if bTab and bTab:IsShown() and bTab:GetRight() then
-						local relRight = math.ceil(bTab:GetRight() - ahFrame:GetLeft()) + 4
-						if relRight > offsetX then
-							offsetX = relRight
-						end
-					end
-				end
+			local lastBuiltin = ahFrame.Tabs and ahFrame.Tabs[#ahFrame.Tabs]
+			if lastBuiltin then
+				tabButton:SetPoint("TOPLEFT", lastBuiltin, "TOPRIGHT", 3, 0)
+			else
+				tabButton:SetPoint("TOPLEFT", ahFrame, "BOTTOMLEFT", 15, 0)
 			end
-			tabButton:SetPoint("BOTTOMLEFT", ahFrame, "BOTTOMLEFT", offsetX, -22)
 		end
 		tabButton:SetID(tabCount)
 		tabButton:Show()

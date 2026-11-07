@@ -231,16 +231,61 @@ function private.CreateFrames()
 		base:SetMaxResize(1600, 950)
 	end
 
-	--resize button for base GUI
+	--resize button for base GUI (proportional scale of window + contents)
+	local savedBCScale = tonumber(private.getter("configator.scale"))
+	if savedBCScale and savedBCScale >= 0.75 and savedBCScale <= 1.75 then
+		base:SetScale(savedBCScale)
+	end
 	base.Resizer = CreateFrame("Button", nil, base)
-	base.Resizer:SetPoint("BOTTOMRIGHT", base, "BOTTOMRIGHT", -8, 8)
-	base.Resizer:SetHeight(32)
-	base.Resizer:SetWidth(32)
-	base.Resizer:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight")
-	base.Resizer:SetNormalTexture("Interface\\Buttons\\UI-SpellbookIcon-NextPage-Up")
-	base.Resizer:SetScript("OnMouseDown", function() base:StartSizing() end)
-	base.Resizer:SetScript("OnMouseUp", function()  base:StopMovingOrSizing()  end)
-	base.Resizer:SetScript("OnEnter", function() private.buttonTooltips( base.Resizer, _BC('Click and drag to resize window')) end)
+	base.Resizer:SetPoint("BOTTOMRIGHT", base, "BOTTOMRIGHT", -4, 4)
+	base.Resizer:SetHeight(18)
+	base.Resizer:SetWidth(18)
+	base.Resizer:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
+	base.Resizer:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
+	base.Resizer:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
+	base.Resizer:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+	base.Resizer:SetScript("OnMouseDown", function(self, button)
+		if button == "RightButton" then
+			local curScale = base:GetScale() or 1
+			local left = base:GetLeft()
+			local top = base:GetTop()
+			base:SetScale(1.0)
+			if left and top then
+				base:ClearAllPoints()
+				base:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", left * curScale, top * curScale)
+			end
+			private.setter("configator.scale", 1.0)
+			return
+		end
+		if button ~= "LeftButton" then return end
+		local uiScale = UIParent:GetEffectiveScale()
+		local startX, startY = GetCursorPosition()
+		startX, startY = startX / uiScale, startY / uiScale
+		local startScale = base:GetScale() or 1
+		local baseW = base:GetWidth() or 834.5
+		local left = (base:GetLeft() or 0) * startScale
+		local top = (base:GetTop() or 0) * startScale
+		self:SetScript("OnUpdate", function()
+			local curX, curY = GetCursorPosition()
+			curX, curY = curX / uiScale, curY / uiScale
+			local dx = curX - startX
+			local dy = startY - curY
+			local delta = math.abs(dx) >= math.abs(dy) and dx or (dy * (834.5 / 450))
+			local newScale = ((baseW * startScale) + delta) / baseW
+			if newScale < 0.75 then newScale = 0.75 end
+			if newScale > 1.75 then newScale = 1.75 end
+			base:SetScale(newScale)
+			if left > 0 and top > 0 then
+				base:ClearAllPoints()
+				base:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", left / newScale, top / newScale)
+			end
+		end)
+	end)
+	base.Resizer:SetScript("OnMouseUp", function(self)
+		self:SetScript("OnUpdate", nil)
+		private.setter("configator.scale", math.floor((base:GetScale() or 1) * 100 + 0.5) / 100)
+	end)
+	base.Resizer:SetScript("OnEnter", function() private.buttonTooltips(base.Resizer, _BC('Click and drag to resize window')) end)
 	base.Resizer:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
 

@@ -40,7 +40,7 @@ local aucPrint,decode,_,_,replicate,empty,get,set,default,debugPrint,fill, _TRAN
 
 local frame
 
-local NUM_ITEMS = 12
+local NUM_ITEMS = (AucAdvanced and AucAdvanced.IsRetailAH) and 14 or 12
 
 local SigFromLink = AucAdvanced.API.GetSigFromLink
 local GetDistribution, GetColored -- to be filled in when ScanData loads
@@ -2666,10 +2666,14 @@ function private.CreateFrames()
 	frame.cancel:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 180, 8)
 	frame.cancel:SetWidth(22)
 	frame.cancel:SetHeight(18)
+	UIStyle.StyleButton(frame.cancel, "default")
+	frame.cancel:SetWidth(22)
 	frame.cancel:Disable()
+	frame.cancel:Hide()
 	frame.cancel:SetScript("OnClick", function()
 		AucAdvanced.Post.CancelPostQueue()
 		frame.cancel:Disable()
+		frame.cancel:Hide()
 		frame.cancel.tex:SetVertexColor(0.3,0.3,0.3)
 	end)
 	frame.cancel:SetScript("OnEnter", function(self) return frame.SetButtonTooltip(self, _TRANS('APPR_HelpTooltip_ClearsPostQueue') ) end)--Clears post queue
@@ -2689,17 +2693,19 @@ function private.CreateFrames()
 	local lastPostProgress = 0
 	local progressBarOptions = {barColor = {0,0,.6}}
 	function private.UpdatePostQueueProgress(postnum)
-		frame.cancel.label:SetText(tostring(postnum))
+		frame.cancel.label:SetText(postnum > 0 and tostring(postnum) or "")
 		--display a progress bar
 		if postnum > lastPostProgress then lastPostProgress = postnum end
 		local value = (100 - postnum * 100 / lastPostProgress) or 0
 		AucAdvanced.API.ProgressBars("AppraiserBar", value, true, format(_TRANS("Appraiser has %d more items to post"), postnum), progressBarOptions)
 
 		if (postnum > 0) and not frame.cancel:IsEnabled() then
+			frame.cancel:Show()
 			frame.cancel:Enable()
 			frame.cancel.tex:SetVertexColor(1.0, 0.9, 0.1)
-		elseif (postnum == 0) and frame.cancel:IsEnabled() then
+		elseif (postnum == 0) then
 			frame.cancel:Disable()
+			frame.cancel:Hide()
 			frame.cancel.tex:SetVertexColor(0.3,0.3,0.3)
 			lastPostProgress = 0
 			AucAdvanced.API.ProgressBars("AppraiserBar")
