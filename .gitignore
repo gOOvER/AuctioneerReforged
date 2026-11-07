@@ -1,0 +1,31 @@
+# OS artifacts
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Editor swap/backup files
+*.swp
+*.swo
+*.tmp
+*.bak
+*.orig
+*~
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Packaging/output folders
+pkg/
+release/
+.release/
+dist/
+
+# Changelog (do not include in AddOns folder / repo)
+CHANGELOG.md
+
+# Temporary archives
+*.zip
+*.tar
+*.tar.gz

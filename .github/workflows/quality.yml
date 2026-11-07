@@ -1,0 +1,52 @@
+name: Code Quality
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+
+jobs:
+  luacheck:
+    name: Lua Code Quality
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install Lua and luacheck
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y lua5.1 luarocks
+        sudo luarocks install luacheck
+
+    - name: Run luacheck
+      run: |
+        echo "Running luacheck..."
+        luacheck --no-color --codes Auc-Advanced/ Auc-ScanData/ BeanCounter/ Enchantrix/ Informant/ || true
+
+  toc-validation:
+    name: TOC Validation
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Validate TOC files
+      run: |
+        for toc in \
+          "Auc-Advanced/Auc-Advanced.toc" \
+          "Auc-ScanData/Auc-ScanData.toc" \
+          "BeanCounter/BeanCounter.toc" \
+          "Enchantrix/Enchantrix.toc" \
+          "Informant/Informant.toc"; do
+          if [ -f "$toc" ]; then
+            echo "✅ TOC file found: $toc"
+          else
+            echo "❌ TOC file missing: $toc"
+            exit 1
+          fi
+        done
+

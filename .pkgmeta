@@ -1,0 +1,22 @@
+package-as: AuctioneerReforged
+enable-nolib-creation: no
+enable-toc-creation: yes
+
+move-folders:
+    AuctioneerReforged/Auc-Advanced: Auc-Advanced
+    AuctioneerReforged/Auc-ScanData: Auc-ScanData
+    AuctioneerReforged/BeanCounter: BeanCounter
+    AuctioneerReforged/Enchantrix: Enchantrix
+    AuctioneerReforged/Informant: Informant
+
+manual-changelog: CHANGELOG.md
+
+ignore:
+    - .github
+    - .gitignore
+    - .gitattributes
+    - .luacheckrc
+    - .pkgmeta
+    - CHANGELOG.md
+    - README.md
+    - LICENSE

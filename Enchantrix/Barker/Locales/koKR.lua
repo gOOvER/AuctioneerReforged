@@ -1,0 +1,220 @@
+--[[
+	EnchantrixBarker - Localization (koKR)
+	License: GNU General Public License v3.0 (GPL-3.0-or-later)
+]]
+
+EnchantrixBarkerLocalizations = EnchantrixBarkerLocalizations or {}
+EnchantrixBarkerLocalizations.koKR = {
+
+		-- Section: Command Messages
+		["BarkerEnxWindowNotOpen"]	= "Enchantrix: 마법부여 창이 열려있지 않습니다. Barker를 사용하려면 마법부여 창이 열려있어야만 합니다.";
+		["BarkerNoEnchantsAvail"]	= "Enchantrix: 마법부여 재료가 하나도 없거나 추출할 재료가 하나도 없습니다.";
+
+		-- Section: Commands
+		["CmdBarker"]	= "알림";
+		["CmdClear"]	= "삭제";
+		["CmdDefault"]	= "기본값";
+		["CmdDisable"]	= "비활성화";
+		["CmdFindBidauct"]	= "입찰중개인";
+		["CmdFindBidauctShort"]	= "bb";
+		["CmdFindBuyauct"]	= "이하확률";
+		["CmdFindBuyauctShort"]	= "pl";
+		["CmdHelp"]	= "도움말";
+		["CmdLocale"]	= "지역";
+		["CmdOff"]	= "끔";
+		["CmdOn"]	= "켬";
+		["CmdPrintin"]	= "출력하는곳";
+		["CmdToggle"]	= "전환";
+		["ShowCount"]	= "수량";
+		["ShowEmbed"]	= "내장";
+		["ShowGuessAuctioneerHsp"]	= "평가된 HSP";
+		["ShowGuessAuctioneerMed"]	= "평가된 중앙값";
+		["ShowTerse"]	= "간결";
+		["ShowValue"]	= "평가";
+
+		-- Section: Game Constants
+		["AnyWeapon"]	= "모든 무기";
+		["BarkerOpening"]	= "마법부여 판매:";
+		["Boots"]	= "장화";
+		["Bracer"]	= "손목";
+		["Chest"]	= "가슴";
+		["Cloak"]	= "망토";
+		["Darnassus"]	= "다르나서스";
+		["Enchanting"]	= "마법부여";
+		["EnchSearchAgility"]	= "민첩성";
+		["EnchSearchAllResistance1"]	= "모든 계열 마법 저항";
+		["EnchSearchAllResistance2"]	= "모든 계열 마법 저항";
+		["EnchSearchAllResistance3"]	= "모든 저항력";
+		["EnchSearchAllStats"]	= "모든 능력치";
+		["EnchSearchArmor"]	= "방어도";
+		["EnchSearchBattlemaster"]	= "주위 파티원 생명력 회복";
+		["EnchSearchBeastslayer"]	= "야수에 대한 전투력";
+		["EnchSearchBoarSpeed"]	= "이동속도를 약간 증가시키고 체력을 [0-9]만큼 증가";
+		["EnchSearchCatSwiftness"]	= "이동속도를 약간 증가시키고 민첩성을 [0-9]만큼 증가";
+		["EnchSearchCrusader"]	= "[0-9]~[0-9]의 생명력을 회복하고 힘을 증가";
+		["EnchSearchDamage1"]	= "points? of damage";
+		["EnchSearchDamage2"]	= "\+[0-9]+ 피해";
+		["EnchSearchDefense"]	= "방어";
+		["EnchSearchDMGAbsorption"]	= "흡수";
+		["EnchSearchFireRes"]	= "화염 저항력";
+		["EnchSearchFrostRes"]	= "냉기 저항력";
+		["EnchSearchHealing"]	= "치유";
+		["EnchSearchHealth"]	= "체력";
+		["EnchSearchIntellect"]	= "지능";
+		["EnchSearchMana"]	= "마나";
+		["EnchSearchManaPerFive"]	= "5초당 마나 회복";
+		["EnchSearchMongoose"]	= "민첩성을 [0-9]만큼 증가시키고 공격속도를 약간 증가";
+		["EnchSearchNatureRes"]	= "자연 저항력";
+		["EnchSearchResFire"]	= "화염 저항력";
+		["EnchSearchResilience"]	= "탄력도";
+		["EnchSearchResShadow"]	= "암흑 저항력";
+		["EnchSearchSoulfrost"]	= "냉기 및 암흑 주문";
+		["EnchSearchSpellPower1"]	= "주문의 피해";
+		["EnchSearchSpellPower2"]	= "모든 주문의 피해";
+		["EnchSearchSpellPower3"]	= "주문 피해";
+		["EnchSearchSpellsurge"]	= "모든 파티원의 마나를 [0-9]+만큼 회복";
+		["EnchSearchSpirit"]	= "정신력";
+		["EnchSearchStamina"]	= "체력";
+		["EnchSearchStrength"]	= "힘";
+		["EnchSearchSunfire"]	= "화염 및 비전 주문";
+		["EnchSearchVitality"]	= "생명력과 마나를 [0-9]+ 만큼 회복";
+		["Gloves"]	= "장갑";
+		["Ironforge"]	= "아이언포지";
+		["OneLetterGold"]	= "골";
+		["OneLetterSilver"]	= "실";
+		["Orgrimmar"]	= "오그리마";
+		["RESIL"]	= "탄력";
+		["Ring"]	= "반지";
+		["Shattrath"]	= "샤트라스";
+		["Shield"]	= "방패";
+		["ShortDarnassus"]	= "다르";
+		["ShortExodar"]	= "엑소";
+		["ShortIronForge"]	= "아포";
+		["ShortOrgrimmar"]	= "오그";
+		["ShortShattrath"]	= "샤트";
+		["ShortSilvermoon"]	= "실버";
+		["ShortStormwind"]	= "스톰";
+		["ShortThunderBluff"]	= "썬더";
+		["ShortUndercity"]	= "언더";
+		["SilvermoonCity"]	= "실버문";
+		["StormwindCity"]	= "스톰윈드";
+		["TheExodar"]	= "엑소다르";
+		["ThunderBluff"]	= "썬더 블러프";
+		["TradeChannel"]	= "거래 - 도시";
+		["TwoHandWeapon"]	= "양손 무기";
+		["Undercity"]	= "언더시티";
+		["Weapon"]	= "무기";
+
+		-- Section: Generic Messages
+		["BarkerLoaded"]	= "Enchantrix Barker 로드됨.";
+		["BarkerNotTradeZone"]	= "Enchantrix Barker: 거래지역이 아닙니다.";
+
+		-- Section: Generic Strings
+		["AGI"]	= "민";
+		["AllStats"]	= "올능";
+		["Crusader"]	= "성전사";
+		["DEF"]	= "보호";
+		["DMG"]	= "뎀";
+		["DMGAbsorb"]	= "뎀흡수";
+		["FireRes"]	= "화저";
+		["FrostRes"]	= "냉저";
+		["INT"]	= "지";
+		["NatureRes"]	= "자저";
+		["ShadowRes"]	= "암저";
+		["ShortAllRes"]	= "올저";
+		["ShortArmor"]	= "방어도";
+		["ShortBattlemaster"]	= "전투의 대가";
+		["ShortBeastslayer"]	= "야수";
+		["ShortBoarSpeed"]	= "맷돼지의 속도";
+		["ShortCatSwiftness"]	= "살쾡이의 날렵함";
+		["ShortHealing"]	= "힐";
+		["ShortHealth"]	= "생명력";
+		["ShortMana"]	= "마나";
+		["ShortManaPerFive"]	= "5초당 마나회복";
+		["ShortMongoose"]	= "살쾡이";
+		["ShortSoulfrost"]	= "냉기의 영혼";
+		["ShortSpellPower"]	= "증뎀";
+		["ShortSpellSurge"]	= "마력의 폭풍";
+		["ShortSunfire"]	= "태양의 불꽃";
+		["ShortVitality"]	= "활력";
+		["SPI"]	= "정";
+		["STA"]	= "체";
+		["STR"]	= "힘";
+
+		-- Section: Tooltip Messages
+		["FrmtBarkerPrice"]	= "가격 알림 (%d%% 마진)";
+		["FrmtPriceEach"]	= "(%s 개)";
+		["FrmtSuggestedPrice"]	= "제안 가격:";
+		["FrmtTotal"]	= "총";
+		["FrmtWarnAuctNotLoaded"]	= "[Auctioneer가 실행되지 않아서 저장된 가격을 사용합니다.]";
+		["FrmtWarnNoPrices"]	= "[가능한 가격 없음]";
+		["FrmtWarnPriceUnavail"]	= "[일부 가격을 사용할 수 없음]";
+		["OpenBarkerWindow"]	= "거래 바커창을 엽니다.";
+
+		-- Section: User Interface
+		["BarkerOptions2HWeaponPriorityTooltip"]	= "양손 무기 마부에 우선순위를 둡니다.";
+		["BarkerOptionsAgilityPriority"]	= "민첩성";
+		["BarkerOptionsAgilityPriorityTooltip"]	= "민첩력 마부에 우선순위를 둡니다.";
+		["BarkerOptionsAllResistances"]	= "모든 저항력";
+		["BarkerOptionsAllResistancesTooltip"]	= "모든 저항력 증가 마부에 우선순위를 둡니다.";
+		["BarkerOptionsAllStatsPriority"]	= "모든 능력치";
+		["BarkerOptionsAllStatsPriorityTooltip"]	= "모든 능력치 마부에 우선순위를 둡니다.";
+		["BarkerOptionsAnyWeaponPriorityTooltip"]	= "무기 마부에 우선순위를 둡니다.";
+		["BarkerOptionsArmorPriority"]	= "방어";
+		["BarkerOptionsArmorPriorityTooltip"]	= "갑옷 마부에 우선순위를 둡니다.";
+		["BarkerOptionsBootsPriorityTooltip"]	= "신발 마부에 우선순위를 둡니다.";
+		["BarkerOptionsBracerPriorityTooltip"]	= "팔보호구 마부에 우선순위를 둡니다.";
+		["BarkerOptionsChestPriorityTooltip"]	= "가슴 마부에 우선순위를 둡니다.";
+		["BarkerOptionsCloakPriorityTooltip"]	= "망토 마부에 우선순위를 둡니다.";
+		["BarkerOptionsDamage"]	= "공격력";
+		["BarkerOptionsDamageTooltip"]	= "증뎀 마부에 우선순위를 둡니다.";
+		["BarkerOptionsDefense"]	= "방어도";
+		["BarkerOptionsDefenseTooltip"]	= "방어 마부에 우선순위를 둡니다.";
+		["BarkerOptionsFireResistance"]	= "화염 저항";
+		["BarkerOptionsFireResistanceTooltip"]	= "화염 저항력 마부에 우선순위를 둡니다.";
+		["BarkerOptionsFrostResistance"]	= "냉기 저항";
+		["BarkerOptionsFrostResistanceTooltip"]	= "냉기 저항력 마부에 우선순위를 둡니다.";
+		["BarkerOptionsGlovesPriorityTooltip"]	= "장갑 마부에 우선순위를 둡니다.";
+		["BarkerOptionsHealth"]	= "생명력";
+		["BarkerOptionsHealthTooltip"]	= "생명력 마부에 우선순위를 둡니다.";
+		["BarkerOptionsHighestPriceForFactorTitle"]	= "가격요건 최고가격";
+		["BarkerOptionsHighestPriceForFactorTooltip"]	= "마법부여가 가격 우선순위에서 0점을 받았거나 이점수 이상입니다.";
+		["BarkerOptionsHighestProfitTitle"]	= "최고 이익";
+		["BarkerOptionsHighestProfitTooltip"]	= "마법부여를 하면 최고가로 이득이 됩니다.";
+		["BarkerOptionsIntellectPriority"]	= "지능";
+		["BarkerOptionsIntellectPriorityTooltip"]	= "지능 마부에 우선순위를 둡니다.";
+		["BarkerOptionsItemsPriority"]	= "전체 아이템 정책";
+		["BarkerOptionsItemsPriorityTooltip"]	= "This sets how important the item is to the overall priority for advertising.";
+		["BarkerOptionsLowestPriceTitle"]	= "최저 가격";
+		["BarkerOptionsLowestPriceTooltip"]	= "마법부여에 대한 시세가 최저 현금 가격으로 평가됩니다.";
+		["BarkerOptionsMana"]	= "마나";
+		["BarkerOptionsManaTooltip"]	= "마나 마부에 우선순위를 둡니다.";
+		["BarkerOptionsNatureResistance"]	= "자연 저항";
+		["BarkerOptionsNatureResistanceTooltip"]	= "자연 저항력 마부에 우선순위를 둡니다.";
+		["BarkerOptionsOther"]	= "기타";
+		["BarkerOptionsOtherTooltip"]	= "무두질, 채광, 탈것 마부에 우선순위를 둡니다.";
+		["BarkerOptionsPricePriorityTitle"]	= "전체 가격 정책";
+		["BarkerOptionsPricePriorityTooltip"]	= "가격 중요도가 광고에 대한 전체 우선순위에서 얼마나 될지 설정합니다.";
+		["BarkerOptionsPriceSweetspotTitle"]	= "가격요건 관심구매가격";
+		["BarkerOptionsPriceSweetspotTooltip"]	= "광고에 대해 이가격에 가까운 마법부여 우선순위를 결정한는데 사용됩니다.";
+		["BarkerOptionsProfitMarginTitle"]	= "이윤폭";
+		["BarkerOptionsProfitMarginTooltip"]	= "기본 비용에 추가하기 적합한 비율입니다.";
+		["BarkerOptionsRandomFactorTitle"]	= "무작위 요건";
+		["BarkerOptionsRandomFactorTooltip"]	= "마법부여에서 무작위로 거래 외침을 선택합니다.";
+		["BarkerOptionsResiliencePriority"]	= "탄력도";
+		["BarkerOptionsResiliencePriorityTooltip"]	= "탄력도 마부에 우선순위를 둡니다.";
+		["BarkerOptionsRingPriorityTooltip"]	= "반지 마부에 우선순위를 둡니다.";
+		["BarkerOptionsShadowResistance"]	= "암흑 저항";
+		["BarkerOptionsShadowResistanceTooltip"]	= "암흑 저항력 마부에 우선순위를 둡니다.";
+		["BarkerOptionsShieldPriorityTooltip"]	= "방패 마부에 우선순위를 둡니다.";
+		["BarkerOptionsSpiritPriority"]	= "정신력";
+		["BarkerOptionsSpiritPriorityTooltip"]	= "정신력 마부에 우선순위를 둡니다.";
+		["BarkerOptionsStaminaPriority"]	= "체력";
+		["BarkerOptionsStaminaPriorityTooltip"]	= "체력 마부에 우선순위를 둡니다.";
+		["BarkerOptionsStatsPriority"]	= "전체 가격 정책";
+		["BarkerOptionsStatsPriorityTooltip"]	= "This sets how important the stat is to the overall priority for advertising.";
+		["BarkerOptionsStrengthPriority"]	= "힘";
+		["BarkerOptionsStrengthPriorityTooltip"]	= "힘 마부에 우선순위를 둡니다.";
+		["BarkerOptionsTab1Title"]	= "이익과 가격 우선순위";
+
+}

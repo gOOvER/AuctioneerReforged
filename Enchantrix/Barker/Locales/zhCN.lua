@@ -1,0 +1,220 @@
+--[[
+	EnchantrixBarker - Localization (zhCN)
+	License: GNU General Public License v3.0 (GPL-3.0-or-later)
+]]
+
+EnchantrixBarkerLocalizations = EnchantrixBarkerLocalizations or {}
+EnchantrixBarkerLocalizations.zhCN = {
+
+		-- Section: Command Messages
+		["BarkerEnxWindowNotOpen"]	= "附魔助手：附魔窗口没有打开。使用barker指令必须打开附魔窗口";
+		["BarkerNoEnchantsAvail"]	= "附魔助手：您没有附魔技能或没有制作试剂";
+
+		-- Section: Commands
+		["CmdBarker"]	= "barker";
+		["CmdClear"]	= "clear清除";
+		["CmdDefault"]	= "default默认";
+		["CmdDisable"]	= "disable禁用";
+		["CmdFindBidauct"]	= "bidbroker出价代理";
+		["CmdFindBidauctShort"]	= "bb(出价代理的缩写)";
+		["CmdFindBuyauct"]	= "percentless比率差额";
+		["CmdFindBuyauctShort"]	= "pl(比率差额的缩写)";
+		["CmdHelp"]	= "help帮助";
+		["CmdLocale"]	= "locale地域代码";
+		["CmdOff"]	= "off关";
+		["CmdOn"]	= "on开";
+		["CmdPrintin"]	= "print-in输出于";
+		["CmdToggle"]	= "toggle开关转换";
+		["ShowCount"]	= "counts计数";
+		["ShowEmbed"]	= "embed嵌入";
+		["ShowGuessAuctioneerHsp"]	= "valuate-hsp估价-最高";
+		["ShowGuessAuctioneerMed"]	= "valuate-median估价-中值";
+		["ShowTerse"]	= "terse简洁";
+		["ShowValue"]	= "valuate估价";
+
+		-- Section: Game Constants
+		["AnyWeapon"]	= "任意武器";
+		["BarkerOpening"]	= "出售附魔：";
+		["Boots"]	= "脚";
+		["Bracer"]	= "腰部";
+		["Chest"]	= "胸部";
+		["Cloak"]	= "肩部";
+		["Darnassus"]	= "达纳苏斯";
+		["Enchanting"]	= "附魔";
+		["EnchSearchAgility"]	= "敏捷";
+		["EnchSearchAllResistance1"]	= "所有抗性";
+		["EnchSearchAllResistance2"]	= "所有抗性";
+		["EnchSearchAllResistance3"]	= "所有抗性";
+		["EnchSearchAllStats"]	= "所有状态";
+		["EnchSearchArmor"]	= "护甲";
+		["EnchSearchBattlemaster"]	= "治疗附近小队成员";
+		["EnchSearchBeastslayer"]	= "野兽伤害";
+		["EnchSearchBoarSpeed"]	= "移动速度提升和[0-9]+耐力";
+		["EnchSearchCatSwiftness"]	= "移动速度提升和[0-9]+敏捷";
+		["EnchSearchCrusader"]	= "治疗[0-9]+到[0-9]+和提升耐力";
+		["EnchSearchDamage1"]	= "点?伤害";
+		["EnchSearchDamage2"]	= "\+[0-9]+伤害";
+		["EnchSearchDefense"]	= "防御";
+		["EnchSearchDMGAbsorption"]	= "吸收";
+		["EnchSearchFireRes"]	= "火焰抗性";
+		["EnchSearchFrostRes"]	= "冰霜抗性";
+		["EnchSearchHealing"]	= "治疗";
+		["EnchSearchHealth"]	= "生命";
+		["EnchSearchIntellect"]	= "智力";
+		["EnchSearchMana"]	= "魔法";
+		["EnchSearchManaPerFive"]	= "5秒回蓝";
+		["EnchSearchMongoose"]	= "提升敏捷[0-9]+和攻击速度";
+		["EnchSearchNatureRes"]	= "自然抗性";
+		["EnchSearchResFire"]	= "火焰抗性";
+		["EnchSearchResilience"]	= "韧性";
+		["EnchSearchResShadow"]	= "暗影抗性";
+		["EnchSearchSoulfrost"]	= "冰霜和暗影技能";
+		["EnchSearchSpellPower1"]	= "法术伤害";
+		["EnchSearchSpellPower2"]	= "法术伤害";
+		["EnchSearchSpellPower3"]	= "法术伤害";
+		["EnchSearchSpellsurge"]	= "恢复[0-9]+魔法附近小队成员";
+		["EnchSearchSpirit"]	= "精神";
+		["EnchSearchStamina"]	= "耐力";
+		["EnchSearchStrength"]	= "力量";
+		["EnchSearchSunfire"]	= "火焰与奥术法术";
+		["EnchSearchVitality"]	= "恢复[0-9]+生命与魔法";
+		["Gloves"]	= "手腕";
+		["Ironforge"]	= "铁炉堡";
+		["OneLetterGold"]	= "G";
+		["OneLetterSilver"]	= "S";
+		["Orgrimmar"]	= "奥格瑞玛";
+		["RESIL"]	= "韧性";
+		["Ring"]	= "耳环";
+		["Shattrath"]	= "沙塔斯城";
+		["Shield"]	= "盾牌";
+		["ShortDarnassus"]	= "达纳";
+		["ShortExodar"]	= "埃索达";
+		["ShortIronForge"]	= "铁";
+		["ShortOrgrimmar"]	= "奥格";
+		["ShortShattrath"]	= "沙城";
+		["ShortSilvermoon"]	= "银月";
+		["ShortStormwind"]	= "暴风";
+		["ShortThunderBluff"]	= "雷霆";
+		["ShortUndercity"]	= "幽暗";
+		["SilvermoonCity"]	= "银月城";
+		["StormwindCity"]	= "暴风城";
+		["TheExodar"]	= "埃索达";
+		["ThunderBluff"]	= "雷霆崖";
+		["TradeChannel"]	= "交易-城市";
+		["TwoHandWeapon"]	= "双手武器";
+		["Undercity"]	= "幽暗城";
+		["Weapon"]	= "武器";
+
+		-- Section: Generic Messages
+		["BarkerLoaded"]	= "附魔助手代理已载入...";
+		["BarkerNotTradeZone"]	= "附魔助手代理:你没有在贸易区[无交易频道]。";
+
+		-- Section: Generic Strings
+		["AGI"]	= "敏捷";
+		["AllStats"]	= "所有属性";
+		["Crusader"]	= "十字军";
+		["DEF"]	= "防御";
+		["DMG"]	= "伤害";
+		["DMGAbsorb"]	= "伤害吸收";
+		["FireRes"]	= "火抗";
+		["FrostRes"]	= "冰抗";
+		["INT"]	= "智力";
+		["NatureRes"]	= "自然抗";
+		["ShadowRes"]	= "暗抗";
+		["ShortAllRes"]	= "所有抗性";
+		["ShortArmor"]	= "护甲";
+		["ShortBattlemaster"]	= "战场大师";
+		["ShortBeastslayer"]	= "野兽";
+		["ShortBoarSpeed"]	= "野豬之速";
+		["ShortCatSwiftness"]	= "貓之迅捷";
+		["ShortHealing"]	= "治疗";
+		["ShortHealth"]	= "生命";
+		["ShortMana"]	= "魔法";
+		["ShortManaPerFive"]	= "5秒回蓝";
+		["ShortMongoose"]	= "猫鼬";
+		["ShortSoulfrost"]	= "霜魂";
+		["ShortSpellPower"]	= "法术";
+		["ShortSpellSurge"]	= "法力回流";
+		["ShortSunfire"]	= "烈日火焰";
+		["ShortVitality"]	= "生命力";
+		["SPI"]	= "精神";
+		["STA"]	= "耐力";
+		["STR"]	= "力量";
+
+		-- Section: Tooltip Messages
+		["FrmtBarkerPrice"]	= "Barker价格(%d%% 最低利润)";
+		["FrmtPriceEach"]	= "(每件%s)";
+		["FrmtSuggestedPrice"]	= "建议价格：";
+		["FrmtTotal"]	= "合计";
+		["FrmtWarnAuctNotLoaded"]	= "[拍卖助手未加载，使用缓冲价格]";
+		["FrmtWarnNoPrices"]	= "[无价可用]";
+		["FrmtWarnPriceUnavail"]	= "[某些价格不可用]";
+		["OpenBarkerWindow"]	= "打开商业代理界面";
+
+		-- Section: User Interface
+		["BarkerOptions2HWeaponPriorityTooltip"]	= "优先显示附魔-双手武器。";
+		["BarkerOptionsAgilityPriority"]	= "敏捷";
+		["BarkerOptionsAgilityPriorityTooltip"]	= "优先显示附魔-敏捷。";
+		["BarkerOptionsAllResistances"]	= "所有抗性";
+		["BarkerOptionsAllResistancesTooltip"]	= "优先显示附魔-所有抗性提升。";
+		["BarkerOptionsAllStatsPriority"]	= "所有属性";
+		["BarkerOptionsAllStatsPriorityTooltip"]	= "优先显示附魔-所有属性提升。";
+		["BarkerOptionsAnyWeaponPriorityTooltip"]	= "优先显示附魔-武器。";
+		["BarkerOptionsArmorPriority"]	= "护甲";
+		["BarkerOptionsArmorPriorityTooltip"]	= "优先显示附魔-护甲。";
+		["BarkerOptionsBootsPriorityTooltip"]	= "优先显示附魔-鞋。";
+		["BarkerOptionsBracerPriorityTooltip"]	= "优先显示附魔-腰部。";
+		["BarkerOptionsChestPriorityTooltip"]	= "优先显示附魔-胸部。";
+		["BarkerOptionsCloakPriorityTooltip"]	= "优先显示附魔-肩部。";
+		["BarkerOptionsDamage"]	= "伤害";
+		["BarkerOptionsDamageTooltip"]	= "优先显示附魔-伤害";
+		["BarkerOptionsDefense"]	= "防御";
+		["BarkerOptionsDefenseTooltip"]	= "优先显示附魔-防御。";
+		["BarkerOptionsFireResistance"]	= "火焰抗性";
+		["BarkerOptionsFireResistanceTooltip"]	= "优先显示附魔-火焰抗性。";
+		["BarkerOptionsFrostResistance"]	= "冰霜抗性";
+		["BarkerOptionsFrostResistanceTooltip"]	= "优先显示附魔-冰霜抗性。";
+		["BarkerOptionsGlovesPriorityTooltip"]	= "优先显示附魔-手腕。";
+		["BarkerOptionsHealth"]	= "生命";
+		["BarkerOptionsHealthTooltip"]	= "优先显示附魔-生命。";
+		["BarkerOptionsHighestPriceForFactorTitle"]	= "价格因素至最高";
+		["BarkerOptionsHighestPriceForFactorTooltip"]	= "大于或等于此价格时附魔让价格优先得零分。";
+		["BarkerOptionsHighestProfitTitle"]	= "最大收益";
+		["BarkerOptionsHighestProfitTooltip"]	= "附魔获得最高的总收益金。";
+		["BarkerOptionsIntellectPriority"]	= "智力";
+		["BarkerOptionsIntellectPriorityTooltip"]	= "优先显示附魔-智力。";
+		["BarkerOptionsItemsPriority"]	= "总体物品优先";
+		["BarkerOptionsItemsPriorityTooltip"]	= "这个设置如何重要物品的总体优先广告";
+		["BarkerOptionsLowestPriceTitle"]	= "最低标价";
+		["BarkerOptionsLowestPriceTooltip"]	= "提供附魔最低的现贷价格。";
+		["BarkerOptionsMana"]	= "魔法";
+		["BarkerOptionsManaTooltip"]	= "优先显示附魔-魔法。";
+		["BarkerOptionsNatureResistance"]	= "自然抗性";
+		["BarkerOptionsNatureResistanceTooltip"]	= "优先显示附魔-自然抗性。";
+		["BarkerOptionsOther"]	= "其他";
+		["BarkerOptionsOtherTooltip"]	= "优先显示附魔-剥皮，采矿，骑术等。";
+		["BarkerOptionsPricePriorityTitle"]	= "总体价格优先";
+		["BarkerOptionsPricePriorityTooltip"]	= "此设置重要定价如何是到总体优先权为做广告。";
+		["BarkerOptionsPriceSweetspotTitle"]	= "价格代理甜点";
+		["BarkerOptionsPriceSweetspotTooltip"]	= "用于给予优先在这个价格附近附魔为做广告。";
+		["BarkerOptionsProfitMarginTitle"]	= "边缘收益";
+		["BarkerOptionsProfitMarginTooltip"]	= "增加赢利百分比到基本边际收益费用。";
+		["BarkerOptionsRandomFactorTitle"]	= "随机要素";
+		["BarkerOptionsRandomFactorTooltip"]	= "相当数量随机性在附魔为商业选择。";
+		["BarkerOptionsResiliencePriority"]	= "韧性";
+		["BarkerOptionsResiliencePriorityTooltip"]	= "优先显示附魔-韧性";
+		["BarkerOptionsRingPriorityTooltip"]	= "优先显示附魔-耳环。";
+		["BarkerOptionsShadowResistance"]	= "暗影抗性";
+		["BarkerOptionsShadowResistanceTooltip"]	= "优先显示附魔-暗影抗性。";
+		["BarkerOptionsShieldPriorityTooltip"]	= "优先显示附魔-盾牌。";
+		["BarkerOptionsSpiritPriority"]	= "精神";
+		["BarkerOptionsSpiritPriorityTooltip"]	= "优先显示附魔-精神。";
+		["BarkerOptionsStaminaPriority"]	= "耐力";
+		["BarkerOptionsStaminaPriorityTooltip"]	= "优先显示附魔-耐力。";
+		["BarkerOptionsStatsPriority"]	= "总体属性优先";
+		["BarkerOptionsStatsPriorityTooltip"]	= "这个设置如何重要的属性总体优先广告";
+		["BarkerOptionsStrengthPriority"]	= "力量";
+		["BarkerOptionsStrengthPriorityTooltip"]	= "优先显示附魔-力量。";
+		["BarkerOptionsTab1Title"]	= "收益与价格优先";
+
+}

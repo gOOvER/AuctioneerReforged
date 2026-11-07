@@ -1,0 +1,32 @@
+## Interface: 11508, 11509, 16001, 20505, 20506, 30405, 38002, 40402, 50503, 50504, 120007, 120100, 120105, 120107
+## Interface-Classic: 11508, 11509, 16001
+## Interface-BCC: 20505, 20506
+## Interface-Wrath: 30405, 38002
+## Interface-Cata: 40402
+## Interface-Mists: 50503, 50504
+## Interface-Mainline: 120007, 120100, 120105, 120107
+## Title: Auc:ScanData
+## Notes: Allows Auctioneer to delay loading the large auction scan dataset until it is needed.
+## Author: gOOvER
+## Version: 1.0.0
+## LoadOnDemand: 1
+## Dependencies: Auc-Advanced
+## OptionalDeps: Auc-Util-PriceLevel
+## SavedVariables: AucScanData
+## Category-enUS: Auctions
+## Category-deDE: Auktionen
+## Category-esES: Subastas
+## Category-esMX: Subastas
+## Category-frFR: Ventes
+## Category-itIT: Aste
+## Category-koKR: 경매
+## Category-ptBR: Leilões
+## Category-ruRU: Лоты
+## Category-zhCN: 拍卖
+## Category-zhTW: 拍賣
+## X-Part-Of: Auctioneer Reforged
+## X-License: GPL-3.0-or-later
+## X-Category: Auction House
+
+StringRope.lua
+ScanData.lua

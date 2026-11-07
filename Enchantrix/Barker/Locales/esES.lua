@@ -1,0 +1,220 @@
+--[[
+	EnchantrixBarker - Localization (esES)
+	License: GNU General Public License v3.0 (GPL-3.0-or-later)
+]]
+
+EnchantrixBarkerLocalizations = EnchantrixBarkerLocalizations or {}
+EnchantrixBarkerLocalizations.esES = {
+
+		-- Section: Command Messages
+		["BarkerEnxWindowNotOpen"]	= "Enchantrix: La ventana de encantamientos no está abierta. La ventana de encantamientos debe estar abierta para utilizar el pregonero.";
+		["BarkerNoEnchantsAvail"]	= "Enchantrix: No tienes ningún encantamiento o los componentes para crearlos.";
+
+		-- Section: Commands
+		["CmdBarker"]	= "pregonero";
+		["CmdClear"]	= "borrar";
+		["CmdDefault"]	= "original";
+		["CmdDisable"]	= "deshabilitar";
+		["CmdFindBidauct"]	= "corredorofertas";
+		["CmdFindBidauctShort"]	= "co";
+		["CmdFindBuyauct"]	= "porcientomenos";
+		["CmdFindBuyauctShort"]	= "pm";
+		["CmdHelp"]	= "ayuda";
+		["CmdLocale"]	= "localidad";
+		["CmdOff"]	= "apagado";
+		["CmdOn"]	= "prendido";
+		["CmdPrintin"]	= "imprimir-en";
+		["CmdToggle"]	= "invertir";
+		["ShowCount"]	= "conteo";
+		["ShowEmbed"]	= "integrar";
+		["ShowGuessAuctioneerHsp"]	= "valorizar-pmv";
+		["ShowGuessAuctioneerMed"]	= "valorizar-mediano";
+		["ShowTerse"]	= "conciso";
+		["ShowValue"]	= "valorizar";
+
+		-- Section: Game Constants
+		["AnyWeapon"]	= "Cualquier arma";
+		["BarkerOpening"]	= "Encantamientos de Venta:";
+		["Boots"]	= "Botas";
+		["Bracer"]	= "Brazal";
+		["Chest"]	= "Pecho";
+		["Cloak"]	= "Capa";
+		["Darnassus"]	= "Darnassus";
+		["Enchanting"]	= "Encantamiento";
+		["EnchSearchAgility"]	= "agilidad";
+		["EnchSearchAllResistance1"]	= "resistencia a todas las escuelas de magia";
+		["EnchSearchAllResistance2"]	= "resistencia a todas escuelas mágicas";
+		["EnchSearchAllResistance3"]	= "todas resistencias";
+		["EnchSearchAllStats"]	= "todas estadísticas";
+		["EnchSearchArmor"]	= "armadura";
+		["EnchSearchBattlemaster"]	= "cura a miembros del grupo cercanos";
+		["EnchSearchBeastslayer"]	= "daño a bestias";
+		["EnchSearchBoarSpeed"]	= "velocidad de movimiento aumentada y [0-9]+ de aguante";
+		["EnchSearchCatSwiftness"]	= "velocidad de movimiento aumentada y [0-9]+ de agilidad";
+		["EnchSearchCrusader"]	= "cura de [0-9]+ a [0-9]+ e incrementa la fuerza";
+		["EnchSearchDamage1"]	= "puntos? de daño";
+		["EnchSearchDamage2"]	= "\+[0-9]+ de daño";
+		["EnchSearchDefense"]	= "defensa";
+		["EnchSearchDMGAbsorption"]	= "absorción";
+		["EnchSearchFireRes"]	= "resistencia al fuego";
+		["EnchSearchFrostRes"]	= "resistencia a la escarcha";
+		["EnchSearchHealing"]	= "curación";
+		["EnchSearchHealth"]	= "salud";
+		["EnchSearchIntellect"]	= "intelecto";
+		["EnchSearchMana"]	= "maná";
+		["EnchSearchManaPerFive"]	= "maná cada 5 segundos";
+		["EnchSearchMongoose"]	= "incrementa la agilidad en [0-9]+ y la velocidad de ataque";
+		["EnchSearchNatureRes"]	= "resistencia a la naturaleza";
+		["EnchSearchResFire"]	= "resistencia al fuego";
+		["EnchSearchResilience"]	= "Resiliencia";
+		["EnchSearchResShadow"]	= "resistencia a las sombras";
+		["EnchSearchSoulfrost"]	= "hechizos de escarcha y sombras";
+		["EnchSearchSpellPower1"]	= "Daño a Hechizos";
+		["EnchSearchSpellPower2"]	= "Daño a todos los Hechizos";
+		["EnchSearchSpellPower3"]	= "daño de hechizo";
+		["EnchSearchSpellsurge"]	= "restaura [0-9]+ de maná a todos los miembros del grupo";
+		["EnchSearchSpirit"]	= "espíritu";
+		["EnchSearchStamina"]	= "aguante";
+		["EnchSearchStrength"]	= "fuerza";
+		["EnchSearchSunfire"]	= "hechizos arcanos y de fuego";
+		["EnchSearchVitality"]	= "restaura [0-9]+ de vida y maná";
+		["Gloves"]	= "Guantes";
+		["Ironforge"]	= "Forjaz";
+		["OneLetterGold"]	= "o";
+		["OneLetterSilver"]	= "p";
+		["Orgrimmar"]	= "Orgrimmar";
+		["RESIL"]	= "hecho";
+		["Ring"]	= "Anillo";
+		["Shattrath"]	= "Shattrath";
+		["Shield"]	= "Escudo";
+		["ShortDarnassus"]	= "Dar";
+		["ShortExodar"]	= "Exo";
+		["ShortIronForge"]	= "FJ";
+		["ShortOrgrimmar"]	= "Org";
+		["ShortShattrath"]	= "Sha";
+		["ShortSilvermoon"]	= "CdL";
+		["ShortStormwind"]	= "VT";
+		["ShortThunderBluff"]	= "CdT";
+		["ShortUndercity"]	= "E";
+		["SilvermoonCity"]	= "Claro de Luna";
+		["StormwindCity"]	= "Ventormenta";
+		["TheExodar"]	= "Exodar";
+		["ThunderBluff"]	= "Cima del Trueno";
+		["TradeChannel"]	= "Comercio - Ciudad";
+		["TwoHandWeapon"]	= "Arma 2M";
+		["Undercity"]	= "Entrañas";
+		["Weapon"]	= "Arma";
+
+		-- Section: Generic Messages
+		["BarkerLoaded"]	= "Enchantrix Barker Cargado...";
+		["BarkerNotTradeZone"]	= "Enchantrix Barker: Usted no esta en una zona de intercambio.";
+
+		-- Section: Generic Strings
+		["AGI"]	= "AGI";
+		["AllStats"]	= "todas las estadísticas";
+		["Crusader"]	= "Cruzado";
+		["DEF"]	= "DEF";
+		["DMG"]	= "Dño";
+		["DMGAbsorb"]	= "Dño absrvdo";
+		["FireRes"]	= "Res fuego";
+		["FrostRes"]	= "Res scarxa";
+		["INT"]	= "INT";
+		["NatureRes"]	= "Res nturlza";
+		["ShadowRes"]	= "Res smbras";
+		["ShortAllRes"]	= "tdas res";
+		["ShortArmor"]	= "Armadura";
+		["ShortBattlemaster"]	= "Maestro de Batalla";
+		["ShortBeastslayer"]	= "Bestia";
+		["ShortBoarSpeed"]	= "Velocidad de Oso";
+		["ShortCatSwiftness"]	= "Velocidad de Gato";
+		["ShortHealing"]	= "Curar";
+		["ShortHealth"]	= "Salud";
+		["ShortMana"]	= "Mana";
+		["ShortManaPerFive"]	= "Mana/5seg";
+		["ShortMongoose"]	= "Mangosta";
+		["ShortSoulfrost"]	= "Soulfrost";
+		["ShortSpellPower"]	= "Hechizo";
+		["ShortSpellSurge"]	= "Aumento de Hechizo";
+		["ShortSunfire"]	= "Fuego del Sol";
+		["ShortVitality"]	= "Vitalidad";
+		["SPI"]	= "PER";
+		["STA"]	= "AGU";
+		["STR"]	= "FUE";
+
+		-- Section: Tooltip Messages
+		["FrmtBarkerPrice"]	= "Precio de Pregonero (margen de %d%%)";
+		["FrmtPriceEach"]	= "(%s c/u)";
+		["FrmtSuggestedPrice"]	= "Precio Sugerido:";
+		["FrmtTotal"]	= "Total";
+		["FrmtWarnAuctNotLoaded"]	= "[Auctioneer no se ha cargado, usando los precios guardados]";
+		["FrmtWarnNoPrices"]	= "[No hay precios disponibles]";
+		["FrmtWarnPriceUnavail"]	= "[Algunos precios no están disponibles]";
+		["OpenBarkerWindow"]	= "Abre la ventana de comercio.";
+
+		-- Section: User Interface
+		["BarkerOptions2HWeaponPriorityTooltip"]	= "La prioridad de puntuación para los encantamientos de las armas de 2 manos.";
+		["BarkerOptionsAgilityPriority"]	= "agilidad";
+		["BarkerOptionsAgilityPriorityTooltip"]	= "La prioridad de puntuación para los encantamientos de agilidad.";
+		["BarkerOptionsAllResistances"]	= "todas las resistencias";
+		["BarkerOptionsAllResistancesTooltip"]	= "La prioridad de puntuación para los encantamientos que aumentan todas las resistencias.";
+		["BarkerOptionsAllStatsPriority"]	= "Todas las Estadísticas";
+		["BarkerOptionsAllStatsPriorityTooltip"]	= "La prioridad de puntuación";
+		["BarkerOptionsAnyWeaponPriorityTooltip"]	= "La puntuacion prioritaria para encantamientos a cualquier arma.";
+		["BarkerOptionsArmorPriority"]	= "armadura";
+		["BarkerOptionsArmorPriorityTooltip"]	= "La prioridad de puntuación para los encantamientos de armadura.";
+		["BarkerOptionsBootsPriorityTooltip"]	= "La prioridad de puntuación para los encantamientos de botas.";
+		["BarkerOptionsBracerPriorityTooltip"]	= "La prioridad de puntuación para los encantamientos de brazaletes.";
+		["BarkerOptionsChestPriorityTooltip"]	= "La prioridad de puntuación para los encantamientos del pecho.";
+		["BarkerOptionsCloakPriorityTooltip"]	= "La prioridad de puntuación para los encantamientos de capa.";
+		["BarkerOptionsDamage"]	= "daño";
+		["BarkerOptionsDamageTooltip"]	= "La prioridad de puntuación para los encantamientos de daño.";
+		["BarkerOptionsDefense"]	= "defensa";
+		["BarkerOptionsDefenseTooltip"]	= "La prioridad de puntuación para los encantamientos de defensa.";
+		["BarkerOptionsFireResistance"]	= "resistencia al fuego";
+		["BarkerOptionsFireResistanceTooltip"]	= "La prioridad de puntuación para los encantamientos de resistencia al fuego.";
+		["BarkerOptionsFrostResistance"]	= "resistencia al hielo";
+		["BarkerOptionsFrostResistanceTooltip"]	= "La prioridad de puntuación para los encantamientos de resistencia al hielo.";
+		["BarkerOptionsGlovesPriorityTooltip"]	= "La prioridad de puntuación para los encantamientos de guante.";
+		["BarkerOptionsHealth"]	= "salud";
+		["BarkerOptionsHealthTooltip"]	= "La prioridad de puntuación para los encantamientos de salud.";
+		["BarkerOptionsHighestPriceForFactorTitle"]	= "Factor Precio Más Alto";
+		["BarkerOptionsHighestPriceForFactorTooltip"]	= "Los encantamientos reciben una puntuación de cero en la prioridad de precio cuando tienen este precio o superior.";
+		["BarkerOptionsHighestProfitTitle"]	= "Beneficio Más Alto";
+		["BarkerOptionsHighestProfitTooltip"]	= "El beneficio máximo de dinero a conseguir en un encantamiento";
+		["BarkerOptionsIntellectPriority"]	= "inteligencia";
+		["BarkerOptionsIntellectPriorityTooltip"]	= "La prioridad de puntuación para los encantamientos de inteligencia.";
+		["BarkerOptionsItemsPriority"]	= "Prioridad total de los objetos.";
+		["BarkerOptionsItemsPriorityTooltip"]	= "Esto fija cuan importante es el artículo a la prioridad total para hacer publicidad.";
+		["BarkerOptionsLowestPriceTitle"]	= "Precio Más Bajo";
+		["BarkerOptionsLowestPriceTooltip"]	= "El precio mínimo para mencionar un encantamiento.";
+		["BarkerOptionsMana"]	= "Mana";
+		["BarkerOptionsManaTooltip"]	= "La prioridad de puntuación para los encantamientos de mana.";
+		["BarkerOptionsNatureResistance"]	= "Resistencia a la naturaleza";
+		["BarkerOptionsNatureResistanceTooltip"]	= "La prioridad de puntuación para los encantamientos de resistencia a la naturaleza.";
+		["BarkerOptionsOther"]	= "otros";
+		["BarkerOptionsOtherTooltip"]	= "La prioridad de puntuación para los encantamientos como son despellejar, minar, montar, etc.";
+		["BarkerOptionsPricePriorityTitle"]	= "Prioridad Global de Precio";
+		["BarkerOptionsPricePriorityTooltip"]	= "Establece cuán importante es el precio en la prioridad global para ser anunciado";
+		["BarkerOptionsPriceSweetspotTitle"]	= "Mejor Punto del Factor Precio";
+		["BarkerOptionsPriceSweetspotTooltip"]	= "Los encantamientos que están cerca de este precio tendrán prioridad a la hora de anunciarse.";
+		["BarkerOptionsProfitMarginTitle"]	= "Margen de Beneficio";
+		["BarkerOptionsProfitMarginTooltip"]	= "El porcentaje de beneficio que se añade al coste base de los materiales";
+		["BarkerOptionsRandomFactorTitle"]	= "Factor Aleatorio";
+		["BarkerOptionsRandomFactorTooltip"]	= "La cantidad de aleatoriedad que se aplica a la hora de elegir qué encantamientos se anuncian.";
+		["BarkerOptionsResiliencePriority"]	= "Resiliencia";
+		["BarkerOptionsResiliencePriorityTooltip"]	= "La puntuación de prioridad para la resistencia encanta.";
+		["BarkerOptionsRingPriorityTooltip"]	= "La prioridad de puntuación para los encantamientos de anillo.";
+		["BarkerOptionsShadowResistance"]	= "resistencia a la oscuridad";
+		["BarkerOptionsShadowResistanceTooltip"]	= "La prioridad de puntuación para los encantamientos de resistencia a la oscuridad.";
+		["BarkerOptionsShieldPriorityTooltip"]	= "La prioridad de puntuación para los encantamientos de escudo.";
+		["BarkerOptionsSpiritPriority"]	= "espiritu";
+		["BarkerOptionsSpiritPriorityTooltip"]	= "La prioridad de puntuación para los encantamientos de espíritu.";
+		["BarkerOptionsStaminaPriority"]	= "vigor";
+		["BarkerOptionsStaminaPriorityTooltip"]	= "La prioridad de puntuación para los encantamientos de vigor.";
+		["BarkerOptionsStatsPriority"]	= "Prioridad total de los estados.";
+		["BarkerOptionsStatsPriorityTooltip"]	= "Esto establece la importancia de las estadísticas es la prioridad general de la publicidad.";
+		["BarkerOptionsStrengthPriority"]	= "fuerza";
+		["BarkerOptionsStrengthPriorityTooltip"]	= "La prioridad de puntuación para los encantamientos de fuerza.";
+		["BarkerOptionsTab1Title"]	= "Prioridades de Beneficio y Precio";
+
+}
