@@ -48,7 +48,7 @@ AucAdvanced.RegisterModuleCallback("scandata", function(lib) GetDistribution = l
 
 -- Check to see if we are embedded or not
 local embedded = false
-for _, module in ipairs(AucAdvanced.EmbeddedModules) do
+for _, module in ipairs(AucAdvanced.EmbeddedModules or {}) do
 	if module == "Auc-Util-Appraiser" then
 		embedded = true
 	end

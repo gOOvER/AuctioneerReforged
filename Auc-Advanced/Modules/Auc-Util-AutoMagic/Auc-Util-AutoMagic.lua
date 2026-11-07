@@ -284,7 +284,7 @@ function lib.slidebar()
 	if LibStub then
 		--Need to figure out if we're embedded first
 		local embedded = false
-		for _, module in ipairs(AucAdvanced.EmbeddedModules) do
+		for _, module in ipairs(AucAdvanced.EmbeddedModules or {}) do
 			if module == "Auc-Util-AutoMagic"  then
 				embedded = true
 			end

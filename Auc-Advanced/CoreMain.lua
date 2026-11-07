@@ -633,7 +633,7 @@ local function OnLoad(addon)
 	end
 
 	if addon == "auc-advanced" then
-		for pos, module in ipairs(AucAdvanced.EmbeddedModules) do
+		for pos, module in ipairs(AucAdvanced.EmbeddedModules or {}) do
 			-- These embedded modules have also just been loaded
 			OnLoad(module)
 		end

@@ -192,7 +192,7 @@ end
 
 function lib.IsLibEmbedded()
 	blnResult = false
-	for pos, module in ipairs(AucAdvanced.EmbeddedModules) do
+	for pos, module in ipairs(AucAdvanced.EmbeddedModules or {}) do
 		if "Auc-Util-"..libName == module then
 			if blnDebug then
 				print("  Debug:Auc-Util-"..libName.." is an embedded module")
