@@ -54,7 +54,7 @@ USAGE:
 ]]
 
 local LIBRARY_VERSION_MAJOR = "Configator"
-local LIBRARY_VERSION_MINOR = 43
+local LIBRARY_VERSION_MINOR = 45
 local lib = LibStub:NewLibrary(LIBRARY_VERSION_MAJOR, LIBRARY_VERSION_MINOR)
 if not lib then return end
 
@@ -74,12 +74,12 @@ lib.UIStyle = UIStyle
 UIStyle._fontListeners = UIStyle._fontListeners or {}
 
 function UIStyle.GetFontSize()
-	local sz = (_G.AucAdvancedData and tonumber(_G.AucAdvancedData.UtilUiFontSize)) or 14
+	local sz = (_G.AucAdvancedData and tonumber(_G.AucAdvancedData.UtilUiFontSize)) or 12
 	return math.min(math.max(math.floor(sz), 10), 20)
 end
 
 function UIStyle.SetFontSize(size)
-	size = math.min(math.max(math.floor(tonumber(size) or 14), 10), 20)
+	size = math.min(math.max(math.floor(tonumber(size) or 12), 10), 20)
 	_G.AucAdvancedData = _G.AucAdvancedData or {}
 	_G.AucAdvancedData.UtilUiFontSize = size
 	for _, fn in ipairs(UIStyle._fontListeners) do
@@ -1249,6 +1249,12 @@ function kit:SetPosition(parent, width, height, left, top)
 	if button then
 		button:SetPoint("TOPLEFT", self, "TOPLEFT", 6, self.buttonTop-10)
 	end
+	if self.buttons then
+		local btnLevel = math.max(20, (self:GetFrameLevel() or 1) + 10)
+		for _, btn in ipairs(self.buttons) do
+			btn:SetFrameLevel(btnLevel)
+		end
+	end
 	self:RenderTabs()
 
 	local id = self.tabs.active
@@ -1285,10 +1291,13 @@ function kit:ExpandFrame(id)
 	assert(isGuiObject(self), "Must be called on a valid object")
 	local tab = self.tabs[id]
 	if tab.gapHeight == 0 then return end
+	if self.frame and self.frame.Hide then
+		self.frame:Hide()
+	end
 	tab.frame.fullsize:SetNormalTexture("Interface\\Minimap\\UI-Minimap-ZoomOutButton-Up")
 	tab.frame.fullsize:SetPushedTexture("Interface\\Minimap\\UI-Minimap-ZoomOutButton-Down")
 	tab.frame:SetPoint("BOTTOMRIGHT", self.Done, "TOPRIGHT", 0-tab.gapWidth, 5+tab.expandGap)
-	raiseFrameTree(tab.frame, math.max(15, (self:GetFrameLevel() or 1) + 12))
+	raiseFrameTree(tab.frame, math.max(25, (self:GetFrameLevel() or 1) + 18))
 	tab.expanded = true
 	updateTabScrollHeight(tab)
 end
@@ -1296,6 +1305,9 @@ function kit:ContractFrame(id)
 	assert(isGuiObject(self), "Must be called on a valid object")
 	local tab = self.tabs[id]
 	if tab.gapHeight == 0 then return end
+	if self.frame and self.frame.Show then
+		self.frame:Show()
+	end
 	tab.frame.fullsize:SetNormalTexture("Interface\\Minimap\\UI-Minimap-ZoomInButton-Up")
 	tab.frame.fullsize:SetPushedTexture("Interface\\Minimap\\UI-Minimap-ZoomInButton-Down")
 	tab.frame:SetPoint("BOTTOMRIGHT", self.Done, "TOPRIGHT", 0-tab.gapWidth, 5+tab.gapHeight-self.heightDelta)

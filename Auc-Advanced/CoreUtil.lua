@@ -359,13 +359,17 @@ do -- Faction related functions
 end
 
 function private.relevelFrame(frame)
-	return private.relevelFrames(frame:GetFrameLevel() + 2, frame:GetChildren())
+	local minLevel = (frame:GetFrameLevel() or 1) + 2
+	return private.relevelFrames(minLevel, frame:GetChildren())
 end
 
-function private.relevelFrames(myLevel, ...)
+function private.relevelFrames(minLevel, ...)
 	for i = 1, select("#", ...) do
 		local child = select(i, ...)
-		child:SetFrameLevel(myLevel)
+		local curLevel = child:GetFrameLevel() or 0
+		if curLevel < minLevel then
+			child:SetFrameLevel(minLevel)
+		end
 		private.relevelFrame(child)
 	end
 end
@@ -375,71 +379,176 @@ private.RetailTabs = {}
 private.RetailTabFrames = {} -- maps tab button to its content frame
 private.HiddenBuiltinFrames = {}
 
+local function ApplyLowBackgroundBox(frame, bgR, bgG, bgB, bgA, brR, brG, brB, brA, withGoldTop, withGoldBottom)
+	if not frame or not frame.CreateTexture then return end
+	if not frame._aucLowBg then
+		local bg = frame:CreateTexture(nil, "BACKGROUND", nil, -8)
+		bg:SetPoint("TOPLEFT", frame, "TOPLEFT", 1, -1)
+		bg:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -1, 1)
+		frame._aucLowBg = bg
+
+		local bTop = frame:CreateTexture(nil, "BACKGROUND", nil, -7)
+		bTop:SetHeight(1)
+		bTop:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
+		bTop:SetPoint("TOPRIGHT", frame, "TOPRIGHT", 0, 0)
+		frame._aucLowBorderTop = bTop
+
+		local bBot = frame:CreateTexture(nil, "BACKGROUND", nil, -7)
+		bBot:SetHeight(1)
+		bBot:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 0, 0)
+		bBot:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
+		frame._aucLowBorderBot = bBot
+
+		local bLeft = frame:CreateTexture(nil, "BACKGROUND", nil, -7)
+		bLeft:SetWidth(1)
+		bLeft:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
+		bLeft:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 0, 0)
+		frame._aucLowBorderLeft = bLeft
+
+		local bRight = frame:CreateTexture(nil, "BACKGROUND", nil, -7)
+		bRight:SetWidth(1)
+		bRight:SetPoint("TOPRIGHT", frame, "TOPRIGHT", 0, 0)
+		bRight:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
+		frame._aucLowBorderRight = bRight
+
+		local accentTop = frame:CreateTexture(nil, "BACKGROUND", nil, -6)
+		accentTop:SetHeight(1)
+		accentTop:SetPoint("TOPLEFT", frame, "TOPLEFT", 1, -1)
+		accentTop:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -1, -1)
+		accentTop:SetColorTexture(0.85, 0.70, 0.20, 0.85)
+		accentTop:Hide()
+		frame._aucLowAccentTop = accentTop
+
+		local accentBot = frame:CreateTexture(nil, "BACKGROUND", nil, -6)
+		accentBot:SetHeight(1)
+		accentBot:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 1, 1)
+		accentBot:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -1, 1)
+		accentBot:SetColorTexture(0.85, 0.70, 0.20, 0.75)
+		accentBot:Hide()
+		frame._aucLowAccentBot = accentBot
+	end
+
+	frame._aucLowBg:SetColorTexture(bgR or 0.08, bgG or 0.09, bgB or 0.12, bgA or 0.96)
+	local r, g, b, a = brR or 0.24, brG or 0.28, brB or 0.36, brA or 1
+	frame._aucLowBorderTop:SetColorTexture(r, g, b, a)
+	frame._aucLowBorderBot:SetColorTexture(r, g, b, a)
+	frame._aucLowBorderLeft:SetColorTexture(r, g, b, a)
+	frame._aucLowBorderRight:SetColorTexture(r, g, b, a)
+	if withGoldTop then
+		frame._aucLowAccentTop:Show()
+	else
+		frame._aucLowAccentTop:Hide()
+	end
+	if withGoldBottom then
+		frame._aucLowAccentBot:Show()
+	else
+		frame._aucLowAccentBot:Hide()
+	end
+end
+
+local ResizeRetailTab
+local SetRetailTabChecked
+
 local function StyleModernAHTab(tab)
 	if not tab then return end
 	local Configator = LibStub and LibStub("Configator", true)
 	local UIStyle = Configator and Configator.UIStyle
 	if not UIStyle then return end
 
+	local tName = tab:GetName()
+	local texKeys = {
+		"Left", "Middle", "Right",
+		"LeftActive", "MiddleActive", "RightActive",
+		"LeftHighlight", "MiddleHighlight", "RightHighlight",
+		"LeftDisabled", "MiddleDisabled", "RightDisabled",
+	}
+	for _, k in ipairs(texKeys) do
+		local tex = tab[k] or (tName and _G[tName .. k])
+		if tex and tex.SetAlpha then
+			tex:SetAlpha(0)
+		end
+	end
+	for _, reg in ipairs({ tab:GetRegions() }) do
+		if reg and reg.IsObjectType and reg:IsObjectType("Texture") then
+			reg:SetAlpha(0)
+		end
+	end
+
 	if not tab._aucTabStyled then
 		tab._aucTabStyled = true
-		local tName = tab:GetName()
-		local texKeys = {
-			"Left", "Middle", "Right",
-			"LeftActive", "MiddleActive", "RightActive",
-			"LeftHighlight", "MiddleHighlight", "RightHighlight",
-			"LeftDisabled", "MiddleDisabled", "RightDisabled",
-		}
-		for _, k in ipairs(texKeys) do
-			local tex = tab[k] or (tName and _G[tName .. k])
-			if tex and tex.SetAlpha then
-				tex:SetAlpha(0)
-			end
-		end
-		for _, reg in ipairs({ tab:GetRegions() }) do
-			if reg and reg.IsObjectType and reg:IsObjectType("Texture") then
-				reg:SetAlpha(0)
-			end
-		end
 
 		local box = CreateFrame("Frame", nil, tab, BackdropTemplateMixin and "BackdropTemplate")
 		box:SetPoint("TOPLEFT", tab, "TOPLEFT", 0, -1)
 		box:SetPoint("BOTTOMRIGHT", tab, "BOTTOMRIGHT", 0, 2)
 		box:EnableMouse(false)
-		UIStyle.ApplyBox(box, 0.09, 0.11, 0.15, 0.98, 0.24, 0.28, 0.36, 1)
+		UIStyle.ApplyBox(box, 0.10, 0.12, 0.17, 0.98, 0.26, 0.30, 0.38, 1)
 		tab._aucTabBox = box
 
-		local goldBar = box:CreateTexture(nil, "OVERLAY")
+		local goldBar = box:CreateTexture(nil, "OVERLAY", nil, 6)
 		goldBar:SetHeight(2)
 		goldBar:SetPoint("TOPLEFT", box, "TOPLEFT", 1, -1)
 		goldBar:SetPoint("TOPRIGHT", box, "TOPRIGHT", -1, -1)
-		goldBar:SetColorTexture(0.92, 0.76, 0.22, 1)
+		goldBar:SetColorTexture(0.95, 0.78, 0.22, 1)
 		goldBar:Hide()
 		tab._aucGoldBar = goldBar
 
+		local label = box:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+		label:SetPoint("CENTER", box, "CENTER", 0, 0)
+		label:SetWordWrap(false)
+		if label.SetNonSpaceWrap then label:SetNonSpaceWrap(false) end
+		box._label = label
+		tab._aucLabel = label
+
+		if tab.SetText then
+			hooksecurefunc(tab, "SetText", function(self, text)
+				local fs = self.Text or (self.GetFontString and self:GetFontString())
+				if fs and fs.SetAlpha then fs:SetAlpha(0) end
+				if self._aucLabel then
+					self._aucLabel:SetText(text or "")
+					self._aucLabel:SetWidth(0)
+				end
+			end)
+		end
+
+		tab:HookScript("OnShow", function(self)
+			ResizeRetailTab(self)
+			SetRetailTabChecked(self, self._checked)
+		end)
+
 		tab:HookScript("OnEnter", function(self)
 			if self._aucTabBox and not self._checked then
-				self._aucTabBox:SetBackdropColor(0.14, 0.17, 0.23, 1)
-				self._aucTabBox:SetBackdropBorderColor(0.65, 0.54, 0.22, 1)
+				self._aucTabBox:SetBackdropColor(0.16, 0.20, 0.28, 1)
+				self._aucTabBox:SetBackdropBorderColor(0.75, 0.62, 0.24, 1)
+				if self._aucLabel then self._aucLabel:SetTextColor(1, 0.95, 0.72, 1) end
 			end
 		end)
 		tab:HookScript("OnLeave", function(self)
 			if self._aucTabBox and not self._checked then
-				self._aucTabBox:SetBackdropColor(0.09, 0.11, 0.15, 0.98)
-				self._aucTabBox:SetBackdropBorderColor(0.24, 0.28, 0.36, 1)
+				self._aucTabBox:SetBackdropColor(0.10, 0.12, 0.17, 0.98)
+				self._aucTabBox:SetBackdropBorderColor(0.26, 0.30, 0.38, 1)
+				if self._aucLabel then self._aucLabel:SetTextColor(0.86, 0.90, 0.96, 1) end
 			end
 		end)
 	end
 
 	local fs = tab.Text or (tab.GetFontString and tab:GetFontString())
-	if fs then
-		UIStyle.ApplyFont(fs, 0)
-		fs:ClearAllPoints()
-		fs:SetPoint("CENTER", tab, "CENTER", 0, 1)
+	local rawText = (tab.GetText and tab:GetText()) or (fs and fs:GetText()) or ""
+	if fs and fs.SetAlpha then
+		fs:SetAlpha(0)
+	end
+	if tab._aucLabel then
+		local fontPath = (GameFontNormal and select(1, GameFontNormal:GetFont())) or STANDARD_TEXT_FONT
+		if fontPath then
+			tab._aucLabel:SetFont(fontPath, 12, "")
+		end
+		if rawText ~= "" then
+			tab._aucLabel:SetText(rawText)
+		end
+		tab._aucLabel:SetWidth(0)
 	end
 end
 
-local function SetRetailTabChecked(tab, checked)
+SetRetailTabChecked = function(tab, checked)
 	if not tab then return end
 	checked = checked and true or false
 	tab._checked = checked
@@ -455,45 +564,59 @@ local function SetRetailTabChecked(tab, checked)
 	end
 	if tab._aucActiveBar then tab._aucActiveBar:Hide() end
 	StyleModernAHTab(tab)
-	local fs = tab.Text or (tab.GetFontString and tab:GetFontString())
+	local lbl = tab._aucLabel
 	if tab._aucTabBox then
 		if checked then
-			tab._aucTabBox:SetBackdropColor(0.15, 0.18, 0.25, 1)
-			tab._aucTabBox:SetBackdropBorderColor(0.86, 0.70, 0.20, 1)
+			tab._aucTabBox:SetBackdropColor(0.17, 0.21, 0.30, 1)
+			tab._aucTabBox:SetBackdropBorderColor(0.92, 0.76, 0.22, 1)
 			if tab._aucGoldBar then tab._aucGoldBar:Show() end
-			if fs then fs:SetTextColor(1.0, 0.86, 0.32) end
+			if lbl then lbl:SetTextColor(1.0, 0.88, 0.30, 1) end
 		else
-			tab._aucTabBox:SetBackdropColor(0.09, 0.11, 0.15, 0.98)
-			tab._aucTabBox:SetBackdropBorderColor(0.24, 0.28, 0.36, 1)
+			tab._aucTabBox:SetBackdropColor(0.10, 0.12, 0.17, 0.98)
+			tab._aucTabBox:SetBackdropBorderColor(0.26, 0.30, 0.38, 1)
 			if tab._aucGoldBar then tab._aucGoldBar:Hide() end
-			if fs then fs:SetTextColor(0.80, 0.84, 0.90) end
+			if lbl then lbl:SetTextColor(0.86, 0.90, 0.96, 1) end
 		end
 	end
 end
 
-local function ResizeRetailTab(tab)
+ResizeRetailTab = function(tab)
 	if not tab then return end
 	StyleModernAHTab(tab)
-	local fs = tab.Text or (tab.GetFontString and tab:GetFontString())
-	local textW = (fs and fs.GetStringWidth and fs:GetStringWidth()) or 54
-	tab:SetSize(math.max(76, math.ceil(textW + 24)), 26)
+	local lbl = tab._aucLabel
+	local textW = 54
+	if lbl then
+		lbl:SetWidth(0)
+		textW = (lbl.GetUnboundedStringWidth and lbl:GetUnboundedStringWidth()) or (lbl.GetStringWidth and lbl:GetStringWidth()) or 54
+	end
+	tab:SetSize(math.max(80, math.ceil(textW + 24)), 26)
 	tab:SetHitRectInsets(0, 0, 0, 0)
 end
 
 local function SyncBuiltinRetailTabStates(ahFrame)
 	if not ahFrame or not ahFrame.Tabs then return end
 	local customActive = (ahFrame.currentCustomTab ~= nil)
-	for idx, t in ipairs(ahFrame.Tabs) do
-		if t and not t._isCustomRetailTab and not private.RetailTabFrames[t] then
-			local isSel = false
-			if not customActive then
-				if ahFrame.selectedTab and ahFrame.selectedTab == idx then
-					isSel = true
-				elseif ahFrame.displayMode and t.displayMode and ahFrame.displayMode == t.displayMode then
-					isSel = true
+	local activeIdx = nil
+	if not customActive then
+		local sel = (PanelTemplates_GetSelectedTab and PanelTemplates_GetSelectedTab(ahFrame)) or ahFrame.selectedTab
+		if sel and ahFrame.Tabs[sel] and not ahFrame.Tabs[sel]._isCustomRetailTab then
+			activeIdx = sel
+		end
+		if not activeIdx and ahFrame.displayMode then
+			for idx, t in ipairs(ahFrame.Tabs) do
+				if t and not t._isCustomRetailTab and t.displayMode == ahFrame.displayMode then
+					activeIdx = idx
+					break
 				end
 			end
-			SetRetailTabChecked(t, isSel)
+		end
+		if not activeIdx then
+			activeIdx = 1
+		end
+	end
+	for idx, t in ipairs(ahFrame.Tabs) do
+		if t and not t._isCustomRetailTab and not private.RetailTabFrames[t] then
+			SetRetailTabChecked(t, (not customActive) and (idx == activeIdx))
 		end
 	end
 end
@@ -634,12 +757,73 @@ local function StretchFrameBackgrounds(f)
 	end
 end
 
+local function StyleRetailHeaderButton(hdr)
+	if not hdr or not hdr.CreateTexture then return end
+	local hName = hdr.GetName and hdr:GetName()
+	for _, k in ipairs({ "Left", "Middle", "Right" }) do
+		local tex = hdr[k] or (hName and _G[hName .. k])
+		if tex and tex.SetAlpha then
+			tex:SetAlpha(0)
+		end
+	end
+	for _, reg in ipairs({ hdr:GetRegions() }) do
+		if reg and reg.IsObjectType and reg:IsObjectType("Texture") then
+			if reg ~= hdr.Arrow and reg ~= hdr.Icon and not reg._aucKeepTex then
+				local layer = reg.GetDrawLayer and reg:GetDrawLayer()
+				if layer == "BACKGROUND" or layer == "BORDER" or layer == "ARTWORK" then
+					reg:SetAlpha(0)
+				end
+			end
+		end
+	end
+	ApplyLowBackgroundBox(hdr, 0.12, 0.14, 0.19, 0.98, 0.24, 0.28, 0.36, 1, false, true)
+	if hdr.Text and hdr.Text.SetTextColor then
+		hdr.Text:SetTextColor(0.95, 0.82, 0.30, 1)
+	end
+	if not hdr._aucHeaderHoverHooked and hdr.HookScript then
+		hdr._aucHeaderHoverHooked = true
+		hdr:HookScript("OnEnter", function(self)
+			if self._aucLowBg then
+				self._aucLowBg:SetColorTexture(0.18, 0.21, 0.29, 1)
+			end
+		end)
+		hdr:HookScript("OnLeave", function(self)
+			if self._aucLowBg then
+				self._aucLowBg:SetColorTexture(0.12, 0.14, 0.19, 0.98)
+			end
+		end)
+	end
+end
+
+local function StyleRetailHeaderContainer(itemList)
+	if not itemList or not itemList.HeaderContainer then return end
+	for _, child in ipairs({ itemList.HeaderContainer:GetChildren() }) do
+		StyleRetailHeaderButton(child)
+	end
+	if itemList.HeaderContainer._aucPctHeaderBtn then
+		StyleRetailHeaderButton(itemList.HeaderContainer._aucPctHeaderBtn)
+	end
+end
+
+lib.StyleRetailHeaderButton = StyleRetailHeaderButton
+lib.StyleRetailHeaderContainer = StyleRetailHeaderContainer
+
 local function ReflowSingleRetailItemList(itemList)
 	if not itemList then return end
 	StretchFrameBackgrounds(itemList)
 
+	local ahFrame = AuctionHouseFrame
+	if ahFrame then
+		if (ahFrame.BrowseResultsFrame and itemList == ahFrame.BrowseResultsFrame.ItemList)
+		or (ahFrame.ItemBuyFrame and itemList == ahFrame.ItemBuyFrame.ItemList)
+		or (ahFrame.CommoditiesBuyFrame and itemList == ahFrame.CommoditiesBuyFrame.ItemList) then
+			itemList._aucHasPctColumn = true
+		end
+	end
+	local pctReserve = itemList._aucHasPctColumn and 56 or 0
+
 	if itemList.HeaderContainer then
-		itemList.HeaderContainer:SetPoint("RIGHT", itemList, "RIGHT", -22, 0)
+		itemList.HeaderContainer:SetPoint("RIGHT", itemList, "RIGHT", -(22 + pctReserve), 0)
 	end
 
 	if itemList.ScrollFrame then
@@ -666,7 +850,8 @@ local function ReflowSingleRetailItemList(itemList)
 				end
 				sf.range = math.max(0, (#buttons * btnH) - sfH)
 			end
-			local rowW = (itemList.HeaderContainer and itemList.HeaderContainer:GetWidth()) or (sf:GetWidth() or 600)
+			local hdrW = (itemList.HeaderContainer and itemList.HeaderContainer:GetWidth()) or ((sf:GetWidth() or 600) - pctReserve)
+			local rowW = hdrW + pctReserve
 			if rowW and rowW > 100 then
 				for i = 1, #buttons do
 					buttons[i]:SetWidth(rowW)
@@ -700,6 +885,11 @@ local function ReflowSingleRetailItemList(itemList)
 				end
 			end
 		end
+	end
+
+	StyleRetailHeaderContainer(itemList)
+	if itemList._aucOnReflowHeaders then
+		pcall(itemList._aucOnReflowHeaders, itemList)
 	end
 
 	if itemList:IsVisible() and itemList.RefreshScrollFrame then
@@ -784,6 +974,69 @@ function lib.ReflowRetailAHInternalFrames(ahFrame)
 	end
 end
 
+local function StyleModernIconButton(btn, labelFallback)
+	if not btn or btn._aucIconBtnStyled then return end
+	btn._aucIconBtnStyled = true
+
+	local iconTex = btn.Icon or btn.icon
+	for _, k in ipairs({ "Left", "Middle", "Right", "Ring", "Border", "NineSlice" }) do
+		if btn[k] and btn[k].SetAlpha then btn[k]:SetAlpha(0) end
+	end
+	if btn.GetNormalTexture and btn:GetNormalTexture() then
+		btn:GetNormalTexture():SetAlpha(0)
+	end
+	if btn.GetPushedTexture and btn:GetPushedTexture() then
+		btn:GetPushedTexture():SetAlpha(0)
+	end
+	if btn.GetDisabledTexture and btn:GetDisabledTexture() then
+		btn:GetDisabledTexture():SetAlpha(0)
+	end
+	if btn.GetHighlightTexture and btn:GetHighlightTexture() then
+		btn:GetHighlightTexture():SetAlpha(0)
+	end
+	for _, reg in ipairs({ btn:GetRegions() }) do
+		if reg and reg ~= iconTex and reg.IsObjectType and reg:IsObjectType("Texture") then
+			reg:SetAlpha(0)
+		end
+	end
+
+	ApplyLowBackgroundBox(btn, 0.14, 0.17, 0.23, 1, 0.28, 0.32, 0.42, 1, false, false)
+
+	if iconTex and iconTex.SetAlpha then
+		iconTex:SetAlpha(1)
+		iconTex:ClearAllPoints()
+		iconTex:SetPoint("CENTER", btn, "CENTER", 0, 0)
+		local w, h = btn:GetSize()
+		local sz = math.max(12, math.min(16, math.floor(math.min(w or 22, h or 22) * 0.65)))
+		iconTex:SetSize(sz, sz)
+	elseif labelFallback then
+		local lbl = btn:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+		lbl:SetPoint("CENTER", btn, "CENTER", 0, 0)
+		lbl:SetText(labelFallback)
+		lbl:SetTextColor(0.95, 0.82, 0.30, 1)
+		btn._aucIconLabel = lbl
+	end
+
+	btn:HookScript("OnEnter", function(self)
+		if self._aucLowBg then self._aucLowBg:SetColorTexture(0.22, 0.26, 0.35, 1) end
+		if self._aucLowBorderTop then
+			self._aucLowBorderTop:SetColorTexture(0.85, 0.70, 0.22, 1)
+			self._aucLowBorderBot:SetColorTexture(0.85, 0.70, 0.22, 1)
+			self._aucLowBorderLeft:SetColorTexture(0.85, 0.70, 0.22, 1)
+			self._aucLowBorderRight:SetColorTexture(0.85, 0.70, 0.22, 1)
+		end
+	end)
+	btn:HookScript("OnLeave", function(self)
+		if self._aucLowBg then self._aucLowBg:SetColorTexture(0.14, 0.17, 0.23, 1) end
+		if self._aucLowBorderTop then
+			self._aucLowBorderTop:SetColorTexture(0.28, 0.32, 0.42, 1)
+			self._aucLowBorderBot:SetColorTexture(0.28, 0.32, 0.42, 1)
+			self._aucLowBorderLeft:SetColorTexture(0.28, 0.32, 0.42, 1)
+			self._aucLowBorderRight:SetColorTexture(0.28, 0.32, 0.42, 1)
+		end
+	end)
+end
+
 local function StyleModernRetailAHChrome(ahFrame, UIStyle)
 	if not ahFrame or not UIStyle or ahFrame._aucModernChromeApplied then return end
 	ahFrame._aucModernChromeApplied = true
@@ -809,22 +1062,15 @@ local function StyleModernRetailAHChrome(ahFrame, UIStyle)
 		end
 	end
 
-	-- Create sleek modern Dark-Slate & Gold Auctioneer window shell
-	local shell = CreateFrame("Frame", "AucRetailAHModernShell", ahFrame, BackdropTemplateMixin and "BackdropTemplate")
-	shell._aucKeepVisible = true
-	shell:SetPoint("TOPLEFT", ahFrame, "TOPLEFT", 0, 0)
-	shell:SetPoint("BOTTOMRIGHT", ahFrame, "BOTTOMRIGHT", 0, 0)
-	shell:SetFrameStrata(ahFrame:GetFrameStrata())
-	shell:SetFrameLevel(math.max(1, (ahFrame:GetFrameLevel() or 1)))
-	shell:EnableMouse(false)
-	UIStyle.StyleWindow(shell, true)
-	ahFrame._aucModernShell = shell
+	-- Apply sleek modern Dark-Slate & Gold Auctioneer window background in lowest BACKGROUND sublayer
+	-- (never creates a child Frame that could cover CategoriesList, ItemList, or MoneyFrame!)
+	ApplyLowBackgroundBox(ahFrame, 0.07, 0.08, 0.11, 0.98, 0.26, 0.30, 0.38, 1, true, false)
 
 	-- Draggable modern header bar
 	local dragBar = CreateFrame("Frame", nil, ahFrame)
 	dragBar._aucKeepVisible = true
 	dragBar:SetPoint("TOPLEFT", ahFrame, "TOPLEFT", 6, -2)
-	dragBar:SetPoint("TOPRIGHT", ahFrame, "TOPRIGHT", -145, -2)
+	dragBar:SetPoint("TOPRIGHT", ahFrame, "TOPRIGHT", -32, -2)
 	dragBar:SetHeight(22)
 	dragBar:EnableMouse(true)
 	dragBar:RegisterForDrag("LeftButton")
@@ -838,20 +1084,41 @@ local function StyleModernRetailAHChrome(ahFrame, UIStyle)
 
 	if ahFrame.TitleContainer then
 		ahFrame.TitleContainer._aucKeepVisible = true
-		ahFrame.TitleContainer:SetFrameLevel(shell:GetFrameLevel() + 5)
 		if ahFrame.TitleContainer.TitleText then
 			ahFrame.TitleContainer.TitleText:SetTextColor(0.95, 0.82, 0.32)
-			UIStyle.ApplyFont(ahFrame.TitleContainer.TitleText, 1)
 		end
 	end
 
 	if ahFrame.CloseButton then
-		ahFrame.CloseButton._aucKeepVisible = true
-		ahFrame.CloseButton:ClearAllPoints()
-		ahFrame.CloseButton:SetPoint("TOPRIGHT", ahFrame, "TOPRIGHT", -3, -3)
-		ahFrame.CloseButton:SetSize(20, 20)
-		ahFrame.CloseButton:SetFrameStrata("DIALOG")
-		ahFrame.CloseButton:SetFrameLevel(110)
+		local cb = ahFrame.CloseButton
+		cb._aucKeepVisible = true
+		cb:ClearAllPoints()
+		cb:SetPoint("TOPRIGHT", ahFrame, "TOPRIGHT", -3, -3)
+		cb:SetSize(20, 20)
+		cb:SetFrameStrata("DIALOG")
+		cb:SetFrameLevel(110)
+		for _, reg in ipairs({ cb:GetRegions() }) do
+			if reg and reg.IsObjectType and reg:IsObjectType("Texture") then
+				reg:SetAlpha(0)
+			end
+		end
+		if cb.Border and cb.Border.SetAlpha then cb.Border:SetAlpha(0) end
+		ApplyLowBackgroundBox(cb, 0.18, 0.11, 0.13, 1, 0.42, 0.24, 0.26, 1, false, false)
+		if not cb._aucCloseLabel then
+			local xLbl = cb:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+			xLbl:SetPoint("CENTER", cb, "CENTER", 0, 0)
+			xLbl:SetText("X")
+			xLbl:SetTextColor(0.95, 0.82, 0.32, 1)
+			cb._aucCloseLabel = xLbl
+			cb:HookScript("OnEnter", function(self)
+				if self._aucLowBg then self._aucLowBg:SetColorTexture(0.55, 0.16, 0.18, 1) end
+				if self._aucCloseLabel then self._aucCloseLabel:SetTextColor(1, 1, 1, 1) end
+			end)
+			cb:HookScript("OnLeave", function(self)
+				if self._aucLowBg then self._aucLowBg:SetColorTexture(0.18, 0.11, 0.13, 1) end
+				if self._aucCloseLabel then self._aucCloseLabel:SetTextColor(0.95, 0.82, 0.32, 1) end
+			end)
+		end
 	end
 
 	-- Skin built-in subframes (CategoriesList, SearchBar, Results, MoneyFrame) into Dark-Slate panels
@@ -860,18 +1127,20 @@ local function StyleModernRetailAHChrome(ahFrame, UIStyle)
 		if f.NineSlice and f.NineSlice.SetAlpha then f.NineSlice:SetAlpha(0) end
 		if f.Bg and f.Bg.SetAlpha then f.Bg:SetAlpha(0) end
 		if f.Background and f.Background.SetAlpha then f.Background:SetAlpha(0) end
+		for _, reg in ipairs({ f:GetRegions() }) do
+			if reg and reg.IsObjectType and reg:IsObjectType("Texture") then
+				if reg ~= f._aucLowBg and reg ~= f._aucLowBorderTop and reg ~= f._aucLowBorderBot
+				and reg ~= f._aucLowBorderLeft and reg ~= f._aucLowBorderRight
+				and reg ~= f._aucLowAccentTop and reg ~= f._aucLowAccentBot then
+					reg:SetAlpha(0)
+				end
+			end
+		end
 	end
 
 	if ahFrame.CategoriesList then
 		SuppressNineSlice(ahFrame.CategoriesList)
-		if not ahFrame.CategoriesList._aucStyled then
-			ahFrame.CategoriesList._aucStyled = true
-			local p = CreateFrame("Frame", nil, ahFrame.CategoriesList, BackdropTemplateMixin and "BackdropTemplate")
-			p:SetAllPoints(ahFrame.CategoriesList)
-			p:SetFrameLevel(math.max(1, (ahFrame.CategoriesList:GetFrameLevel() or 2) - 1))
-			p:EnableMouse(false)
-			UIStyle.StylePanel(p)
-		end
+		ApplyLowBackgroundBox(ahFrame.CategoriesList, 0.08, 0.09, 0.12, 0.98, 0.22, 0.25, 0.32, 1, false, false)
 	end
 
 	local panelSubframes = {
@@ -887,29 +1156,109 @@ local function StyleModernRetailAHChrome(ahFrame, UIStyle)
 		ahFrame.AuctionsFrame and ahFrame.AuctionsFrame.BidsList,
 	}
 	for _, sf in ipairs(panelSubframes) do
-		if sf and not sf._aucStyled then
-			sf._aucStyled = true
+		if sf then
 			SuppressNineSlice(sf)
-			local p = CreateFrame("Frame", nil, sf, BackdropTemplateMixin and "BackdropTemplate")
-			p:SetAllPoints(sf)
-			p:SetFrameLevel(math.max(1, (sf:GetFrameLevel() or 2) - 1))
-			p:EnableMouse(false)
-			UIStyle.StylePanel(p)
+			ApplyLowBackgroundBox(sf, 0.08, 0.09, 0.12, 0.98, 0.22, 0.25, 0.32, 1, false, false)
+			StyleRetailHeaderContainer(sf)
+			if sf.RefreshFrame and sf.RefreshFrame.RefreshButton then
+				StyleModernIconButton(sf.RefreshFrame.RefreshButton, "R")
+			end
 		end
 	end
 
-	if ahFrame.MoneyFrameBorder then SuppressNineSlice(ahFrame.MoneyFrameBorder); ahFrame.MoneyFrameBorder:SetAlpha(0) end
-	if ahFrame.MoneyFrameInset then SuppressNineSlice(ahFrame.MoneyFrameInset); ahFrame.MoneyFrameInset:SetAlpha(0) end
+	-- Keep MoneyFrame visible, only suppress the legacy silver border chrome around it
+	if ahFrame.MoneyFrameBorder then SuppressNineSlice(ahFrame.MoneyFrameBorder) end
+	if ahFrame.MoneyFrameInset then SuppressNineSlice(ahFrame.MoneyFrameInset) end
+
+	local function StyleFixedWidthAHButton(btn, variant)
+		if not btn then return end
+		local w = btn:GetWidth()
+		if w and w > 20 then
+			btn._fixedWidth = math.ceil(w)
+		end
+		UIStyle.StyleButton(btn, variant or "default")
+	end
 
 	if ahFrame.SearchBar then
 		if ahFrame.SearchBar.SearchButton then
-			UIStyle.StyleButton(ahFrame.SearchBar.SearchButton, "primary")
+			StyleFixedWidthAHButton(ahFrame.SearchBar.SearchButton, "primary")
 		end
 		if ahFrame.SearchBar.SearchBox then
 			UIStyle.StyleEditBox(ahFrame.SearchBar.SearchBox)
 		end
 		if ahFrame.SearchBar.FilterButton then
-			UIStyle.StyleButton(ahFrame.SearchBar.FilterButton, "default")
+			StyleFixedWidthAHButton(ahFrame.SearchBar.FilterButton, "default")
+		end
+		if ahFrame.SearchBar.FavoritesSearchButton then
+			StyleModernIconButton(ahFrame.SearchBar.FavoritesSearchButton, "*")
+		end
+	end
+
+	-- Style action buttons across ItemBuyFrame, CommoditiesBuyFrame, ItemSellFrame, CommoditiesSellFrame, AuctionsFrame
+	if ahFrame.ItemBuyFrame then
+		local ibf = ahFrame.ItemBuyFrame
+		StyleFixedWidthAHButton(ibf.BackButton, "default")
+		if ibf.BidFrame then StyleFixedWidthAHButton(ibf.BidFrame.BidButton, "default") end
+		if ibf.BuyoutFrame then StyleFixedWidthAHButton(ibf.BuyoutFrame.BuyoutButton, "primary") end
+		if ibf.RefreshFrame and ibf.RefreshFrame.RefreshButton then
+			StyleModernIconButton(ibf.RefreshFrame.RefreshButton, "R")
+		end
+	end
+	if ahFrame.CommoditiesBuyFrame then
+		local cbf = ahFrame.CommoditiesBuyFrame
+		StyleFixedWidthAHButton(cbf.BackButton, "default")
+		if cbf.BuyDisplay then StyleFixedWidthAHButton(cbf.BuyDisplay.BuyButton, "primary") end
+		if cbf.RefreshFrame and cbf.RefreshFrame.RefreshButton then
+			StyleModernIconButton(cbf.RefreshFrame.RefreshButton, "R")
+		end
+	end
+	if ahFrame.ItemSellFrame then
+		StyleFixedWidthAHButton(ahFrame.ItemSellFrame.PostButton, "primary")
+	end
+	if ahFrame.CommoditiesSellFrame then
+		StyleFixedWidthAHButton(ahFrame.CommoditiesSellFrame.PostButton, "primary")
+	end
+	if ahFrame.AuctionsFrame then
+		local af = ahFrame.AuctionsFrame
+		StyleFixedWidthAHButton(af.CancelAuctionButton, "default")
+		if af.BidFrame then StyleFixedWidthAHButton(af.BidFrame.BidButton, "default") end
+		if af.BuyoutFrame then StyleFixedWidthAHButton(af.BuyoutFrame.BuyoutButton, "primary") end
+		if af.RefreshFrame and af.RefreshFrame.RefreshButton then
+			StyleModernIconButton(af.RefreshFrame.RefreshButton, "R")
+		end
+		-- Style AuctionsFrame top sub-tabs ("Auktionen" / "Gebote")
+		local subTabs = af.Tabs or { _G["AuctionsFrameTab1"], _G["AuctionsFrameTab2"] }
+		if subTabs and #subTabs > 0 then
+			local function SyncAuctionSubTabs()
+				local sel = (PanelTemplates_GetSelectedTab and PanelTemplates_GetSelectedTab(af)) or af.selectedTab or (af.displayMode) or 1
+				for idx, st in ipairs(subTabs) do
+					if st then
+						ResizeRetailTab(st)
+						SetRetailTabChecked(st, idx == sel)
+						st:ClearAllPoints()
+						if idx == 1 then
+							st:SetPoint("BOTTOMLEFT", af.SummaryList or af, "TOPLEFT", 0, 2)
+						else
+							st:SetPoint("LEFT", subTabs[idx - 1], "RIGHT", 4, 0)
+						end
+					end
+				end
+			end
+			for idx, st in ipairs(subTabs) do
+				if st and not st._aucSubTabHooked then
+					st._aucSubTabHooked = true
+					st:HookScript("OnClick", function()
+						if PanelTemplates_SetTab then pcall(PanelTemplates_SetTab, af, idx) end
+						SyncAuctionSubTabs()
+					end)
+				end
+			end
+			if af.SetDisplayMode and not af._aucSubModeHooked then
+				af._aucSubModeHooked = true
+				hooksecurefunc(af, "SetDisplayMode", SyncAuctionSubTabs)
+			end
+			af:HookScript("OnShow", SyncAuctionSubTabs)
+			SyncAuctionSubTabs()
 		end
 	end
 end
@@ -951,56 +1300,11 @@ local function SetupRetailAHWindowControls(ahFrame)
 	local UIStyle = Configator and Configator.UIStyle
 
 	if UIStyle then
+		-- Reset any legacy enlarged font size back to crisp 12pt default
+		if _G.AucAdvancedData and _G.AucAdvancedData.UtilUiFontSize and _G.AucAdvancedData.UtilUiFontSize ~= 12 then
+			UIStyle.SetFontSize(12)
+		end
 		StyleModernRetailAHChrome(ahFrame, UIStyle)
-	end
-
-	-- Font size control bar [A-] [13pt] [A+] in top-right header bar (anchored right-to-left with fixed button widths)
-	if UIStyle and not ahFrame._aucFontBar then
-		local fontBar = CreateFrame("Frame", "AucRetailAHFontBar", ahFrame)
-		fontBar._aucKeepVisible = true
-		fontBar:SetSize(80, 18)
-		fontBar:SetPoint("TOPRIGHT", ahFrame, "TOPRIGHT", -54, -4)
-		fontBar:SetFrameStrata("DIALOG")
-		fontBar:SetFrameLevel(100)
-
-		local btnPlus = CreateFrame("Button", nil, fontBar, BackdropTemplateMixin and "BackdropTemplate")
-		btnPlus._fixedWidth = 22
-		btnPlus:SetSize(22, 18)
-		btnPlus:SetPoint("RIGHT", fontBar, "RIGHT", 0, 0)
-		btnPlus:SetNormalFontObject("GameFontHighlightSmall")
-		btnPlus:SetText("A+")
-		UIStyle.StyleButton(btnPlus, "default")
-		btnPlus:SetSize(22, 18)
-
-		local lblSize = fontBar:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-		lblSize:SetWidth(30)
-		lblSize:SetJustifyH("CENTER")
-		lblSize:SetPoint("RIGHT", btnPlus, "LEFT", -2, 0)
-		lblSize:SetText(UIStyle.GetFontSize().."pt")
-		lblSize:SetTextColor(0.95, 0.82, 0.35)
-
-		local btnMinus = CreateFrame("Button", nil, fontBar, BackdropTemplateMixin and "BackdropTemplate")
-		btnMinus._fixedWidth = 22
-		btnMinus:SetSize(22, 18)
-		btnMinus:SetPoint("RIGHT", lblSize, "LEFT", -2, 0)
-		btnMinus:SetNormalFontObject("GameFontHighlightSmall")
-		btnMinus:SetText("A-")
-		UIStyle.StyleButton(btnMinus, "default")
-		btnMinus:SetSize(22, 18)
-
-		btnMinus:SetScript("OnClick", function()
-			UIStyle.SetFontSize(UIStyle.GetFontSize() - 1)
-		end)
-		btnPlus:SetScript("OnClick", function()
-			UIStyle.SetFontSize(UIStyle.GetFontSize() + 1)
-		end)
-		UIStyle.RegisterFontListener(function(newSize)
-			lblSize:SetText(newSize.."pt")
-			btnMinus:SetSize(22, 18)
-			btnPlus:SetSize(22, 18)
-			PositionRetailTabs(ahFrame)
-		end)
-		ahFrame._aucFontBar = fontBar
 	end
 
 	-- Bottom-right window resize & scale grip:
@@ -1225,7 +1529,7 @@ function lib.AddTab(tabButton, tabFrame)
 
 			ahFrame.currentCustomTab = self
 			SetRetailTabChecked(self, true)
-			EnsureTabFrameSurface(tabFrame, ahFrame)
+			SyncBuiltinRetailTabStates(ahFrame)
 			tabFrame:Show()
 		end)
 
@@ -1238,8 +1542,16 @@ function lib.AddTab(tabButton, tabFrame)
 					lib.HideAllRetailTabs()
 					lib.RestoreBuiltinAHContent()
 					ahFrame.currentCustomTab = nil
+					SyncBuiltinRetailTabStates(ahFrame)
 				end
 			end)
+			if PanelTemplates_SetTab then
+				hooksecurefunc("PanelTemplates_SetTab", function(frame)
+					if frame == ahFrame then
+						SyncBuiltinRetailTabStates(ahFrame)
+					end
+				end)
+			end
 			if ahFrame.Tabs then
 				for idx, builtinTab in ipairs(ahFrame.Tabs) do
 					builtinTab:HookScript("OnClick", function(self)
@@ -1253,7 +1565,8 @@ function lib.AddTab(tabButton, tabFrame)
 						if PanelTemplates_SetTab then
 							pcall(PanelTemplates_SetTab, ahFrame, idx)
 						end
-						SetRetailTabChecked(self, true)
+						ahFrame.selectedTab = idx
+						SyncBuiltinRetailTabStates(ahFrame)
 					end)
 				end
 			end
@@ -1269,11 +1582,13 @@ function lib.AddTab(tabButton, tabFrame)
 		if not private.closeHooked then
 			private.closeHooked = true
 			ahFrame:HookScript("OnShow", function()
+				ahFrame.currentCustomTab = nil
 				PositionRetailTabs(ahFrame)
 				for _, tab in ipairs(private.RetailTabs) do
 					SetRetailTabChecked(tab, false)
 					tab:Show()
 				end
+				SyncBuiltinRetailTabStates(ahFrame)
 				lib.ReflowRetailAHInternalFrames(ahFrame)
 			end)
 			ahFrame:HookScript("OnHide", function()

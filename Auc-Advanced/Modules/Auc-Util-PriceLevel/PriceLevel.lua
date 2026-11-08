@@ -349,7 +349,9 @@ function private.ResetRetailBars()
 	end
 end
 
-function private.SetRetailRowBar(row, r, g, b, pct)
+local PCT_COL_WIDTH = 56
+
+function private.SetRetailRowBar(row, r, g, b, pct, hasPctCol)
 	if not row then return end
 	if not row._aucPriceLevelTex then
 		local tex = row:CreateTexture(nil, "BORDER", nil, 2)
@@ -362,18 +364,34 @@ function private.SetRetailRowBar(row, r, g, b, pct)
 		local overlay = CreateFrame("Frame", nil, row)
 		overlay:SetAllPoints(row)
 		overlay:SetFrameLevel((row:GetFrameLevel() or 1) + 5)
+
+		local div = overlay:CreateTexture(nil, "ARTWORK", nil, 2)
+		div:SetWidth(1)
+		div:SetPoint("TOPLEFT", overlay, "TOPRIGHT", -PCT_COL_WIDTH, -1)
+		div:SetPoint("BOTTOMLEFT", overlay, "BOTTOMRIGHT", -PCT_COL_WIDTH, 1)
+		div:SetColorTexture(0.24, 0.28, 0.36, 0.65)
+		overlay._divider = div
+
 		local txt = overlay:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-		txt:SetPoint("RIGHT", overlay, "RIGHT", -8, 0)
+		txt:SetPoint("RIGHT", overlay, "RIGHT", -6, 0)
+		txt:SetWidth(PCT_COL_WIDTH - 8)
 		txt:SetJustifyH("RIGHT")
 		row._aucPriceLevelOverlay = overlay
 		row._aucPriceLevelText = txt
 	end
 
+	if row._aucPriceLevelOverlay and row._aucPriceLevelOverlay._divider then
+		if hasPctCol ~= false then
+			row._aucPriceLevelOverlay._divider:Show()
+		else
+			row._aucPriceLevelOverlay._divider:Hide()
+		end
+	end
+
 	local txt = row._aucPriceLevelText
 	local tex = row._aucPriceLevelTex
-	local offset = (AucAdvanced and AucAdvanced.GetFontSizeOffset and AucAdvanced.GetFontSizeOffset()) or 0
 	local fontPath = (STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF")
-	pcall(txt.SetFont, txt, fontPath, math.max(9, 12 + offset), "OUTLINE")
+	pcall(txt.SetFont, txt, fontPath, 12, "OUTLINE")
 
 	if not pct or not r or not g or not b then
 		txt:SetText("")
@@ -533,17 +551,8 @@ function private.GetRetailFallbackWorth(link, itemID, rowData, itemList)
 	return nil
 end
 
-function private.UpdateRetailRow(row, itemList)
-	if not row then return end
-	if not row:IsShown() then
-		private.SetRetailRowBar(row, nil, nil, nil, nil)
-		return
-	end
-	local rowData = GetRowDataFromFrame(row, itemList)
-	if not rowData then
-		private.SetRetailRowBar(row, nil, nil, nil, nil)
-		return
-	end
+function private.ComputeRowPriceLevel(rowData, itemList)
+	if not rowData then return nil end
 
 	local quantity, bidPrice, buyPrice
 	if rowData.minPrice and rowData.minPrice > 0 then
@@ -561,8 +570,7 @@ function private.UpdateRetailRow(row, itemList)
 	end
 
 	if (not buyPrice or buyPrice <= 0) and (not bidPrice or bidPrice <= 0) then
-		private.SetRetailRowBar(row, nil, nil, nil, nil)
-		return
+		return nil
 	end
 
 	local itemID = rowData.itemID or (rowData.itemKey and rowData.itemKey.itemID)
@@ -585,8 +593,7 @@ function private.UpdateRetailRow(row, itemList)
 	end
 
 	if not link then
-		private.SetRetailRowBar(row, nil, nil, nil, nil)
-		return
+		return nil
 	end
 
 	local priceLevel, _, r, g, b = lib.CalcLevel(link, quantity, bidPrice, buyPrice)
@@ -597,18 +604,354 @@ function private.UpdateRetailRow(row, itemList)
 		end
 	end
 
-	private.SetRetailRowBar(row, r, g, b, priceLevel)
+	return priceLevel, r, g, b
+end
+
+function private.UpdateRetailRow(row, itemList)
+	if not row then return end
+	local hasPctCol = itemList and itemList._aucHasPctColumn
+	if not row:IsShown() then
+		private.SetRetailRowBar(row, nil, nil, nil, nil, hasPctCol)
+		return
+	end
+	local rowData = GetRowDataFromFrame(row, itemList)
+	if not rowData then
+		private.SetRetailRowBar(row, nil, nil, nil, nil, hasPctCol)
+		return
+	end
+
+	local priceLevel, r, g, b = private.ComputeRowPriceLevel(rowData, itemList)
+	private.SetRetailRowBar(row, r, g, b, priceLevel, hasPctCol)
+end
+
+local function GetRowSortValue(rowData, colKey, itemList)
+	if type(rowData) ~= "table" then
+		return (colKey == "name" or colKey == "seller") and "" or 0
+	end
+	if colKey == "price" then
+		local qty = (rowData.quantity and rowData.quantity > 0) and rowData.quantity or 1
+		return rowData.minPrice
+			or rowData.unitPrice
+			or (rowData.buyoutAmount and rowData.buyoutAmount > 0 and (rowData.buyoutAmount / qty))
+			or (rowData.bidAmount and rowData.bidAmount > 0 and (rowData.bidAmount / qty))
+			or rowData.minBid or 0
+	elseif colKey == "buyout" then
+		return rowData.buyoutAmount or rowData.minPrice or rowData.unitPrice or 0
+	elseif colKey == "bid" then
+		return rowData.bidAmount or rowData.minBid or rowData.minPrice or 0
+	elseif colKey == "quantity" then
+		return rowData.totalQuantity or rowData.quantity or 0
+	elseif colKey == "level" then
+		local ilvl = (rowData.itemKey and rowData.itemKey.itemLevel) or rowData.itemLevel
+		if not ilvl or ilvl <= 0 then
+			local id = rowData.itemLink or rowData.itemID or (rowData.itemKey and rowData.itemKey.itemID)
+			if id then
+				ilvl = select(4, GetItemInfo(id))
+			end
+		end
+		return ilvl or 0
+	elseif colKey == "timeleft" then
+		return rowData.timeLeftSeconds or rowData.timeLeft or 0
+	elseif colKey == "pct" then
+		local pct = private.ComputeRowPriceLevel(rowData, itemList)
+		return pct or 999999
+	elseif colKey == "seller" then
+		local oList = rowData.owners
+		if type(oList) == "table" and oList[1] then
+			return tostring(oList[1]):lower()
+		end
+		return tostring(rowData.bidder or rowData.ownerName or ""):lower()
+	elseif colKey == "name" then
+		local name = rowData.itemName or rowData.name
+		if not name and rowData.itemKey and C_AuctionHouse and C_AuctionHouse.GetItemKeyInfo then
+			local ok, info = pcall(C_AuctionHouse.GetItemKeyInfo, rowData.itemKey)
+			if ok and info and info.itemName then
+				name = info.itemName
+			end
+		end
+		if not name then
+			local id = rowData.itemLink or rowData.itemID or (rowData.itemKey and rowData.itemKey.itemID)
+			if id then
+				name = GetItemInfo(id)
+			end
+		end
+		return tostring(name or ""):lower()
+	end
+	return 0
+end
+
+local function DetectHeaderColumnKey(hdr, colIdx)
+	if not hdr then return "price" end
+	if hdr._aucColKey then return hdr._aucColKey end
+	local so = hdr.sortOrder
+	if so ~= nil then
+		if so == 0 then return "price"
+		elseif so == 1 then return "name"
+		elseif so == 2 then return "level"
+		elseif so == 3 then return "bid"
+		elseif so == 4 then return "buyout"
+		elseif so == 5 then return "timeleft"
+		end
+	end
+	if hdr.Icon and hdr.Icon:IsShown() then
+		return "timeleft"
+	end
+	local txt = (hdr.Text and hdr.Text.GetText and hdr.Text:GetText()) or (hdr.GetText and hdr:GetText()) or ""
+	local low = txt:lower()
+	if low == "%" then return "pct"
+	elseif low:find("verf") or low:find("avail") or low:find("menge") or low:find("anz") or low:find("quant") then return "quantity"
+	elseif low:find("st%.") or low:find("stufe") or low:find("lvl") or low:find("level") then return "level"
+	elseif low:find("gebot") or low:find("bid") then return "bid"
+	elseif low:find("kauf") or low:find("sofort") or low:find("buy") then return "buyout"
+	elseif low:find("preis") or low:find("price") then return "price"
+	elseif low:find("gegenstand") or low:find("name") or low:find("item") or low:find("auktion") then return "name"
+	elseif low:find("verk") or low:find("seller") then return "seller"
+	end
+	if colIdx == 1 then return "price"
+	elseif colIdx == 2 then return "name"
+	elseif colIdx == 3 then return "level"
+	elseif colIdx == 4 then return "quantity"
+	end
+	return "price"
+end
+
+local function EnsureHeaderSortArrow(hdr)
+	if not hdr or hdr._aucSortArrow then return hdr and hdr._aucSortArrow end
+	local arrow = hdr:CreateTexture(nil, "OVERLAY", nil, 6)
+	arrow:SetSize(9, 8)
+	arrow:SetPoint("RIGHT", hdr, "RIGHT", -3, 0)
+	arrow:SetTexture("Interface\\AddOns\\Auc-Advanced\\Libs\\ScrollSheet\\upsort")
+	arrow:SetVertexColor(1, 0.85, 0.25, 1)
+	arrow:Hide()
+	hdr._aucSortArrow = arrow
+	return arrow
+end
+
+local function UpdateHeaderSortArrows(itemList)
+	if not itemList or not itemList.HeaderContainer then return end
+	local activeCol = itemList._aucSortColumn
+	local isAsc = itemList._aucSortAscending
+
+	local headers = { itemList.HeaderContainer:GetChildren() }
+	for idx, hdr in ipairs(headers) do
+		if hdr then
+			if hdr.Arrow and hdr.Arrow.Hide then
+				hdr.Arrow:Hide()
+				if hdr.Arrow.SetAlpha then hdr.Arrow:SetAlpha(0) end
+			end
+			local arrow = EnsureHeaderSortArrow(hdr)
+			local colKey = DetectHeaderColumnKey(hdr, idx)
+			if activeCol and colKey == activeCol and arrow then
+				arrow:SetTexture(isAsc and "Interface\\AddOns\\Auc-Advanced\\Libs\\ScrollSheet\\upsort" or "Interface\\AddOns\\Auc-Advanced\\Libs\\ScrollSheet\\downsort")
+				arrow:Show()
+			elseif arrow then
+				arrow:Hide()
+			end
+		end
+	end
+end
+
+local function ApplySortToItemList(itemList)
+	if not itemList or not itemList._aucSortColumn then return end
+	local colKey = itemList._aucSortColumn
+	local asc = itemList._aucSortAscending
+
+	-- 1. If this is BrowseResultsFrame.ItemList and browseResults is a table, sort browseResults directly in-place
+	if AuctionHouseFrame and AuctionHouseFrame.BrowseResultsFrame
+	and itemList == AuctionHouseFrame.BrowseResultsFrame.ItemList
+	and type(AuctionHouseFrame.BrowseResultsFrame.browseResults) == "table" then
+		local list = AuctionHouseFrame.BrowseResultsFrame.browseResults
+		if #list > 1 then
+			table.sort(list, function(a, b)
+				local va = GetRowSortValue(a, colKey, itemList)
+				local vb = GetRowSortValue(b, colKey, itemList)
+				if va == vb then
+					local pa = (a and a.minPrice) or 0
+					local pb = (b and b.minPrice) or 0
+					if asc then return pa < pb else return pa > pb end
+				end
+				if asc then return va < vb else return va > vb end
+			end)
+		end
+		itemList._aucSortedMap = nil
+		return
+	end
+
+	-- 2. For C++ dataProvider lists (ItemBuyFrame, CommoditiesBuyFrame, AuctionsFrame, etc.), build index permutation map
+	local rawProvider = itemList._aucRawDataProvider or itemList.dataProvider
+		or (itemList.tableBuilder and itemList.tableBuilder._aucRawDataProvider)
+		or (itemList.tableBuilder and itemList.tableBuilder.dataProvider)
+	local numEntries = 0
+	if type(itemList.getNumEntries) == "function" then
+		local ok, n = pcall(itemList.getNumEntries)
+		if ok and type(n) == "number" then numEntries = n end
+	elseif type(itemList.numEntries) == "number" then
+		numEntries = itemList.numEntries
+	end
+
+	if type(rawProvider) == "function" and numEntries > 1 then
+		local indices = {}
+		local keys = {}
+		for i = 1, numEntries do
+			indices[i] = i
+			local ok, entry = pcall(rawProvider, i)
+			keys[i] = GetRowSortValue(ok and entry or nil, colKey, itemList)
+		end
+		table.sort(indices, function(ia, ib)
+			local va, vb = keys[ia], keys[ib]
+			if va == vb then
+				return ia < ib
+			end
+			if asc then return va < vb else return va > vb end
+		end)
+		itemList._aucSortedMap = indices
+	else
+		itemList._aucSortedMap = nil
+	end
+end
+
+local function SortRetailItemListByColumn(itemList, colKey)
+	if not itemList or not colKey then return end
+	if itemList._aucSortColumn == colKey then
+		itemList._aucSortAscending = not itemList._aucSortAscending
+	else
+		itemList._aucSortColumn = colKey
+		itemList._aucSortAscending = true
+	end
+	if PlaySound then
+		PlaySound(SOUNDKIT and SOUNDKIT.IG_MAINMENU_OPTION_CheckBox_ON or 856)
+	end
+	ApplySortToItemList(itemList)
+	UpdateHeaderSortArrows(itemList)
+	if itemList.RefreshScrollFrame then
+		pcall(itemList.RefreshScrollFrame, itemList)
+	elseif itemList.UpdateTable then
+		pcall(itemList.UpdateTable, itemList)
+	end
+	private.UpdateRetailItemList(itemList)
+end
+
+local function InstallSortableDataProvider(itemList)
+	if not itemList or itemList._aucDataProviderWrapped then return end
+	itemList._aucDataProviderWrapped = true
+
+	local function WrapProvider(fn)
+		if type(fn) ~= "function" or fn == itemList._aucWrappedProviderFn then
+			return fn
+		end
+		itemList._aucRawDataProvider = fn
+		itemList._aucWrappedProviderFn = function(index, ...)
+			local mapped = (itemList._aucSortedMap and itemList._aucSortedMap[index]) or index
+			return itemList._aucRawDataProvider(mapped, ...)
+		end
+		return itemList._aucWrappedProviderFn
+	end
+
+	if type(itemList.dataProvider) == "function" then
+		itemList.dataProvider = WrapProvider(itemList.dataProvider)
+	end
+	if itemList.tableBuilder and type(itemList.tableBuilder.dataProvider) == "function" then
+		itemList.tableBuilder.dataProvider = WrapProvider(itemList.tableBuilder.dataProvider)
+	end
+	if itemList.SetDataProvider then
+		hooksecurefunc(itemList, "SetDataProvider", function(self, newProvider)
+			local w = WrapProvider(newProvider)
+			self.dataProvider = w
+			if self.tableBuilder then
+				self.tableBuilder.dataProvider = w
+			end
+		end)
+	end
+	if itemList.tableBuilder and itemList.tableBuilder.SetDataProvider then
+		hooksecurefunc(itemList.tableBuilder, "SetDataProvider", function(tb, newProvider)
+			tb.dataProvider = WrapProvider(newProvider)
+		end)
+	end
+end
+
+local function SetupHeaderButtonsSorting(itemList)
+	if not itemList or not itemList.HeaderContainer then return end
+	InstallSortableDataProvider(itemList)
+
+	if AucAdvanced and AucAdvanced.StyleRetailHeaderContainer then
+		AucAdvanced.StyleRetailHeaderContainer(itemList)
+	end
+
+	-- Create or update dedicated "%" column header button for PriceLevel lists
+	if itemList._aucHasPctColumn then
+		if itemList.HeaderContainer._aucPctHeader then
+			itemList.HeaderContainer._aucPctHeader:Hide()
+		end
+		local pctBtn = itemList.HeaderContainer._aucPctHeaderBtn
+		if not pctBtn then
+			pctBtn = CreateFrame("Button", nil, itemList.HeaderContainer)
+			pctBtn._aucColKey = "pct"
+			pctBtn:RegisterForClicks("LeftButtonUp")
+			local txt = pctBtn:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+			txt:SetPoint("CENTER", pctBtn, "CENTER", -2, 0)
+			txt:SetText("%")
+			txt:SetTextColor(0.95, 0.82, 0.30, 1)
+			pctBtn.Text = txt
+			EnsureHeaderSortArrow(pctBtn)
+			pctBtn:SetScript("OnClick", function()
+				SortRetailItemListByColumn(itemList, "pct")
+			end)
+			itemList.HeaderContainer._aucPctHeaderBtn = pctBtn
+		end
+		pctBtn:ClearAllPoints()
+		pctBtn:SetPoint("TOPLEFT", itemList.HeaderContainer, "TOPRIGHT", 1, 0)
+		pctBtn:SetPoint("BOTTOMLEFT", itemList.HeaderContainer, "BOTTOMRIGHT", 1, 0)
+		pctBtn:SetWidth(PCT_COL_WIDTH - 1)
+		pctBtn:Show()
+		if AucAdvanced and AucAdvanced.StyleRetailHeaderButton then
+			AucAdvanced.StyleRetailHeaderButton(pctBtn)
+		end
+	end
+
+	-- Make every column header in HeaderContainer clickable for ascending/descending sort
+	local children = { itemList.HeaderContainer:GetChildren() }
+	local colIdx = 0
+	for _, hdr in ipairs(children) do
+		if hdr and hdr ~= itemList.HeaderContainer._aucPctHeaderBtn and hdr:IsShown() then
+			colIdx = colIdx + 1
+			local colKey = DetectHeaderColumnKey(hdr, colIdx)
+			hdr._aucColKey = colKey
+			EnsureHeaderSortArrow(hdr)
+			if hdr.Text and hdr.Text.ClearAllPoints then
+				hdr.Text:ClearAllPoints()
+				hdr.Text:SetPoint("LEFT", hdr, "LEFT", 6, 0)
+				hdr.Text:SetPoint("RIGHT", hdr, "RIGHT", -14, 0)
+				hdr.Text:SetJustifyH("LEFT")
+			end
+			pcall(hdr.EnableMouse, hdr, true)
+			if hdr.IsObjectType and hdr:IsObjectType("Button") then
+				pcall(hdr.RegisterForClicks, hdr, "LeftButtonUp")
+				hdr:SetScript("OnClick", function()
+					SortRetailItemListByColumn(itemList, colKey)
+				end)
+			else
+				hdr:SetScript("OnMouseUp", function(_, button)
+					if button == "LeftButton" then
+						SortRetailItemListByColumn(itemList, colKey)
+					end
+				end)
+			end
+		end
+	end
+
+	UpdateHeaderSortArrows(itemList)
 end
 
 function private.UpdateRetailItemList(itemList)
 	if not itemList or not itemList:IsVisible() then return end
-	if itemList.HeaderContainer and not itemList.HeaderContainer._aucPctHeader then
-		local hdr = itemList.HeaderContainer:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-		hdr:SetPoint("RIGHT", itemList.HeaderContainer, "RIGHT", -12, 0)
-		hdr:SetText("%")
-		hdr:SetTextColor(1, 0.82, 0, 0.9)
-		itemList.HeaderContainer._aucPctHeader = hdr
+	if AuctionHouseFrame then
+		if (AuctionHouseFrame.BrowseResultsFrame and itemList == AuctionHouseFrame.BrowseResultsFrame.ItemList)
+		or (AuctionHouseFrame.ItemBuyFrame and itemList == AuctionHouseFrame.ItemBuyFrame.ItemList)
+		or (AuctionHouseFrame.CommoditiesBuyFrame and itemList == AuctionHouseFrame.CommoditiesBuyFrame.ItemList) then
+			itemList._aucHasPctColumn = true
+		end
 	end
+	SetupHeaderButtonsSorting(itemList)
 	local rows = GetItemListRowFrames(itemList)
 	for _, row in ipairs(rows) do
 		private.UpdateRetailRow(row, itemList)
@@ -623,9 +966,14 @@ function private.UpdateAllRetailLists()
 	end
 end
 
-local function HookSingleRetailItemList(itemList)
+local function HookSingleRetailItemList(itemList, hasPctColumn)
 	if not itemList or private.hookedItemLists[itemList] then return end
 	private.hookedItemLists[itemList] = true
+	if hasPctColumn then
+		itemList._aucHasPctColumn = true
+	end
+	itemList._aucOnReflowHeaders = SetupHeaderButtonsSorting
+	InstallSortableDataProvider(itemList)
 
 	if itemList.RefreshScrollFrame then
 		hooksecurefunc(itemList, "RefreshScrollFrame", function(self)
@@ -682,6 +1030,9 @@ local function HookSingleRetailItemList(itemList)
 		end
 	end
 	itemList:HookScript("OnShow", function(self)
+		if AucAdvanced and AucAdvanced.ReflowRetailAHInternalFrames and AuctionHouseFrame then
+			AucAdvanced.ReflowRetailAHInternalFrames(AuctionHouseFrame)
+		end
 		private.UpdateRetailItemList(self)
 	end)
 end
@@ -689,13 +1040,26 @@ end
 function private.HookRetailAH()
 	if not AuctionHouseFrame then return end
 	if AuctionHouseFrame.BrowseResultsFrame and AuctionHouseFrame.BrowseResultsFrame.ItemList then
-		HookSingleRetailItemList(AuctionHouseFrame.BrowseResultsFrame.ItemList)
+		HookSingleRetailItemList(AuctionHouseFrame.BrowseResultsFrame.ItemList, true)
 	end
 	if AuctionHouseFrame.ItemBuyFrame and AuctionHouseFrame.ItemBuyFrame.ItemList then
-		HookSingleRetailItemList(AuctionHouseFrame.ItemBuyFrame.ItemList)
+		HookSingleRetailItemList(AuctionHouseFrame.ItemBuyFrame.ItemList, true)
 	end
 	if AuctionHouseFrame.CommoditiesBuyFrame and AuctionHouseFrame.CommoditiesBuyFrame.ItemList then
-		HookSingleRetailItemList(AuctionHouseFrame.CommoditiesBuyFrame.ItemList)
+		HookSingleRetailItemList(AuctionHouseFrame.CommoditiesBuyFrame.ItemList, true)
+	end
+	if AuctionHouseFrame.ItemSellList then
+		HookSingleRetailItemList(AuctionHouseFrame.ItemSellList, false)
+	end
+	if AuctionHouseFrame.CommoditiesSellList then
+		HookSingleRetailItemList(AuctionHouseFrame.CommoditiesSellList, false)
+	end
+	if AuctionHouseFrame.AuctionsFrame then
+		local af = AuctionHouseFrame.AuctionsFrame
+		if af.AllAuctionsList then HookSingleRetailItemList(af.AllAuctionsList, false) end
+		if af.BidsList then HookSingleRetailItemList(af.BidsList, false) end
+		if af.ItemList then HookSingleRetailItemList(af.ItemList, false) end
+		if af.CommoditiesList then HookSingleRetailItemList(af.CommoditiesList, false) end
 	end
 
 	if not private.retailEventFrame then
@@ -705,9 +1069,16 @@ function private.HookRetailAH()
 		ef:RegisterEvent("ITEM_SEARCH_RESULTS_UPDATED")
 		ef:RegisterEvent("ITEM_SEARCH_RESULTS_ADDED")
 		ef:RegisterEvent("COMMODITY_SEARCH_RESULTS_UPDATED")
+		ef:RegisterEvent("OWNED_AUCTIONS_UPDATED")
+		ef:RegisterEvent("BIDS_UPDATED")
 		local pendingDelay = nil
 		ef:SetScript("OnEvent", function()
 			wipe(private.peerWorthCache)
+			for itemList in pairs(private.hookedItemLists) do
+				if itemList._aucSortColumn then
+					ApplySortToItemList(itemList)
+				end
+			end
 			private.UpdateAllRetailLists()
 			pendingDelay = 0.08
 		end)
@@ -716,6 +1087,11 @@ function private.HookRetailAH()
 			pendingDelay = pendingDelay - elapsed
 			if pendingDelay <= 0 then
 				pendingDelay = nil
+				for itemList in pairs(private.hookedItemLists) do
+					if itemList._aucSortColumn then
+						ApplySortToItemList(itemList)
+					end
+				end
 				private.UpdateAllRetailLists()
 			end
 		end)
@@ -729,6 +1105,9 @@ function private.HookRetailAH()
 		end)
 	end
 
+	if AucAdvanced and AucAdvanced.ReflowRetailAHInternalFrames then
+		AucAdvanced.ReflowRetailAHInternalFrames(AuctionHouseFrame)
+	end
 	private.UpdateAllRetailLists()
 end
 

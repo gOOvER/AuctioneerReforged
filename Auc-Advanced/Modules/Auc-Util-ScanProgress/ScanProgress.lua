@@ -68,22 +68,39 @@ end
 
 ----  Functions to manage the progress indicator ----
 private.scanStartTime = time()
-private.scanProgressFormat = "Auctioneer Advanced: %s\nScanning page %d of %d\n\nAuctions per second: %.2f\nAuctions expected: %d\nAuctions scanned thus far: %d (%3.1f%%)\n\nElapsed scan time: %s\nEstimated time left: %s\n%s"
-private.scanCompleteFormat = "Auctioneer Advanced: %s\nScan Complete\n\nAuctions per second: %.2f\nAuctions expected: %d\nAuctions scanned: %d (%3.1f%%)\n\nElapsed scan time: %s\n%s"
+local isDe = (GetLocale and GetLocale() == "deDE")
+private.scanProgressFormat = isDe
+	and "Auctioneer Advanced: %s\nScanne Seite %d von %d\n\nAuktionen pro Sekunde: %.2f\nErwartete Auktionen: %d\nBisher gescannt: %d (%3.1f%%)\n\nVerstrichene Zeit: %s\nGeschätzte Restzeit: %s\n%s"
+	or "Auctioneer Advanced: %s\nScanning page %d of %d\n\nAuctions per second: %.2f\nAuctions expected: %d\nAuctions scanned thus far: %d (%3.1f%%)\n\nElapsed scan time: %s\nEstimated time left: %s\n%s"
+private.scanCompleteFormat = isDe
+	and "Auctioneer Advanced: %s\nScan abgeschlossen\n\nAuktionen pro Sekunde: %.2f\nErwartete Auktionen: %d\nGescannte Auktionen: %d (%3.1f%%)\n\nGesamtdauer: %s\n%s"
+	or "Auctioneer Advanced: %s\nScan Complete\n\nAuctions per second: %.2f\nAuctions expected: %d\nAuctions scanned: %d (%3.1f%%)\n\nElapsed scan time: %s\n%s"
 
 local function GetRetailProgressOverlay()
 	if private.retailOverlay then return private.retailOverlay end
-	if not AuctionHouseFrame or not AuctionHouseFrame.BrowseResultsFrame or not AuctionHouseFrame.BrowseResultsFrame.ItemList then
+	if not AuctionHouseFrame then
 		return nil
 	end
-	local parentFrame = AuctionHouseFrame.BrowseResultsFrame.ItemList
-	local overlay = CreateFrame("Frame", "AucRetailScanProgressOverlay", parentFrame, BackdropTemplateMixin and "BackdropTemplate")
-	overlay:SetSize(380, 185)
-	overlay:SetPoint("CENTER", parentFrame, "CENTER", 0, 0)
-	overlay:SetFrameLevel((parentFrame:GetFrameLevel() or 10) + 15)
+	-- Full-window modal blocker covering the entire AuctionHouseFrame (including bottom tabs)
+	-- so all inputs are locked while a scan is running.
+	local overlay = CreateFrame("Frame", "AucRetailScanProgressOverlay", AuctionHouseFrame, BackdropTemplateMixin and "BackdropTemplate")
+	overlay._aucKeepVisible = true
+	overlay:SetPoint("TOPLEFT", AuctionHouseFrame, "TOPLEFT", 0, 2)
+	overlay:SetPoint("BOTTOMRIGHT", AuctionHouseFrame, "BOTTOMRIGHT", 0, -30)
+	overlay:SetFrameStrata("DIALOG")
+	overlay:SetFrameLevel(185)
+	overlay:EnableMouse(true)
+	if overlay.EnableMouseWheel then overlay:EnableMouseWheel(true) end
+	overlay:SetScript("OnMouseDown", function() end)
+	overlay:SetScript("OnMouseUp", function() end)
+	if overlay.SetScript then
+		pcall(overlay.SetScript, overlay, "OnMouseWheel", function() end)
+	end
+
 	local Configator = LibStub and LibStub("Configator", true)
-	if Configator and Configator.UIStyle then
-		Configator.UIStyle.StylePanel(overlay)
+	local UIStyle = Configator and Configator.UIStyle
+	if UIStyle then
+		UIStyle.ApplyBox(overlay, 0.03, 0.04, 0.06, 0.80, 0.78, 0.64, 0.22, 0.75)
 	elseif overlay.SetBackdrop then
 		overlay:SetBackdrop({
 			bgFile = "Interface\\Buttons\\WHITE8X8",
@@ -91,14 +108,34 @@ local function GetRetailProgressOverlay()
 			edgeSize = 1,
 			insets = { left = 1, right = 1, top = 1, bottom = 1 },
 		})
-		overlay:SetBackdropColor(0.08, 0.09, 0.12, 0.94)
-		overlay:SetBackdropBorderColor(0.78, 0.64, 0.22, 0.85)
+		overlay:SetBackdropColor(0.03, 0.04, 0.06, 0.80)
+		overlay:SetBackdropBorderColor(0.78, 0.64, 0.22, 0.75)
 	end
-	overlay.text = overlay:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-	overlay.text:SetPoint("TOPLEFT", overlay, "TOPLEFT", 14, -14)
-	overlay.text:SetPoint("BOTTOMRIGHT", overlay, "BOTTOMRIGHT", -14, 14)
+
+	local card = CreateFrame("Frame", nil, overlay, BackdropTemplateMixin and "BackdropTemplate")
+	card:SetSize(420, 190)
+	card:SetPoint("CENTER", overlay, "CENTER", 0, 10)
+	card:SetFrameLevel(overlay:GetFrameLevel() + 5)
+	if UIStyle then
+		UIStyle.StyleWindow(card, true)
+	elseif card.SetBackdrop then
+		card:SetBackdrop({
+			bgFile = "Interface\\Buttons\\WHITE8X8",
+			edgeFile = "Interface\\Buttons\\WHITE8X8",
+			edgeSize = 1,
+			insets = { left = 1, right = 1, top = 1, bottom = 1 },
+		})
+		card:SetBackdropColor(0.08, 0.09, 0.12, 0.98)
+		card:SetBackdropBorderColor(0.85, 0.70, 0.22, 1)
+	end
+	overlay.card = card
+
+	overlay.text = card:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+	overlay.text:SetPoint("TOPLEFT", card, "TOPLEFT", 16, -16)
+	overlay.text:SetPoint("BOTTOMRIGHT", card, "BOTTOMRIGHT", -16, 16)
 	overlay.text:SetJustifyH("CENTER")
 	overlay.text:SetJustifyV("MIDDLE")
+
 	overlay:Hide()
 	private.retailOverlay = overlay
 	return overlay
@@ -122,7 +159,7 @@ function private.UpdateScanProgress(state, totalAuctions, scannedAuctions, elaps
 			return
 		elseif state == true then
 			private.scanStartTime = time()
-			overlay.text:SetText("Auctioneer: Scanning auctions...")
+			overlay.text:SetText(isDe and "Auctioneer: Auktionen werden gescannt..." or "Auctioneer: Scanning auctions...")
 			overlay:Show()
 		end
 		if scannedAuctions and scannedAuctions > 0 and totalAuctions and totalAuctions > 0 then
@@ -132,7 +169,7 @@ function private.UpdateScanProgress(state, totalAuctions, scannedAuctions, elaps
 			local remaining = math.max(0, (totalAuctions - scannedAuctions) / math.max(1, speed))
 			overlay.text:SetText(
 				private.scanProgressFormat:format(
-					"Scanning auctions",
+					isDe and "Auktionen werden gescannt" or "Scanning auctions",
 					page or 1, maxPages or 1,
 					speed,
 					totalAuctions,

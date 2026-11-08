@@ -1935,5 +1935,15 @@ AuctioneerLocalizations.deDE = {
 		["Change localization language (for next session)"]	= "Sprache ändern (für nächste Sitzung)";
 		["The selected Locale takes effect after a /reload or on next login"]	= "Die gewählte Sprache wird nach einem /reload oder beim nächsten Login aktiv.";
 		["Click and drag to resize window"]	= "Ziehen, um die Fenstergröße zu ändern (Rechtsklick: Standardgröße)";
+		["Reason"]	= "Grund";
+		["Bid/ea"]	= "Gebot/je";
+		["Buy/ea"]	= "Kauf/je";
+		["Min/ea"]	= "Min/je";
+		["Cur/ea"]	= "Akt/je";
+		["About the SearchUI"]	= "Über die Auktionssuche (SearchUI)";
+		["Welcome"]	= "Willkommen";
+		["About"]	= "Über";
+		["Searchers"]	= "Suchmodule";
+		["Filters"]	= "Filter";
 
 }

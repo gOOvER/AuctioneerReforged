@@ -1052,6 +1052,10 @@ function lib.AttachToAH()
 		end
 	end
 	gui.buttonTop = -30
+	if parent and parent.backing then
+		parent.backing:SetFrameLevel(math.max(1, (parent:GetFrameLevel() or 15) + 1))
+	end
+	gui:SetFrameLevel(math.max(20, (parent and parent:GetFrameLevel() or 15) + 8))
 	gui:SetPosition(parent, width, height, 5, 7+height)
 	gui:HideBackdrop()
 	gui:EnableMouse(false)
@@ -1169,8 +1173,10 @@ function private.CreateAuctionFrames()
 	frame.money:SetHeight(32)
 
 	frame.backing = CreateFrame("Frame", nil, frame, BackdropTemplateMixin and "BackdropTemplate")
-	frame.backing:SetPoint("TOPLEFT", frame, "TOPLEFT", 17, -70)
-	frame.backing:SetPoint("BOTTOMRIGHT", frame.money, "TOPLEFT", 145, 50)
+	frame.backing:SetPoint("TOPLEFT", frame, "TOPLEFT", 8, -34)
+	frame.backing:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 8, 36)
+	frame.backing:SetWidth(154)
+	frame.backing:EnableMouse(false)
 	local Configator = LibStub("Configator", true)
 	if Configator and Configator.UIStyle then
 		Configator.UIStyle.StylePanel(frame.backing)
@@ -1178,7 +1184,7 @@ function private.CreateAuctionFrames()
 		frame.backing:SetBackdrop({ bgFile="Interface\\AddOns\\Auc-Advanced\\Textures\\BlackBack", edgeFile="Interface\\AddOns\\Auc-Advanced\\Textures\\WhiteCornerBorder", tile=1, tileSize=8, edgeSize=8, insets={left=3, right=3, top=3, bottom=3} })
 		frame.backing:SetBackdropColor(0,0,0, 0.60)
 	end
-	frame.backing:SetFrameLevel(frame:GetFrameLevel())
+	frame.backing:SetFrameLevel(math.max(1, (frame:GetFrameLevel() or 1) + 1))
 
 	frame.scanslabel = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 	frame.scanslabel:SetPoint("TOPLEFT", frame, "TOPLEFT", 72, -19)
@@ -1218,12 +1224,12 @@ function private.MakeGuiConfig()
 	local id, last, cont
 	local selected
 
-	gui = Configator:Create(setter,getter, 900, 500, 5, 345, 26, 5)
+	gui = Configator:Create(setter,getter, 900, 500, 5, 315, 26, 5)
 
 	gui.expandGap = 25
-	gui.expandOnActivate = true
+	gui.expandOnActivate = false
 	gui.autoScrollTabs = true
-	gui.buttonBottom = 108
+	gui.buttonBottom = 42
 
 	gui.searchers = {}
 	gui.AddSearcher = function (self, searchType, searchDetail, searchPos)
@@ -1264,8 +1270,8 @@ function private.MakeGuiConfig()
 	end
 
 	gui.frame = CreateFrame("Frame", nil, gui, BackdropTemplateMixin and "BackdropTemplate")
-	gui.frame:SetPoint("TOP", gui, "TOP", 0, -115)
-	gui.frame:SetPoint("BOTTOMRIGHT", gui.Done, "TOPRIGHT", -5, 27)
+	gui.frame:SetPoint("TOP", gui, "TOP", 0, -145)
+	gui.frame:SetPoint("BOTTOMRIGHT", gui, "BOTTOMRIGHT", -6, 36)
 	gui.frame:SetPoint("LEFT", gui, "LEFT", 165, 0)
 	if UIStyle then
 		UIStyle.StylePanel(gui.frame)
@@ -1551,17 +1557,19 @@ function private.MakeGuiConfig()
 	end
 
 	gui.Search = CreateFrame("Button", "AucSearchUISearchButton", gui, "UIPanelButtonTemplate")
-	gui.Search:SetPoint("BOTTOMLEFT", gui, "BOTTOMLEFT", 20, 80)
+	gui.Search:SetPoint("BOTTOMLEFT", gui, "BOTTOMLEFT", 8, 8)
 	gui.Search:SetText(_TRANS("Search"))
-	gui.Search:SetWidth(80)
+	gui.Search:SetWidth(74)
 	gui.Search:SetHeight(22)
+	gui.Search._fixedWidth = 74
 	gui.Search:SetScript("OnClick", function() lib.PerformSearch() end)
-	gui.Search:SetFrameLevel(11)
+	gui.Search:SetFrameLevel(25)
 	gui.Search.TooltipText = _TRANS("Search Snapshot using current Searcher")
 	gui.Search:SetScript("OnEnter", showTooltipText)
 	gui.Search:SetScript("OnLeave", hideTooltip)
 	if UIStyle then
 		UIStyle.StyleButton(gui.Search, "primary")
+		gui.Search:SetWidth(74)
 	end
 	gui.Search:Disable()
 	gui.Search.updateDisplay = function()
@@ -1659,9 +1667,11 @@ function private.MakeGuiConfig()
 	end
 
 	gui.frame.purchase = CreateFrame("Button", nil, gui.frame, "UIPanelButtonTemplate")
-	gui.frame.purchase:SetPoint("BOTTOMLEFT", gui, "BOTTOMLEFT", 170, 35)
+	gui.frame.purchase:SetPoint("BOTTOMLEFT", gui, "BOTTOMLEFT", 165, 8)
 	gui.frame.purchase:SetText(_TRANS("Purchase"))
-	gui.frame.purchase:SetWidth(100)
+	gui.frame.purchase:SetWidth(82)
+	gui.frame.purchase:SetHeight(22)
+	gui.frame.purchase._fixedWidth = 82
 	gui.frame.purchase:SetScript("OnClick", private.purchase)
 	gui.frame.purchase:Disable()
 	gui.frame.purchase.TooltipText = _TRANS("Bid/BuyOut selected auction\nbased on 'reason' column. \nHold CTRL+ALT+SHIFT to purchase all items.")
@@ -1699,9 +1709,11 @@ function private.MakeGuiConfig()
 	end
 
 	gui.frame.notnow = CreateFrame("Button", nil, gui.frame, "UIPanelButtonTemplate")
-	gui.frame.notnow:SetPoint("TOP", gui.frame.purchase, "BOTTOM", 0, -2)
+	gui.frame.notnow:SetPoint("LEFT", gui.frame.purchase, "RIGHT", 4, 0)
 	gui.frame.notnow:SetText(_TRANS("Not Now"))
-	gui.frame.notnow:SetWidth(100)
+	gui.frame.notnow:SetWidth(74)
+	gui.frame.notnow:SetHeight(22)
+	gui.frame.notnow._fixedWidth = 74
 	gui.frame.notnow:SetScript("OnClick", private.ignoretemp)
 	gui.frame.notnow:Disable()
 	gui.frame.notnow.TooltipText = _TRANS("Ignore selected auction for session")
@@ -1709,18 +1721,34 @@ function private.MakeGuiConfig()
 	gui.frame.notnow:SetScript("OnLeave", hideTooltip)
 
 	gui.frame.snatch = CreateFrame("Button", nil, gui.frame, "UIPanelButtonTemplate")
-	gui.frame.snatch:SetPoint("BOTTOMRIGHT", gui.frame, "BOTTOMRIGHT", -16, 35)
+	gui.frame.snatch:SetPoint("BOTTOMRIGHT", gui, "BOTTOMRIGHT", -6, 8)
 	gui.frame.snatch:SetText(_TRANS("Snatch"))
-	gui.frame.snatch:SetWidth(100)
+	gui.frame.snatch:SetWidth(86)
+	gui.frame.snatch:SetHeight(22)
+	gui.frame.snatch._fixedWidth = 86
 	gui.frame.snatch:SetScript("OnClick", private.snatch)
 	gui.frame.snatch:Disable()
 	gui.frame.snatch.TooltipText = _TRANS("Add selected auction to snatch list")
 	gui.frame.snatch:SetScript("OnEnter", showTooltipText)
 	gui.frame.snatch:SetScript("OnLeave", hideTooltip)
 
+	gui.frame.ignoreperm = CreateFrame("Button", nil, gui.frame, "UIPanelButtonTemplate")
+	gui.frame.ignoreperm:SetPoint("RIGHT", gui.frame.snatch, "LEFT", -4, 0)
+	gui.frame.ignoreperm:SetText(_TRANS("Ignore"))
+	gui.frame.ignoreperm:SetWidth(86)
+	gui.frame.ignoreperm:SetHeight(22)
+	gui.frame.ignoreperm._fixedWidth = 86
+	gui.frame.ignoreperm:SetScript("OnClick", private.ignoreperm)
+	gui.frame.ignoreperm:Disable()
+	gui.frame.ignoreperm.TooltipText = _TRANS("Ignore selected auction at any price")
+	gui.frame.ignoreperm:SetScript("OnEnter", showTooltipText)
+	gui.frame.ignoreperm:SetScript("OnLeave", hideTooltip)
+
 	gui.frame.ignore = CreateFrame("Button", nil, gui.frame, "UIPanelButtonTemplate")
-	gui.frame.ignore:SetPoint("RIGHT", gui.frame.snatch, "LEFT", -16, 0)
-	gui.frame.ignore:SetWidth(105)
+	gui.frame.ignore:SetPoint("RIGHT", gui.frame.ignoreperm, "LEFT", -4, 0)
+	gui.frame.ignore:SetWidth(94)
+	gui.frame.ignore:SetHeight(22)
+	gui.frame.ignore._fixedWidth = 94
 	gui.frame.ignore:SetText(_TRANS("Ignore Price"))
 	gui.frame.ignore:SetScript("OnClick", private.ignore)
 	gui.frame.ignore:Disable()
@@ -1728,21 +1756,13 @@ function private.MakeGuiConfig()
 	gui.frame.ignore:SetScript("OnEnter", showTooltipText)
 	gui.frame.ignore:SetScript("OnLeave", hideTooltip)
 
-	gui.frame.ignoreperm = CreateFrame("Button", nil, gui.frame, "UIPanelButtonTemplate")
-	gui.frame.ignoreperm:SetPoint("TOP", gui.frame.ignore, "BOTTOM", 0, -2)
-	gui.frame.ignoreperm:SetText(_TRANS("Ignore"))
-	gui.frame.ignoreperm:SetWidth(105)
-	gui.frame.ignoreperm:SetScript("OnClick", private.ignoreperm)
-	gui.frame.ignoreperm:Disable()
-	gui.frame.ignoreperm.TooltipText = _TRANS("Ignore selected auction at any price")
-	gui.frame.ignoreperm:SetScript("OnEnter", showTooltipText)
-	gui.frame.ignoreperm:SetScript("OnLeave", hideTooltip)
-
 	gui.frame.clear = CreateFrame("Button", nil, gui.frame, "UIPanelButtonTemplate")
-	gui.frame.clear:SetPoint("TOPLEFT", gui.Search, "BOTTOMLEFT", 0, -4)
+	gui.frame.clear:SetPoint("LEFT", gui.Search, "RIGHT", 6, 0)
 	gui.frame.clear:SetText(_TRANS("Clear"))
-	gui.frame.clear:SetWidth(80)
+	gui.frame.clear:SetWidth(74)
 	gui.frame.clear:SetHeight(22)
+	gui.frame.clear._fixedWidth = 74
+	gui.frame.clear:SetFrameLevel(25)
 	gui.frame.clear:SetScript("OnClick", private.removeall)
 	gui.frame.clear:Enable()
 	gui.frame.clear.TooltipText = _TRANS("Clear results list")
@@ -1750,7 +1770,7 @@ function private.MakeGuiConfig()
 	gui.frame.clear:SetScript("OnLeave", hideTooltip)
 
 	gui.frame.cancel = CreateFrame("Button", "AucAdvSearchUICancelButton", gui.frame, "UIPanelButtonTemplate")
-	gui.frame.cancel:SetPoint("BOTTOMLEFT", gui, "BOTTOMLEFT", 20, 28)
+	gui.frame.cancel:SetPoint("BOTTOMLEFT", gui.Search, "TOPLEFT", 0, 4)
 	gui.frame.cancel:SetWidth(22)
 	gui.frame.cancel:SetHeight(18)
 	gui.frame.cancel:Disable()
@@ -1793,9 +1813,11 @@ function private.MakeGuiConfig()
 	gui.frame.cancel.label:SetJustifyH("LEFT")
 
 	gui.frame.buyout = CreateFrame("Button", nil, gui.frame, "UIPanelButtonTemplate")
-	gui.frame.buyout:SetPoint("LEFT", gui.frame.notnow, "RIGHT", 5, 0)
+	gui.frame.buyout:SetPoint("LEFT", gui.frame.notnow, "RIGHT", 4, 0)
 	gui.frame.buyout:SetText(_TRANS("Buyout"))
-	gui.frame.buyout:SetWidth(80)
+	gui.frame.buyout:SetWidth(86)
+	gui.frame.buyout:SetHeight(22)
+	gui.frame.buyout._fixedWidth = 86
 	gui.frame.buyout:SetScript("OnClick", private.buyauction)
 	gui.frame.buyout:Disable()
 	gui.frame.buyout.TooltipText = _TRANS("Buyout selected auction")
@@ -1803,16 +1825,19 @@ function private.MakeGuiConfig()
 	gui.frame.buyout:SetScript("OnLeave", hideTooltip)
 
 	gui.frame.buyoutbox = gui.frame.buyout:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-	gui.frame.buyoutbox:SetPoint("LEFT", gui.frame.buyout, "RIGHT", 0, 0)
-	gui.frame.buyoutbox:SetWidth(100)
+	gui.frame.buyoutbox:SetPoint("LEFT", gui.frame.buyout, "RIGHT", 4, 0)
+	gui.frame.buyoutbox:SetWidth(80)
 
 	do -- bid button and bid box
 		local bidbutton = CreateFrame("Button", nil, gui.frame, "UIPanelButtonTemplate")
 		gui.frame.bid = bidbutton
-		bidbutton:SetPoint("LEFT", gui.frame.purchase, "RIGHT", 5, 0)
+		bidbutton:SetPoint("LEFT", gui.frame.buyoutbox, "RIGHT", 4, 0)
+		bidbutton:SetWidth(70)
+		bidbutton:SetHeight(22)
+		bidbutton._fixedWidth = 70
 		local bidbox = CreateFrame("Frame", "AucAdvSearchUIBidBox", gui.frame, "MoneyInputFrameTemplate")
 		gui.frame.bidbox = bidbox
-		bidbox:SetPoint("LEFT", bidbutton, "RIGHT", 10, 2)
+		bidbox:SetPoint("LEFT", bidbutton, "RIGHT", 6, 1)
 
 		bidbutton:SetText(_TRANS("Bid"))
 		bidbutton:Disable()
@@ -1979,19 +2004,30 @@ function private.MakeGuiConfig()
 	-- Add the welcome text now
 	local b = "  |TInterface\\QuestFrame\\UI-Quest-BulletPoint.blp:13|t "
 	local w = ""
-	w=w.."The Auctioneer Search UI is here to assist you in finding the Auctions that are of special interest to you.\n"
-	w=w.."\n"
-	w=w.."It has 2 modes of operation:\n"
-	w=w..b.."Offline - Searches are applied against the current data\n"
-	w=w..b.."Realtime - Searches are applied against the realtime scans of the AH\n"
-	w=w.."\n"
-	w=w.."There are also 2 types of searching modules that exist in the Search UI:\n"
-	w=w..b.."Searchers - Searches for a specific set of criteria, only 1 searcher is active at once\n"
-	w=w..b.."Filters - All filters always apply their criteria, excluding non-matching items from the search.\n"
-	w=w.."\n"
-	w=w.."In order to begin using the Search UI, you should first setup your filters to exclude the items you don't wish to find, then select a searcher to perform a search.\n"
-	w=w.."\n"
-	w=w.."Here's a quick list of the searchers and filters that you may wish to investigate:\n"
+	if GetLocale() == "deDE" then
+		w=w.."Die Auctioneer-Auktionssuche (SearchUI) unterstützt dich beim schnellen Finden lohnenswerter Auktionen.\n\n"
+		w=w.."Betriebsmodi:\n"
+		w=w..b.."Offline – Durchsucht den zuletzt gespeicherten Auktionshaus-Scan\n"
+		w=w..b.."Echtzeit – Prüft laufende Auktionshaus-Scans direkt in Echtzeit\n\n"
+		w=w.."Modularten in der SearchUI:\n"
+		w=w..b.."Suchmodule (Searchers) – Suchen nach bestimmten Kriterien (immer 1 Suchmodul gleichzeitig aktiv)\n"
+		w=w..b.."Filter (Filters) – Alle aktiven Filter schließen unerwünschte Gegenstände automatisch aus\n\n"
+		w=w.."Verfügbare Suchmodule & Filter:\n"
+	else
+		w=w.."The Auctioneer Search UI is here to assist you in finding the Auctions that are of special interest to you.\n"
+		w=w.."\n"
+		w=w.."It has 2 modes of operation:\n"
+		w=w..b.."Offline - Searches are applied against the current data\n"
+		w=w..b.."Realtime - Searches are applied against the realtime scans of the AH\n"
+		w=w.."\n"
+		w=w.."There are also 2 types of searching modules that exist in the Search UI:\n"
+		w=w..b.."Searchers - Searches for a specific set of criteria, only 1 searcher is active at once\n"
+		w=w..b.."Filters - All filters always apply their criteria, excluding non-matching items from the search.\n"
+		w=w.."\n"
+		w=w.."In order to begin using the Search UI, you should first setup your filters to exclude the items you don't wish to find, then select a searcher to perform a search.\n"
+		w=w.."\n"
+		w=w.."Here's a quick list of the searchers and filters that you may wish to investigate:\n"
+	end
 	for pos, sdata in keyPairs(gui.searchers) do
 		for searchType, searchDetail in keyPairs(sdata) do
 			w=w..b.."|cffffce00"..searchType.."|r - "..searchDetail.."\n"
