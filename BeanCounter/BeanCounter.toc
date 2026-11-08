@@ -10,7 +10,7 @@
 ## Author: gOOvER
 ## Version: 1.0.0
 ## Dependencies: Auc-Advanced
-## OptionalDeps: Babylonian, Configator, LibExtraTip_, TipHelper, LibDataBroker-1.1, LibDBIcon-1.0
+## OptionalDeps: Babylonian, Configator, LibExtraTip_, TipHelper, LibDataBroker-1.1, LibDBIcon-1.0, ElvUI
 ## SavedVariables: BeanCounterDB, BeanCounterDBSettings, BeanCounterDBNames, BeanCounterAccountDB, BeanCounterMailPatch
 ## Category-enUS: Auctions
 ## Category-deDE: Auktionen

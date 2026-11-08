@@ -22,6 +22,9 @@ release/
 .release/
 dist/
 
+# External libraries downloaded via .pkgmeta
+libs/
+
 # Changelog (do not include in AddOns folder / repo)
 CHANGELOG.md
 

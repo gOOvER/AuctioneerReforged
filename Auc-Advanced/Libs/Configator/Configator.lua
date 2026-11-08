@@ -116,6 +116,9 @@ UIStyle.FLAT_BACKDROP = {
 
 function UIStyle.ApplyBox(frame, bgR, bgG, bgB, bgA, brR, brG, brB, brA)
 	if not frame then return end
+	frame.callbackBackdropColor = nil
+	if frame.iborder and frame.iborder.Hide then frame.iborder:Hide() end
+	if frame.oborder and frame.oborder.Hide then frame.oborder:Hide() end
 	if not frame.SetBackdrop and BackdropTemplateMixin then
 		Mixin(frame, BackdropTemplateMixin)
 	end

@@ -11,7 +11,7 @@
 ## Version: 1.0.0
 ## LoadOnDemand: 0
 ## Dependencies: Auc-Advanced
-## OptionalDeps: Babylonian, Configator, LibExtraTip_, TipHelper, LibDataBroker-1.1, LibDBIcon-1.0
+## OptionalDeps: Babylonian, Configator, LibExtraTip_, TipHelper, LibDataBroker-1.1, LibDBIcon-1.0, ElvUI
 ## SavedVariables: EnchantConfig, EnchantedLocal, EnchantedItemTypes, NonDisenchantablesLocal, ProspectedLocal, MillingLocal, EnchantedDetailItemTypes, EnchantrixBarkerConfig, EnchantrixBarkerSavedInfo
 ## SavedVariablesPerCharacter: AutoDisenchantIgnoreList
 ## Category-enUS: Auctions

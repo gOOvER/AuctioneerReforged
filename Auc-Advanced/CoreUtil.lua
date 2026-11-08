@@ -417,13 +417,24 @@ local function PositionRetailTabs(ahFrame)
 		offsetX = -14
 	end
 	local hitInset = math.max(0, math.floor((math.abs(offsetX) - 3) / 2))
+	local lastBuiltin
+	if ahFrame.Tabs then
+		for i = #ahFrame.Tabs, 1, -1 do
+			local t = ahFrame.Tabs[i]
+			if t and not t._isCustomRetailTab and not private.RetailTabFrames[t] then
+				lastBuiltin = t
+				break
+			end
+		end
+	end
+	for _, tab in ipairs(private.RetailTabs) do
+		tab:ClearAllPoints()
+	end
 	for idx, tab in ipairs(private.RetailTabs) do
 		ResizeRetailTab(tab)
-		tab:ClearAllPoints()
 		if idx > 1 then
 			tab:SetPoint("TOPLEFT", private.RetailTabs[idx - 1], "TOPRIGHT", offsetX, 0)
 		else
-			local lastBuiltin = ahFrame.Tabs and ahFrame.Tabs[#ahFrame.Tabs]
 			if lastBuiltin then
 				tab:SetPoint("TOPLEFT", lastBuiltin, "TOPRIGHT", offsetX, 0)
 			else
@@ -884,6 +895,23 @@ function lib.AddTab(tabButton, tabFrame)
 		local ahFrame = AuctionHouseFrame
 		if not ahFrame then return end
 
+		-- AuctionHouseFrameDisplayModeTabTemplate has parentArray="Tabs", which causes
+		-- CreateFrame to append custom tabs into ahFrame.Tabs. Remove any custom tabs
+		-- from ahFrame.Tabs so built-in tab iteration and anchoring never self-reference.
+		tabButton._isCustomRetailTab = true
+		tabButton._aucKeepVisible = true
+		if ahFrame.Tabs then
+			for i = #ahFrame.Tabs, 1, -1 do
+				local t = ahFrame.Tabs[i]
+				if t == tabButton or t._isCustomRetailTab or private.RetailTabFrames[t] then
+					table.remove(ahFrame.Tabs, i)
+				end
+			end
+			if PanelTemplates_SetNumTabs then
+				pcall(PanelTemplates_SetNumTabs, ahFrame, #ahFrame.Tabs)
+			end
+		end
+
 		SetupRetailAHWindowControls(ahFrame)
 
 		for _, tab in ipairs(private.RetailTabs) do
@@ -899,8 +927,6 @@ function lib.AddTab(tabButton, tabFrame)
 		tabFrame:Hide()
 
 		-- Tab button: parent to ahFrame
-		tabButton._isCustomRetailTab = true
-		tabButton._aucKeepVisible = true
 		tabButton:SetParent(ahFrame)
 		tabButton:SetScript("OnShow", nil)
 		tabButton:SetScript("OnEvent", nil)
@@ -1084,12 +1110,8 @@ function lib.RemoveTab(tabButton, tabFrame)
 				break
 			end
 		end
-		for i, tab in ipairs(private.RetailTabs) do
-			if i > 1 then
-				local prevTab = private.RetailTabs[i - 1]
-				tab:ClearAllPoints()
-				tab:SetPoint("LEFT", prevTab, "RIGHT", -15, 0)
-			end
+		if AuctionHouseFrame then
+			PositionRetailTabs(AuctionHouseFrame)
 		end
 		tabFrame:Hide()
 		tabButton:Hide()

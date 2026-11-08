@@ -10,7 +10,7 @@
 ## Author: gOOvER
 ## Version: 1.0.0
 ## LoadOnDemand: 0
-## OptionalDeps: Configator, Babylonian, TipHelper, LibExtraTip_, LibDataBroker-1.1, LibDBIcon-1.0
+## OptionalDeps: Configator, Babylonian, TipHelper, LibExtraTip_, LibDataBroker-1.1, LibDBIcon-1.0, ElvUI
 ## SavedVariables: AucAdvancedConfig, AucAdvancedData, AucAdvancedServers, AucAdvancedFilterBasic_IgnoreList, AucAdvancedStatHistogramData, AucAdvancedStat_iLevelData, AucAdvancedStatPurchasedData, AucAdvancedStatSimpleData, AucAdvancedStatStdDevData
 ## SavedVariablesPerCharacter: AucAdvancedLocal
 ## AddonCompartmentFunc: AuctioneerReforged_OnAddonCompartmentClick

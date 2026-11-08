@@ -10,7 +10,7 @@
 ## Author: gOOvER
 ## Version: 1.0.0
 ## Dependencies: Auc-Advanced
-## OptionalDeps: Babylonian, Configator, LibExtraTip_, TipHelper, LibDataBroker-1.1, LibDBIcon-1.0
+## OptionalDeps: Babylonian, Configator, LibExtraTip_, TipHelper, LibDataBroker-1.1, LibDBIcon-1.0, ElvUI
 ## SavedVariables: InformantConfig, InformantLocalUpdates
 ## IconTexture: Interface/Addons/Informant/inficon.blp
 ## X-Part-Of: Auctioneer Reforged
