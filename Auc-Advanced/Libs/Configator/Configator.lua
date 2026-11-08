@@ -242,10 +242,14 @@ function UIStyle.StyleButton(btn, variant)
 		local fontStr = self:GetFontString()
 		if not fontStr then return end
 		fontStr:SetFontObject("GameFontHighlightSmall")
-		UIStyle.ApplyFont(fontStr, 0)
+		UIStyle.ApplyFont(fontStr, self._fontDelta or 0)
+		if self._fixedWidth then
+			self:SetWidth(self._fixedWidth)
+			return
+		end
 		local textW = fontStr:GetStringWidth() or 0
 		if textW > 0 then
-			self:SetWidth(math.max(self._minWidth or 60, math.ceil(textW + 24)))
+			self:SetWidth(math.max(self._minWidth or 60, math.ceil(textW + 20)))
 		end
 	end
 	if fs then
@@ -354,22 +358,41 @@ function UIStyle.StyleEditBox(box)
 	end
 
 	UIStyle.ApplyBox(box, 0.06, 0.07, 0.09, 1, 0.24, 0.27, 0.35, 1)
-	local hasCoinIcon = name and (_G[name.."Icon"] ~= nil)
+	local coinIcon = box.icon or (name and _G[name.."Icon"])
+	if not coinIcon then
+		for _, reg in ipairs({ box:GetRegions() }) do
+			if reg and reg.IsObjectType and reg:IsObjectType("Texture") and reg:GetDrawLayer() == "OVERLAY" then
+				coinIcon = reg
+				break
+			end
+		end
+	end
+	local hasCoinIcon = (coinIcon ~= nil)
 	if box.SetTextInsets then
 		if hasCoinIcon then
-			box:SetTextInsets(4, 14, 0, 0)
+			box:SetTextInsets(4, 18, 0, 0)
 		else
 			box:SetTextInsets(6, 6, 0, 0)
 		end
 	end
-	if hasCoinIcon and _G[name.."Icon"] then
-		local icon = _G[name.."Icon"]
-		icon:SetSize(12, 12)
-		icon:ClearAllPoints()
-		icon:SetPoint("RIGHT", box, "RIGHT", -3, 0)
+	if hasCoinIcon and coinIcon then
+		coinIcon:SetSize(12, 12)
+		coinIcon:ClearAllPoints()
+		coinIcon:SetPoint("RIGHT", box, "RIGHT", -3, 0)
+		if box.SetJustifyH then
+			box:SetJustifyH("RIGHT")
+		end
+	end
+	if UIStyle.ApplyFont and box.GetFont then
+		UIStyle.ApplyFont(box, -1)
 	end
 	if not box._uiHooked then
 		box._uiHooked = true
+		UIStyle.RegisterFontListener(function()
+			if box and box.GetFont then
+				UIStyle.ApplyFont(box, -1)
+			end
+		end)
 		box:HookScript("OnEditFocusGained", function(self)
 			if self.SetBackdropBorderColor then
 				self:SetBackdropBorderColor(0.83, 0.68, 0.21, 1)
@@ -381,6 +404,38 @@ function UIStyle.StyleEditBox(box)
 			end
 		end)
 	end
+end
+
+function UIStyle.StyleMoneyInputFrame(moneyFrame, goldWidth, silverWidth)
+	if not moneyFrame then return end
+	local fname = moneyFrame:GetName()
+	local gold = moneyFrame.gold or moneyFrame.Gold or (fname and _G[fname.."Gold"])
+	local silver = moneyFrame.silver or moneyFrame.Silver or (fname and _G[fname.."Silver"])
+	local copper = moneyFrame.copper or moneyFrame.Copper or (fname and _G[fname.."Copper"])
+	local gW = goldWidth or 58
+	local sW = silverWidth or 44
+	local cW = silverWidth or 44
+	if gold then
+		gold:SetSize(gW, 20)
+		UIStyle.StyleEditBox(gold)
+	end
+	if silver then
+		silver:SetSize(sW, 20)
+		silver:ClearAllPoints()
+		if gold then
+			silver:SetPoint("LEFT", gold, "RIGHT", 6, 0)
+		end
+		UIStyle.StyleEditBox(silver)
+	end
+	if copper then
+		copper:SetSize(cW, 20)
+		copper:ClearAllPoints()
+		if silver then
+			copper:SetPoint("LEFT", silver, "RIGHT", 6, 0)
+		end
+		UIStyle.StyleEditBox(copper)
+	end
+	moneyFrame:SetSize(gW + sW + cW + 12, 20)
 end
 
 local kit = {}
@@ -521,6 +576,7 @@ function lib:Create(setter, getter, dialogWidth, dialogHeight, gapWidth, gapHeig
 	UIStyle.StyleButton(gui.Done, "primary")
 
 	gui.FontPlus = CreateFrame("Button", nil, gui.Backdrop, "UIPanelButtonTemplate")
+	gui.FontPlus._fixedWidth = 30
 	gui.FontPlus:SetSize(30, 22)
 	gui.FontPlus:SetPoint("RIGHT", gui.Done, "LEFT", -8, 0)
 	gui.FontPlus:SetText("A+")
@@ -537,6 +593,7 @@ function lib:Create(setter, getter, dialogWidth, dialogHeight, gapWidth, gapHeig
 	gui.FontLabel = fontLabel
 
 	gui.FontMinus = CreateFrame("Button", nil, gui.Backdrop, "UIPanelButtonTemplate")
+	gui.FontMinus._fixedWidth = 30
 	gui.FontMinus:SetSize(30, 22)
 	gui.FontMinus:SetPoint("RIGHT", gui.FontLabelFrame, "LEFT", -3, 0)
 	gui.FontMinus:SetText("A-")
@@ -2048,9 +2105,7 @@ function kit:AddControl(id, cType, column, ...)
 		-- for the time being, set to cycle around the fields of the current money frame
 		MoneyInputFrame_SetPreviousFocus(el, _G[frameName.."Copper"])
 		MoneyInputFrame_SetNextFocus(el, _G[frameName.."Gold"])
-		UIStyle.StyleEditBox(_G[frameName.."Gold"])
-		UIStyle.StyleEditBox(_G[frameName.."Silver"])
-		UIStyle.StyleEditBox(_G[frameName.."Copper"])
+		UIStyle.StyleMoneyInputFrame(el, 58, 42)
 
 		local cur = el
 		local MoneyInputFrame_SetOnValueChangedFunc = MoneyInputFrame_SetOnvalueChangedFunc or MoneyInputFrame_SetOnValueChangedFunc -- WotLK Hack

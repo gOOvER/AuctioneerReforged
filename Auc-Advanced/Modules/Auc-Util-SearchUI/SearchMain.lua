@@ -1913,6 +1913,9 @@ function private.MakeGuiConfig()
 		UIStyle.StyleButton(gui.frame.cancel, "default")
 		UIStyle.StyleButton(gui.frame.buyout, "primary")
 		UIStyle.StyleButton(gui.frame.bid, "default")
+		if UIStyle.StyleMoneyInputFrame and gui.frame.bidbox then
+			UIStyle.StyleMoneyInputFrame(gui.frame.bidbox, 58, 42)
+		end
 	end
 
 	gui.frame.progressbar = CreateFrame("STATUSBAR", nil, gui.frame, BackdropTemplateMixin and "TextStatusBar,BackdropTemplate" or "TextStatusBar")

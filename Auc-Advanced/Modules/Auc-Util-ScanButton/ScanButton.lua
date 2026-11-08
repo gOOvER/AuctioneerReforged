@@ -71,20 +71,33 @@ function private.HookAH()
 	private.buttons = CreateFrame("Frame", "AucScanButtonBar", parentFrame)
 	private.buttons._aucKeepVisible = true
 	if isRetail then
-		private.buttons:SetPoint("TOPLEFT", AuctionHouseFrame, "TOPLEFT", 68, -3)
+		private.buttons:SetPoint("TOPLEFT", AuctionHouseFrame, "TOPLEFT", 12, -4)
 		private.buttons:SetFrameStrata("DIALOG")
 		private.buttons:SetFrameLevel(100)
 	else
 		private.buttons:SetPoint("TOPLEFT", AuctionFrameBrowse, "TOPLEFT", 180, -15)
 	end
-	private.buttons:SetWidth(22*4 + 4)
+	private.buttons:SetWidth(22*4 + 6)
 	private.buttons:SetHeight(18)
 	private.buttons:SetScript("OnUpdate", private.OnUpdate)
+
+	local Configator = LibStub and LibStub("Configator", true)
+	local UIStyle = Configator and Configator.UIStyle
+	local function StyleNavIconBtn(btn)
+		if not UIStyle or not UIStyle.ApplyBox then return end
+		if btn.Left then btn.Left:Hide() end
+		if btn.Middle then btn.Middle:Hide() end
+		if btn.Right then btn.Right:Hide() end
+		btn:SetNormalTexture("")
+		btn:SetPushedTexture("")
+		UIStyle.ApplyBox(btn, 0.14, 0.16, 0.22, 0.96, 0.28, 0.33, 0.44, 1)
+	end
 
 	private.buttons.stop = CreateFrame("Button", nil, private.buttons, "UIPanelButtonTemplate")
 	private.buttons.stop:SetPoint("TOPLEFT", private.buttons, "TOPLEFT", 0,0)
 	private.buttons.stop:SetWidth(22)
 	private.buttons.stop:SetHeight(18)
+	StyleNavIconBtn(private.buttons.stop)
 	private.buttons.stop:SetScript("OnClick", private.stop)
 	private.buttons.stop.tex = private.buttons.stop:CreateTexture(nil, "OVERLAY")
 	private.buttons.stop.tex:SetPoint("TOPLEFT", private.buttons.stop, "TOPLEFT", 4,-2)
@@ -112,6 +125,7 @@ function private.HookAH()
 	private.buttons.play:SetPoint("TOPLEFT", private.buttons.stop, "TOPRIGHT", 2,0)
 	private.buttons.play:SetWidth(22)
 	private.buttons.play:SetHeight(18)
+	StyleNavIconBtn(private.buttons.play)
 	private.buttons.play:SetScript("OnClick", private.play)
 	private.buttons.play.tex = private.buttons.play:CreateTexture(nil, "OVERLAY")
 	private.buttons.play.tex:SetPoint("TOPLEFT", private.buttons.play, "TOPLEFT", 4,-2)
@@ -131,6 +145,7 @@ function private.HookAH()
 	private.buttons.pause:SetPoint("TOPLEFT", private.buttons.play, "TOPRIGHT", 2,0)
 	private.buttons.pause:SetWidth(22)
 	private.buttons.pause:SetHeight(18)
+	StyleNavIconBtn(private.buttons.pause)
 	private.buttons.pause:SetScript("OnClick", private.pause)
 	private.buttons.pause.tex = private.buttons.pause:CreateTexture(nil, "OVERLAY")
 	private.buttons.pause.tex:SetPoint("TOPLEFT", private.buttons.pause, "TOPLEFT", 4,-2)
@@ -157,6 +172,7 @@ function private.HookAH()
 	end
 	private.buttons.getall:SetWidth(22)
 	private.buttons.getall:SetHeight(18)
+	StyleNavIconBtn(private.buttons.getall)
 	private.buttons.getall:SetScript("OnClick", private.getall)
 	private.buttons.getall.tex = private.buttons.getall:CreateTexture(nil, "OVERLAY")
 	private.buttons.getall.tex:SetPoint("TOPLEFT", private.buttons.getall, "TOPLEFT", 4,-2)

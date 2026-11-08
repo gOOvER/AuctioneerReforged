@@ -323,9 +323,13 @@ function lib:MakeGuiConfig(gui)
 	frame.resetList:SetScript("OnEnter", function() lib.buttonTooltips( frame.resetList, _TRANS("Shift+Ctrl+Alt Click to remove all items from the snatch list")) end)
 	frame.resetList:SetScript("OnLeave", function() GameTooltip:Hide() end)
 	if UIStyle then
-		UIStyle.StyleEditBox(AucSearchUISearcherSnatchMoneyGold)
-		UIStyle.StyleEditBox(AucSearchUISearcherSnatchMoneySilver)
-		UIStyle.StyleEditBox(AucSearchUISearcherSnatchMoneyCopper)
+		if UIStyle.StyleMoneyInputFrame then
+			UIStyle.StyleMoneyInputFrame(frame.money, 58, 42)
+		else
+			UIStyle.StyleEditBox(AucSearchUISearcherSnatchMoneyGold)
+			UIStyle.StyleEditBox(AucSearchUISearcherSnatchMoneySilver)
+			UIStyle.StyleEditBox(AucSearchUISearcherSnatchMoneyCopper)
+		end
 		UIStyle.StyleEditBox(frame.pctBox)
 		UIStyle.StyleButton(frame.additem, "primary")
 		UIStyle.StyleButton(frame.removeitem, "default")

@@ -155,6 +155,7 @@ local function calculateMaxScroll(self, w, height)
 		local baseTotal = 0
 		local visCount = 0
 		local gapTotal = 0
+		local effWidths = {}
 		for idx = 1, #sheet.labels do
 			local lbl = sheet.labels[idx]
 			local bw = lbl.baseWidth or lbl.button:GetWidth() or 30
@@ -162,22 +163,30 @@ local function calculateMaxScroll(self, w, height)
 				gapTotal = gapTotal + 3
 			end
 			if bw > 1 then
-				baseTotal = baseTotal + bw
+				local strW = (lbl.GetUnboundedStringWidth and lbl:GetUnboundedStringWidth()) or (lbl.GetStringWidth and lbl:GetStringWidth()) or 0
+				local minHdrW = math.ceil(strW + 14)
+				local effW = bw
+				if not sheet.userResized and minHdrW > effW then
+					effW = minHdrW
+				end
+				effWidths[idx] = effW
+				baseTotal = baseTotal + effW
 				visCount = visCount + 1
 			else
+				effWidths[idx] = bw
 				gapTotal = gapTotal + bw
 			end
 		end
 		local targetVisW = availW - gapTotal
 		if baseTotal > 0 and targetVisW > 100 and (availW > (baseTotal + gapTotal + 4) or (visCount <= 10 and not sheet.userResized and targetVisW >= 360)) then
-			local scale = targetVisW / baseTotal
+			local scale = math.max(1.0, targetVisW / baseTotal)
 			local newTotal = 10
 			for idx = 1, #sheet.labels do
 				local lbl = sheet.labels[idx]
-				local bw = lbl.baseWidth or 30
+				local bw = effWidths[idx] or lbl.baseWidth or 30
 				local colW = bw
 				if bw > 1 then
-					colW = math.max(24, math.floor(bw * scale + 0.5))
+					colW = math.max(bw, math.floor(bw * scale + 0.5))
 				end
 				lbl.button:SetWidth(colW)
 				if lbl.nub then
@@ -190,7 +199,7 @@ local function calculateMaxScroll(self, w, height)
 			local newTotal = 10
 			for idx = 1, #sheet.labels do
 				local lbl = sheet.labels[idx]
-				local colW = lbl.baseWidth or lbl.button:GetWidth() or 30
+				local colW = effWidths[idx] or lbl.baseWidth or lbl.button:GetWidth() or 30
 				lbl.button:SetWidth(colW)
 				if lbl.nub then
 					lbl.nub:SetHeight(newContentH)
@@ -432,9 +441,17 @@ function kit:PerformSort()
 	for i=1, #self.labels do -- Removes the previous Columns arrows before we create the new arrows
 		self.labels[i].texture:SetColorTexture(0.13, 0.15, 0.20, 0.95)
 		self.labels[i].sortTexture:Hide()
+		if self.labels[i].button then
+			self.labels[i]:SetPoint("TOPLEFT", self.labels[i].button, "TOPLEFT", 2, 0)
+			self.labels[i]:SetPoint("BOTTOMRIGHT", self.labels[i].button, "BOTTOMRIGHT", -2, 0)
+		end
 	end
 	if self.labels[self.curSort] then
 		self.labels[self.curSort].texture:SetColorTexture(0.20, 0.17, 0.09, 0.98)
+		if self.labels[self.curSort].button then
+			self.labels[self.curSort]:SetPoint("TOPLEFT", self.labels[self.curSort].button, "TOPLEFT", 2, 0)
+			self.labels[self.curSort]:SetPoint("BOTTOMRIGHT", self.labels[self.curSort].button, "BOTTOMRIGHT", -12, 0)
+		end
 	end
 
 	if self.curDir == 1 then
@@ -740,10 +757,12 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize, onSelect
 				end
 			end )
 		end
-		label:SetPoint("TOPLEFT", button, "TOPLEFT", 0,0)
-		label:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", 0,0)
+		label:SetPoint("TOPLEFT", button, "TOPLEFT", 2, 0)
+		label:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -2, 0)
 		label:SetJustifyH("CENTER")
 		label:SetJustifyV("MIDDLE")
+		if label.SetWordWrap then label:SetWordWrap(false) end
+		if label.SetNonSpaceWrap then label:SetNonSpaceWrap(false) end
 		label:SetTextColor(0.92, 0.78, 0.30)
 
 		label.button = button
@@ -806,6 +825,8 @@ function lib:Create(frame, layout, onEnter, onLeave, onClick, onResize, onSelect
 
 			cell:SetHeight(rowHeight)
 			cell:SetJustifyV("MIDDLE")
+			if cell.SetWordWrap then cell:SetWordWrap(false) end
+			if cell.SetNonSpaceWrap then cell:SetNonSpaceWrap(false) end
 			if (layout[i][2] == "TEXT") then
 				cell:SetJustifyH("LEFT")
 			elseif (layout[i][2] == "TOOLTIP") then

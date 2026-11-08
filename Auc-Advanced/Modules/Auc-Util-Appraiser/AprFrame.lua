@@ -41,11 +41,29 @@ local aucPrint,decode,_,_,replicate,empty,get,set,default,debugPrint,fill, _TRAN
 local frame
 
 local MAX_ITEMS = 32
-local NUM_ITEMS = (AucAdvanced and AucAdvanced.IsRetailAH) and 14 or 12
+local NUM_ITEMS = 12
 
 local SigFromLink = AucAdvanced.API.GetSigFromLink
 local GetDistribution, GetColored -- to be filled in when ScanData loads
 AucAdvanced.RegisterModuleCallback("scandata", function(lib) GetDistribution = lib.GetDistribution; GetColored = lib.Colored end)
+
+local function GetSigItemCount(sig)
+	if not sig then return 0, 0 end
+	if AucAdvanced and AucAdvanced.Post and AucAdvanced.Post.CountAvailableItems then
+		local avail, total, unpostable = AucAdvanced.Post.CountAvailableItems(sig)
+		if avail then
+			return avail, unpostable or 0, total or avail
+		end
+	end
+	local itemID = tonumber(type(sig) == "string" and sig:match("^(%d+)") or sig)
+	if itemID then
+		local fn = _G.GetItemCount or (C_Item and C_Item.GetItemCount)
+		if fn then
+			return fn(itemID, false) or 0, 0
+		end
+	end
+	return 0, 0
+end
 
 -- Check to see if we are embedded or not
 local embedded = false
@@ -236,7 +254,7 @@ function private.CreateFrames()
 			if selected then
 				if selected[7] == frame.selectedRawLink then -- we had a raw link and it matches last selected item
 					item = selected -- note that this item is not included in ItemList
-					item[6] = GetItemCount(sig, false) -- re-count available items
+					item[6] = (GetSigItemCount(sig)) -- re-count available items
 					sig = item[1]
 					-- pos remains nil
 				elseif get("util.appraiser.reselect") then
@@ -329,7 +347,7 @@ function private.CreateFrames()
 				if not name and rarity then
 					return
 				end
-				local myCount = GetItemCount(sig, false)
+				local myCount = GetSigItemCount(sig)
 				item = {
 					sig, name, texture, rarity, stack, myCount, rawlink,
 					raw = true,
@@ -1621,7 +1639,7 @@ function private.CreateFrames()
 
 	function frame.PostBySig(sig, dryRun, singleclick)
 		local link, itemName = AucAdvanced.Modules.Util.Appraiser.GetLinkFromSig(sig)
-		local total, unpostable = GetItemCount(sig, false), 0;
+		local total, unpostable = GetSigItemCount(sig)
 		if not (link and total) then
 			UIErrorsFrame:AddMessage(_TRANS('APPR_Interface_UnablePostAuctions') )--Unable to post auctions at this time
 			aucPrint(_TRANS('APPR_Help_CannotPostAuctions'), "Invalid item sig")--Cannot post auctions:
@@ -1834,6 +1852,15 @@ function private.CreateFrames()
 
 	function frame.SetScroll(...)
 		wipe(frame.distributionqueue)
+		if frame.itembox then
+			local h = frame.itembox:GetHeight()
+			if h and h > 100 then
+				local calcNum = math.max(8, math.min(MAX_ITEMS, math.floor((h - 16) / 31)))
+				if calcNum ~= NUM_ITEMS then
+					NUM_ITEMS = calcNum
+				end
+			end
+		end
 		local pos = floor(frame.scroller:GetValue())
 		for i = 1, NUM_ITEMS do
 			local item = frame.list[pos+i]
@@ -1976,9 +2003,12 @@ function private.CreateFrames()
 	local UIStyle = LibStub("Configator").UIStyle
 
 	local title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-	title:SetPoint("TOPLEFT", frame, "TOPLEFT", 16, -12)
+	title:SetPoint("TOPLEFT", frame, "TOPLEFT", 14, -10)
 	title:SetTextColor(1, 0.85, 0.25)
 	title:SetText(_TRANS('APPR_Interface_AppraiserAuctionPostingInterface') )--Appraiser: Auction posting interface
+	if UIStyle and UIStyle.ApplyFont then
+		UIStyle.ApplyFont(title, 2)
+	end
 
 	frame.manifestOpen = false
 	frame.toggleManifest = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
@@ -2002,9 +2032,9 @@ function private.CreateFrames()
 	frame.toggleManifest:Show()
 
 	frame.config = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-	frame.config:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -10, -10)
+	frame.config:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -8, -8)
 	frame.config:SetText(_TRANS('APPR_Interface_Configure') )--Configure
-	frame.config:SetSize(90, 22)
+	frame.config:SetSize(96, 22)
 	UIStyle.StyleButton(frame.config, "default")
 	frame.config:SetScript("OnClick", function()
 		AucAdvanced.Settings.Show()
@@ -2014,20 +2044,27 @@ function private.CreateFrames()
 
 	frame.itembox = CreateFrame("Frame", nil, frame, BackdropTemplateMixin and "BackdropTemplate")
 	UIStyle.StylePanel(frame.itembox)
-	frame.itembox:SetPoint("TOPLEFT", frame, "TOPLEFT", 13, -71)
-	frame.itembox:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 13, 38)
-	frame.itembox:SetWidth(240)
+	frame.itembox:SetPoint("TOPLEFT", frame, "TOPLEFT", 10, -71)
+	frame.itembox:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 10, 38)
+	frame.itembox:SetWidth(248)
 	frame.itembox:SetHeight(340)
+	if frame.itembox.SetClipsChildren then
+		frame.itembox:SetClipsChildren(true)
+	end
 
 	-- "Show Auctions" checkbox
-	frame.itembox.showAuctions = CreateFrame("CheckButton", "Auc_Util_Appraiser_ShowAuctions", frame.itembox, "UICheckButtonTemplate")
+	frame.itembox.showAuctions = CreateFrame("CheckButton", "Auc_Util_Appraiser_ShowAuctions", frame, "UICheckButtonTemplate")
 	frame.itembox.showAuctions:SetScript("OnEnter", function(self) return frame.SetButtonTooltip(self, _TRANS('APPR_HelpTooltip_IncludeAuctionsListing') ) end)--Include own auctions in the item listing
 	frame.itembox.showAuctions:SetScript("OnLeave", function() return GameTooltip:Hide() end)
-	frame.itembox.showAuctions:SetWidth(24)
-	frame.itembox.showAuctions:SetHeight(24)
+	frame.itembox.showAuctions:SetWidth(20)
+	frame.itembox.showAuctions:SetHeight(20)
+	if UIStyle and UIStyle.StyleCheckBox then
+		UIStyle.StyleCheckBox(frame.itembox.showAuctions, 18)
+	end
 	Auc_Util_Appraiser_ShowAuctionsText:SetText(_TRANS('APPR_Interface_Auctions') )--Auctions
-	frame.itembox.showAuctions:SetPoint("BOTTOMRIGHT", frame.itembox, "TOPRIGHT", 0-Auc_Util_Appraiser_ShowAuctionsText:GetWidth(), 0)
-	frame.itembox.showAuctions:SetHitRectInsets(0, 0-Auc_Util_Appraiser_ShowAuctionsText:GetWidth(), 0, 0)
+	if UIStyle and UIStyle.ApplyFont then
+		UIStyle.ApplyFont(Auc_Util_Appraiser_ShowAuctionsText, -1)
+	end
 	frame.itembox.showAuctions:SetScript("OnClick", function(self)
 		frame.showAuctions = self:GetChecked()
 		frame.GenerateList(true)
@@ -2035,14 +2072,18 @@ function private.CreateFrames()
 	end)
 
 	-- "Show Hidden" checkbox
-	frame.itembox.showHidden = CreateFrame("CheckButton", "Auc_Util_Appraiser_ShowHidden", frame.itembox, "UICheckButtonTemplate")
+	frame.itembox.showHidden = CreateFrame("CheckButton", "Auc_Util_Appraiser_ShowHidden", frame, "UICheckButtonTemplate")
 	frame.itembox.showHidden:SetScript("OnEnter", function(self) return frame.SetButtonTooltip(self, _TRANS('APPR_HelpTooltip_IncludeItemsHiddenListing') ) end)--Include items tagged as 'hidden' in the item listing
 	frame.itembox.showHidden:SetScript("OnLeave", function() return GameTooltip:Hide() end)
-	frame.itembox.showHidden:SetWidth(24)
-	frame.itembox.showHidden:SetHeight(24)
+	frame.itembox.showHidden:SetWidth(20)
+	frame.itembox.showHidden:SetHeight(20)
+	if UIStyle and UIStyle.StyleCheckBox then
+		UIStyle.StyleCheckBox(frame.itembox.showHidden, 18)
+	end
 	Auc_Util_Appraiser_ShowHiddenText:SetText(_TRANS('APPR_Interface_Hidden') )--Hidden
-	frame.itembox.showHidden:SetPoint("BOTTOMRIGHT", frame.itembox.showAuctions, "BOTTOMLEFT", 0-Auc_Util_Appraiser_ShowHiddenText:GetWidth(), 0)
-	frame.itembox.showHidden:SetHitRectInsets(0, 0-Auc_Util_Appraiser_ShowHiddenText:GetWidth(), 0, 0)
+	if UIStyle and UIStyle.ApplyFont then
+		UIStyle.ApplyFont(Auc_Util_Appraiser_ShowHiddenText, -1)
+	end
 	frame.itembox.showHidden:SetScript("OnClick", function(self)
 		frame.showHidden = self:GetChecked()
 		frame.GenerateList(true)
@@ -2050,13 +2091,29 @@ function private.CreateFrames()
 	end)
 
 	-- "Show:" label
-	frame.itembox.showText = CreateFrame("Frame", nil, frame.itembox)
-	frame.itembox.showText:SetPoint("BOTTOMRIGHT", frame.itembox.showHidden, "BOTTOMLEFT", 0,0)
+	frame.itembox.showText = CreateFrame("Frame", nil, frame)
 	frame.itembox.showText.text = frame.itembox.showText:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-	frame.itembox.showText.text:SetAllPoints(frame.itembox.showText)
+	frame.itembox.showText.text:SetPoint("LEFT", frame.itembox.showText, "LEFT", 0, 0)
 	frame.itembox.showText.text:SetText(_TRANS('APPR_Interface_Show').." " )--Show:
-	frame.itembox.showText:SetWidth(frame.itembox.showText.text:GetWidth())
-	frame.itembox.showText:SetHeight(frame.itembox.showAuctions:GetHeight())
+	if UIStyle and UIStyle.ApplyFont then
+		UIStyle.ApplyFont(frame.itembox.showText.text, -1)
+	end
+
+	local function LayoutShowFilterBar()
+		local aucW = math.ceil(Auc_Util_Appraiser_ShowAuctionsText:GetStringWidth() or 54)
+		local hidW = math.ceil(Auc_Util_Appraiser_ShowHiddenText:GetStringWidth() or 50)
+		local showW = math.ceil(frame.itembox.showText.text:GetStringWidth() or 36)
+		frame.itembox.showAuctions:ClearAllPoints()
+		frame.itembox.showAuctions:SetPoint("BOTTOMRIGHT", frame.itembox, "TOPRIGHT", -(aucW + 4), 4)
+		frame.itembox.showAuctions:SetHitRectInsets(0, -aucW, 0, 0)
+		frame.itembox.showHidden:ClearAllPoints()
+		frame.itembox.showHidden:SetPoint("BOTTOMRIGHT", frame.itembox.showAuctions, "BOTTOMLEFT", -(hidW + 8), 0)
+		frame.itembox.showHidden:SetHitRectInsets(0, -hidW, 0, 0)
+		frame.itembox.showText:ClearAllPoints()
+		frame.itembox.showText:SetPoint("RIGHT", frame.itembox.showHidden, "LEFT", -4, 0)
+		frame.itembox.showText:SetSize(showW + 2, 20)
+	end
+	LayoutShowFilterBar()
 
 	frame.items = {}
 	local function itemButtonClick(self, button)
@@ -2105,12 +2162,12 @@ function private.CreateFrames()
 
 		item:SetScript("OnClick", itemButtonClick)
 		if (i == 1) then
-			item:SetPoint("TOPLEFT", frame.itembox, "TOPLEFT", 5,-8 )
+			item:SetPoint("TOPLEFT", frame.itembox, "TOPLEFT", 5, -6)
 		else
 			item:SetPoint("TOPLEFT", frame.items[i-1], "BOTTOMLEFT", 0, -1)
 		end
-		item:SetPoint("RIGHT", frame.itembox, "RIGHT", -23,0)
-		item:SetHeight(26)
+		item:SetPoint("RIGHT", frame.itembox, "RIGHT", -23, 0)
+		item:SetHeight(30)
 
 		item.id = i
 
@@ -2119,7 +2176,7 @@ function private.CreateFrames()
 		item.iconbutton = CreateFrame("Button", nil, item)
 		item.iconbutton:SetHeight(26)
 		item.iconbutton:SetWidth(26)
-		item.iconbutton:SetPoint("LEFT", item, "LEFT", 3,0)
+		item.iconbutton:SetPoint("LEFT", item, "LEFT", 3, 0)
 		item.iconbutton:SetScript("OnClick", itemIconClick)
 		item.iconbutton:SetScript("OnEnter", function() frame.DoTooltip(item) end)
 		item.iconbutton:SetScript("OnLeave", frame.UndoTooltip)
@@ -2151,24 +2208,27 @@ function private.CreateFrames()
 		item.name:SetJustifyH("LEFT")
 		item.name:SetJustifyV("TOP")
 		item.name:SetWordWrap(false)
-		item.name:SetPoint("TOPLEFT", item.icon, "TOPRIGHT", 3,-1)
-		item.name:SetPoint("RIGHT", item, "RIGHT", -5,0)
+		item.name:SetNonSpaceWrap(false)
+		item.name:SetPoint("TOPLEFT", item.icon, "TOPRIGHT", 5, 1)
+		item.name:SetPoint("RIGHT", item, "RIGHT", -4, 0)
 		item.name:SetText(_TRANS('APPR_Interface_None') )--[None]
 		UIStyle.ApplyFont(item.name, -1)
 
 		item.size = item:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
 		item.size:SetJustifyH("RIGHT")
 		item.size:SetJustifyV("BOTTOM")
-		item.size:SetPoint("BOTTOMLEFT", item.icon, "BOTTOMRIGHT", 3,2)
-		item.size:SetPoint("RIGHT", item, "RIGHT", -10,0)
+		item.size:SetWordWrap(false)
+		item.size:SetPoint("BOTTOMRIGHT", item, "BOTTOMRIGHT", -6, 1)
 		item.size:SetText(_TRANS('APPR_Interface_25x') )--25x
 		UIStyle.ApplyFont(item.size, -2)
 
 		item.info = item:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
 		item.info:SetJustifyH("LEFT")
 		item.info:SetJustifyV("BOTTOM")
-		item.info:SetPoint("BOTTOMLEFT", item.icon, "BOTTOMRIGHT", 3,2)
-		item.info:SetPoint("RIGHT", item, "RIGHT", -10,0)
+		item.info:SetWordWrap(false)
+		item.info:SetNonSpaceWrap(false)
+		item.info:SetPoint("BOTTOMLEFT", item.icon, "BOTTOMRIGHT", 5, 1)
+		item.info:SetPoint("RIGHT", item.size, "LEFT", -4, 0)
 		item.info:SetText("" )
 		UIStyle.ApplyFont(item.info, -2)
 
@@ -2198,7 +2258,7 @@ function private.CreateFrames()
 	frame.itembox:SetScript("OnMouseWheel", function(obj, dir) scroller:SetValue(scroller:GetValue() - dir) frame.SetScroll() end)
 	frame.itembox:HookScript("OnSizeChanged", function(self, _, height)
 		local h = height or self:GetHeight() or 340
-		local newNum = math.max(12, math.min(MAX_ITEMS, math.floor((h - 14) / 27)))
+		local newNum = math.max(8, math.min(MAX_ITEMS, math.floor((h - 16) / 31)))
 		if newNum ~= NUM_ITEMS then
 			NUM_ITEMS = newNum
 			if frame:IsVisible() and frame.scroller then
@@ -2222,8 +2282,8 @@ function private.CreateFrames()
 
 	frame.salebox = CreateFrame("Frame", nil, frame, BackdropTemplateMixin and "BackdropTemplate")
 	UIStyle.StylePanel(frame.salebox)
-	frame.salebox:SetPoint("TOPLEFT", frame.itembox, "TOPRIGHT", -3,35)
-	frame.salebox:SetPoint("RIGHT", frame, "RIGHT", -5,0)
+	frame.salebox:SetPoint("TOPLEFT", frame.itembox, "TOPRIGHT", 6, 35)
+	frame.salebox:SetPoint("RIGHT", frame, "RIGHT", -8, 0)
 	frame.salebox:SetHeight(170)
 
 	frame.salebox.slot = frame.salebox:CreateTexture(nil, "BORDER")
@@ -2661,6 +2721,12 @@ function private.CreateFrames()
 	MoneyInputFrame_SetPreviousFocus(frame.salebox.bid.stack, AppraiserSaleboxBuyStackCopper)
 	MoneyInputFrame_SetNextFocus(frame.salebox.buy.stack, AppraiserSaleboxBidStackGold)
 	MoneyInputFrame_SetPreviousFocus(frame.salebox.buy.stack, AppraiserSaleboxBidStackCopper)
+	if UIStyle and UIStyle.StyleMoneyInputFrame then
+		UIStyle.StyleMoneyInputFrame(frame.salebox.bid, 58, 42)
+		UIStyle.StyleMoneyInputFrame(frame.salebox.buy, 58, 42)
+		UIStyle.StyleMoneyInputFrame(frame.salebox.bid.stack, 58, 42)
+		UIStyle.StyleMoneyInputFrame(frame.salebox.buy.stack, 58, 42)
+	end
 
 
 	--Button for Bid  frame  to toggle stack/single mode
@@ -2890,9 +2956,9 @@ function private.CreateFrames()
 
 	frame.imageview = CreateFrame("Frame", nil, frame, BackdropTemplateMixin and "BackdropTemplate")
 	UIStyle.StylePanel(frame.imageview)
-	frame.imageview:SetPoint("TOPLEFT", frame.salebox, "BOTTOMLEFT", 0, 2)
-	frame.imageview:SetPoint("TOPRIGHT", frame.salebox, "BOTTOMRIGHT", 0, 2)
-	frame.imageview:SetPoint("BOTTOM", frame.itembox, "BOTTOM", 0, 26)
+	frame.imageview:SetPoint("TOPLEFT", frame.salebox, "BOTTOMLEFT", 0, -4)
+	frame.imageview:SetPoint("TOPRIGHT", frame.salebox, "BOTTOMRIGHT", 0, -4)
+	frame.imageview:SetPoint("BOTTOM", frame.itembox, "BOTTOM", 0, 28)
 	--records the column width changes
 	--store width by header name, that way if column reorginizing is added we apply size to proper column
 	function private.onResize(self, column, width)
@@ -2997,7 +3063,7 @@ function private.CreateFrames()
 
 	frame.imageview.purchase = CreateFrame("Frame", nil, frame.imageview, BackdropTemplateMixin and "BackdropTemplate")
 	frame.imageview.purchase:SetPoint("TOPLEFT", frame.imageview, "BOTTOMLEFT", 0, -2)
-	frame.imageview.purchase:SetPoint("BOTTOMRIGHT", frame.imageview, "BOTTOMRIGHT", 0, -26)
+	frame.imageview.purchase:SetPoint("BOTTOMRIGHT", frame.imageview, "BOTTOMRIGHT", 0, -28)
 	UIStyle.StylePanel(frame.imageview.purchase)
 
 	frame.imageview.purchase.buy = CreateFrame("Button", nil, frame.imageview.purchase, "UIPanelButtonTemplate")
@@ -3095,6 +3161,23 @@ function private.CreateFrames()
 	frame.ScanTab:SetDisplay()
 
 	frame.ChangeUI()
+	if UIStyle and UIStyle.RegisterFontListener then
+		UIStyle.RegisterFontListener(function()
+			UIStyle.ApplyFont(title, 2)
+			UIStyle.ApplyFont(Auc_Util_Appraiser_ShowAuctionsText, -1)
+			UIStyle.ApplyFont(Auc_Util_Appraiser_ShowHiddenText, -1)
+			UIStyle.ApplyFont(frame.itembox.showText.text, -1)
+			LayoutShowFilterBar()
+			for i = 1, MAX_ITEMS do
+				local itm = frame.items[i]
+				if itm then
+					UIStyle.ApplyFont(itm.name, -1)
+					UIStyle.ApplyFont(itm.size, -2)
+					UIStyle.ApplyFont(itm.info, -2)
+				end
+			end
+		end)
+	end
 	if not AucAdvanced.IsRetailAH and AuctionFrameTab_OnClick then
 		hooksecurefunc("AuctionFrameTab_OnClick", frame.ScanTab.OnClick)
 	elseif AucAdvanced.IsRetailAH and AuctionHouseFrame then

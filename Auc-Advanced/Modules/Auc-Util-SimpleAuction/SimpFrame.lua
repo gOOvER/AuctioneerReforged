@@ -1165,47 +1165,56 @@ function private.CreateFrames()
 	frame:SetScript("OnUpdate", private.OnUpdate)
 
 	frame.title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-	frame.title:SetPoint("TOPLEFT", frame, "TOPLEFT", 16, -12)
+	frame.title:SetPoint("TOPLEFT", frame, "TOPLEFT", 14, -10)
 	frame.title:SetText(_TRANS("Simple Auction - Simplified auction posting interface"))
 	frame.title:SetTextColor(1, 0.85, 0.25)
 
 	frame.leftPanel = CreateFrame("Frame", nil, frame, BackdropTemplateMixin and "BackdropTemplate")
 	frame.leftPanel:SetPoint("TOPLEFT", frame, "TOPLEFT", 8, -38)
 	frame.leftPanel:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 8, 38)
-	frame.leftPanel:SetWidth(190)
+	frame.leftPanel:SetWidth(210)
 	if UIStyle then
 		UIStyle.StylePanel(frame.leftPanel)
 	end
 
 	frame.topPanel = CreateFrame("Frame", nil, frame, BackdropTemplateMixin and "BackdropTemplate")
-	frame.topPanel:SetPoint("TOPLEFT", frame, "TOPLEFT", 204, -38)
+	frame.topPanel:SetPoint("TOPLEFT", frame, "TOPLEFT", 224, -38)
 	frame.topPanel:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -8, -38)
-	frame.topPanel:SetHeight(54)
+	frame.topPanel:SetHeight(58)
 	if UIStyle then
 		UIStyle.StylePanel(frame.topPanel)
 	end
 
 	frame.slot = frame.topPanel:CreateTexture(nil, "BORDER")
-	frame.slot:SetPoint("TOPLEFT", frame.topPanel, "TOPLEFT", 8, -6)
+	frame.slot:SetPoint("TOPLEFT", frame.topPanel, "TOPLEFT", 8, -8)
 	frame.slot:SetWidth(42)
 	frame.slot:SetHeight(42)
 	frame.slot:SetTexCoord(0.15, 0.85, 0.15, 0.85)
 	frame.slot:SetTexture("Interface\\Buttons\\UI-EmptySlot")
 
 	frame.name = frame.topPanel:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-	frame.name:SetPoint("TOPLEFT", frame.slot, "TOPRIGHT", 10, 0)
+	frame.name:SetPoint("TOPLEFT", frame.slot, "TOPRIGHT", 10, 1)
+	frame.name:SetPoint("RIGHT", frame.topPanel, "RIGHT", -8, 0)
+	frame.name:SetJustifyH("LEFT")
 	frame.name:SetJustifyV("TOP")
+	frame.name:SetWordWrap(false)
 	frame.name:SetText(_TRANS("Drop item onto slot"))
 
 	frame.info = frame.topPanel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 	frame.info:SetPoint("TOPLEFT", frame.name, "BOTTOMLEFT", 0, -2)
+	frame.info:SetPoint("RIGHT", frame.topPanel, "RIGHT", -8, 0)
+	frame.info:SetJustifyH("LEFT")
 	frame.info:SetJustifyV("TOP")
+	frame.info:SetWordWrap(false)
 	frame.info:SetTextColor(0.0,1,1)
 	frame.info:SetText(_TRANS("To auction an item, drag it from your bag."))
 
 	frame.err = frame.topPanel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-	frame.err:SetPoint("TOPLEFT", frame.info, "BOTTOMLEFT", 0, -1)
+	frame.err:SetPoint("TOPLEFT", frame.info, "BOTTOMLEFT", 0, -2)
+	frame.err:SetPoint("RIGHT", frame.topPanel, "RIGHT", -8, 0)
+	frame.err:SetJustifyH("LEFT")
 	frame.err:SetJustifyV("TOP")
+	frame.err:SetWordWrap(false)
 	frame.err:SetTextColor(1,0.2,0,1)
 	frame.err:SetText(_TRANS("-- No item selected --"))
 	if UIStyle then
@@ -1254,21 +1263,22 @@ function private.CreateFrames()
 			frame.CurItem.valuechanged = true
 		end)
 	frame.minprice.label = frame.minprice:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-	frame.minprice.label:SetPoint("BOTTOMLEFT", frame.minprice, "TOPLEFT", 0, 2)
+	frame.minprice.label:SetPoint("BOTTOMLEFT", frame.minprice, "TOPLEFT", 0, 3)
 	frame.minprice.label:SetText(_TRANS("Starting price:"))
-	AucAdvSimpFrameStartGold:SetWidth(50)
 
 	frame.buyout = CreateFrame("Frame", "AucAdvSimpFrameBuyout", frame.leftPanel, "MoneyInputFrameTemplate")
 	frame.buyout.isMoneyFrame = true
-	frame.buyout:SetPoint("TOPLEFT", frame.minprice, "BOTTOMLEFT", 0, -22)
+	frame.buyout:SetPoint("TOPLEFT", frame.minprice, "BOTTOMLEFT", 0, -24)
 	MoneyInputFrame_SetOnValueChangedFunc(frame.buyout, function()
 			frame.CurItem.valuechanged = true
 		end)
 	frame.buyout.label = frame.buyout:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-	frame.buyout.label:SetPoint("BOTTOMLEFT", frame.buyout, "TOPLEFT", 0, 2)
+	frame.buyout.label:SetPoint("BOTTOMLEFT", frame.buyout, "TOPLEFT", 0, 3)
 	frame.buyout.label:SetText(_TRANS("Buyout price:"))
-	AucAdvSimpFrameBuyoutGold:SetWidth(50)
-	if UIStyle then
+	if UIStyle and UIStyle.StyleMoneyInputFrame then
+		UIStyle.StyleMoneyInputFrame(frame.minprice, 58, 44)
+		UIStyle.StyleMoneyInputFrame(frame.buyout, 58, 44)
+	elseif UIStyle then
 		UIStyle.StyleEditBox(AucAdvSimpFrameStartGold)
 		UIStyle.StyleEditBox(AucAdvSimpFrameStartSilver)
 		UIStyle.StyleEditBox(AucAdvSimpFrameStartCopper)
@@ -1278,11 +1288,11 @@ function private.CreateFrames()
 	end
 
 	frame.duration = CreateFrame("Frame", "AucAdvSimpFrameDuration", frame.leftPanel)
-	frame.duration:SetPoint("TOPLEFT", frame.buyout, "BOTTOMLEFT", 0, -22)
-	frame.duration:SetWidth(165)
+	frame.duration:SetPoint("TOPLEFT", frame.buyout, "BOTTOMLEFT", 0, -24)
+	frame.duration:SetWidth(185)
 	frame.duration:SetHeight(20)
 	frame.duration.label = frame.duration:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-	frame.duration.label:SetPoint("BOTTOMLEFT", frame.duration, "TOPLEFT", 0, 2)
+	frame.duration.label:SetPoint("BOTTOMLEFT", frame.duration, "TOPLEFT", 0, 3)
 	frame.duration.label:SetText(_TRANS("Duration:"));
 
 	frame.duration.time = {
@@ -1309,7 +1319,7 @@ function private.CreateFrames()
 	local t = frame.duration.time
 	for pos, dur in ipairs(t.intervals) do
 		t[pos] = CreateFrame("CheckButton", "AucAdvSimpFrameDuration"..dur, frame.duration, "UICheckButtonTemplate")
-		t[pos]:SetPoint("TOPLEFT", frame.duration, "TOPLEFT", (pos-1)*53, -2)
+		t[pos]:SetPoint("TOPLEFT", frame.duration, "TOPLEFT", (pos-1)*58, -2)
 		t[pos]:SetHitRectInsets(-1, -25, -1, -1)
 		if UIStyle and UIStyle.StyleCheckBox then
 			UIStyle.StyleCheckBox(t[pos], 18)
@@ -1328,29 +1338,29 @@ function private.CreateFrames()
 
 	frame.stacks = CreateFrame("Frame", "AucAdvSimpFrameStacks", frame.leftPanel)
 	frame.stacks:SetPoint("TOPLEFT", frame.duration, "BOTTOMLEFT", 0, -24)
-	frame.stacks:SetWidth(165)
+	frame.stacks:SetWidth(185)
 	frame.stacks:SetHeight(20)
 	frame.stacks.label = frame.duration:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-	frame.stacks.label:SetPoint("BOTTOMLEFT", frame.stacks, "TOPLEFT", 0, 2)
+	frame.stacks.label:SetPoint("BOTTOMLEFT", frame.stacks, "TOPLEFT", 0, 3)
 	frame.stacks.label:SetText(_TRANS("Stacks: (number x size)"));
 
 	frame.stacks.num = CreateFrame("EditBox", "AucAdvSimpFrameStackNum", frame.stacks, "InputBoxTemplate")
 	frame.stacks.num:SetPoint("TOPLEFT", frame.stacks, "TOPLEFT", 2, -2)
 	frame.stacks.num:SetAutoFocus(false)
 	frame.stacks.num:SetHeight(18)
-	frame.stacks.num:SetWidth(40)
+	frame.stacks.num:SetWidth(46)
 	frame.stacks.num:SetNumeric(true)
 	frame.stacks.num:SetScript("OnTextChanged", function() frame.CurItem.valuechanged = true end)
 
 	frame.stacks.mult = frame.duration:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-	frame.stacks.mult:SetPoint("LEFT", frame.stacks.num, "RIGHT", 5, 0)
+	frame.stacks.mult:SetPoint("LEFT", frame.stacks.num, "RIGHT", 6, 0)
 	frame.stacks.mult:SetText("x")
 
 	frame.stacks.size = CreateFrame("EditBox", "AucAdvSimpFrameStackSize", frame.stacks, "InputBoxTemplate")
-	frame.stacks.size:SetPoint("LEFT", frame.stacks.mult, "RIGHT", 5, 0)
+	frame.stacks.size:SetPoint("LEFT", frame.stacks.mult, "RIGHT", 6, 0)
 	frame.stacks.size:SetAutoFocus(false)
 	frame.stacks.size:SetHeight(18)
-	frame.stacks.size:SetWidth(36)
+	frame.stacks.size:SetWidth(44)
 	frame.stacks.size:SetNumeric(true)
 	frame.stacks.size:SetScript("OnTextChanged", function() frame.CurItem.valuechanged = true end)
 	if UIStyle then
@@ -1359,12 +1369,12 @@ function private.CreateFrames()
 	end
 
 	frame.stacks.equals = frame.duration:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-	frame.stacks.equals:SetPoint("LEFT", frame.stacks.size, "RIGHT", 5, 0)
+	frame.stacks.equals:SetPoint("LEFT", frame.stacks.size, "RIGHT", 6, 0)
 	frame.stacks.equals:SetText("= 0")
 
 	frame.fees = frame.leftPanel:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
 	frame.fees:SetPoint("BOTTOM", frame.leftPanel, "BOTTOM", 0, 10)
-	frame.fees:SetWidth(170)
+	frame.fees:SetWidth(190)
 	frame.fees:SetJustifyV("BOTTOM")
 	frame.fees:SetJustifyH("CENTER")
 	frame.fees:SetText("")
@@ -1372,14 +1382,14 @@ function private.CreateFrames()
 
 	frame.options = CreateFrame("Frame", "AucAdvSimpFrameOptions", frame.leftPanel)
 	frame.options:SetPoint("TOPLEFT", frame.stacks, "BOTTOMLEFT", 0, -24)
-	frame.options:SetWidth(165)
+	frame.options:SetWidth(185)
 	frame.options:SetHeight(110)
 	frame.options.label = frame.options:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 	frame.options.label:SetPoint("BOTTOMLEFT", frame.options, "TOPLEFT", 0, 3)
 	frame.options.label:SetText(_TRANS("Options:"))
 
 	frame.create = CreateFrame("Button", "AucAdvSimpFrameCreate", frame, "UIPanelButtonTemplate")
-	frame.create:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 204, 8)
+	frame.create:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 224, 8)
 	frame.create:SetSize(140, 22)
 	frame.create:SetText(_TRANS("Create Auction"))
 	frame.create:SetScript("OnClick", private.PostAuction)
@@ -1415,7 +1425,7 @@ function private.CreateFrames()
 
 		item.label = item:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 		item.label:SetPoint("LEFT", item, "RIGHT", 5, 0)
-		item.label:SetWidth(145)
+		item.label:SetWidth(165)
 		item.label:SetJustifyH("LEFT")
 		item.label:SetText(_TRANS(text))
 
@@ -1522,7 +1532,7 @@ function private.CreateFrames()
 		})
 		frame.imageview:SetBackdropColor(0, 0, 0, 1)
 	end
-	frame.imageview:SetPoint("TOPLEFT", frame, "TOPLEFT", 204, -96)
+	frame.imageview:SetPoint("TOPLEFT", frame, "TOPLEFT", 224, -100)
 	frame.imageview:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -8, 38)
 	--records the column width changes
 	--store width by header name, that way if column reorginizing is added we apply size to proper column
