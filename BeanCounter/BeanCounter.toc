@@ -24,7 +24,7 @@
 ## Category-zhCN: 拍卖
 ## Category-zhTW: 拍賣
 ## X-Part-Of: Auctioneer Reforged
-## X-License: GPL-3.0-or-later
+## X-License: GPL-3.0
 ## X-Category: Auction House
 
 Embed.xml

@@ -14,7 +14,7 @@
 ## SavedVariables: InformantConfig, InformantLocalUpdates
 ## IconTexture: Interface/Addons/Informant/inficon.blp
 ## X-Part-Of: Auctioneer Reforged
-## X-License: GPL-3.0-or-later
+## X-License: GPL-3.0
 ## X-Category: Item Data
 
 InfManifest.lua
