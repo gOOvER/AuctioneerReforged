@@ -385,30 +385,35 @@ local function ApplyLowBackgroundBox(frame, bgR, bgG, bgB, bgA, brR, brG, brB, b
 		local bg = frame:CreateTexture(nil, "BACKGROUND", nil, -8)
 		bg:SetPoint("TOPLEFT", frame, "TOPLEFT", 1, -1)
 		bg:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -1, 1)
+		bg._aucKeepTex = true
 		frame._aucLowBg = bg
 
 		local bTop = frame:CreateTexture(nil, "BACKGROUND", nil, -7)
 		bTop:SetHeight(1)
 		bTop:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
 		bTop:SetPoint("TOPRIGHT", frame, "TOPRIGHT", 0, 0)
+		bTop._aucKeepTex = true
 		frame._aucLowBorderTop = bTop
 
 		local bBot = frame:CreateTexture(nil, "BACKGROUND", nil, -7)
 		bBot:SetHeight(1)
 		bBot:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 0, 0)
 		bBot:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
+		bBot._aucKeepTex = true
 		frame._aucLowBorderBot = bBot
 
 		local bLeft = frame:CreateTexture(nil, "BACKGROUND", nil, -7)
 		bLeft:SetWidth(1)
 		bLeft:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, 0)
 		bLeft:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 0, 0)
+		bLeft._aucKeepTex = true
 		frame._aucLowBorderLeft = bLeft
 
 		local bRight = frame:CreateTexture(nil, "BACKGROUND", nil, -7)
 		bRight:SetWidth(1)
 		bRight:SetPoint("TOPRIGHT", frame, "TOPRIGHT", 0, 0)
 		bRight:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", 0, 0)
+		bRight._aucKeepTex = true
 		frame._aucLowBorderRight = bRight
 
 		local accentTop = frame:CreateTexture(nil, "BACKGROUND", nil, -6)
@@ -416,6 +421,7 @@ local function ApplyLowBackgroundBox(frame, bgR, bgG, bgB, bgA, brR, brG, brB, b
 		accentTop:SetPoint("TOPLEFT", frame, "TOPLEFT", 1, -1)
 		accentTop:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -1, -1)
 		accentTop:SetColorTexture(0.85, 0.70, 0.20, 0.85)
+		accentTop._aucKeepTex = true
 		accentTop:Hide()
 		frame._aucLowAccentTop = accentTop
 
@@ -424,15 +430,22 @@ local function ApplyLowBackgroundBox(frame, bgR, bgG, bgB, bgA, brR, brG, brB, b
 		accentBot:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 1, 1)
 		accentBot:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -1, 1)
 		accentBot:SetColorTexture(0.85, 0.70, 0.20, 0.75)
+		accentBot._aucKeepTex = true
 		accentBot:Hide()
 		frame._aucLowAccentBot = accentBot
 	end
 
 	frame._aucLowBg:SetColorTexture(bgR or 0.08, bgG or 0.09, bgB or 0.12, bgA or 0.96)
+	frame._aucLowBg:SetAlpha(1)
 	local r, g, b, a = brR or 0.24, brG or 0.28, brB or 0.36, brA or 1
 	frame._aucLowBorderTop:SetColorTexture(r, g, b, a)
+	frame._aucLowBorderTop:SetAlpha(1)
 	frame._aucLowBorderBot:SetColorTexture(r, g, b, a)
+	frame._aucLowBorderBot:SetAlpha(1)
 	frame._aucLowBorderLeft:SetColorTexture(r, g, b, a)
+	frame._aucLowBorderLeft:SetAlpha(1)
+	frame._aucLowBorderRight:SetColorTexture(r, g, b, a)
+	frame._aucLowBorderRight:SetAlpha(1)
 	frame._aucLowBorderRight:SetColorTexture(r, g, b, a)
 	if withGoldTop then
 		frame._aucLowAccentTop:Show()
@@ -828,7 +841,7 @@ local function ReflowSingleRetailItemList(itemList)
 		if not hcH or hcH < 16 then hcH = 19 end
 		itemList.HeaderContainer:ClearAllPoints()
 		itemList.HeaderContainer:SetPoint("TOPLEFT", itemList, "TOPLEFT", 4, -4)
-		itemList.HeaderContainer:SetPoint("TOPRIGHT", itemList, "TOPRIGHT", -(22 + pctReserve), -4)
+		itemList.HeaderContainer:SetPoint("TOPRIGHT", itemList, "TOPRIGHT", -22, -4)
 		itemList.HeaderContainer:SetHeight(hcH)
 	end
 
@@ -856,8 +869,7 @@ local function ReflowSingleRetailItemList(itemList)
 				end
 				sf.range = math.max(0, (#buttons * btnH) - sfH)
 			end
-			local hdrW = (itemList.HeaderContainer and itemList.HeaderContainer:GetWidth()) or ((sf:GetWidth() or 600) - pctReserve)
-			local rowW = hdrW + pctReserve
+			local rowW = (itemList.HeaderContainer and itemList.HeaderContainer:GetWidth()) or (sf:GetWidth() or 600)
 			if rowW and rowW > 100 then
 				for i = 1, #buttons do
 					buttons[i]:SetWidth(rowW)
@@ -876,7 +888,8 @@ local function ReflowSingleRetailItemList(itemList)
 	if itemList.tableBuilder and itemList.HeaderContainer then
 		local hdrW = itemList.HeaderContainer:GetWidth()
 		if hdrW and hdrW > 100 then
-			pcall(itemList.tableBuilder.SetTableWidth, itemList.tableBuilder, hdrW)
+			local tblW = math.max(100, hdrW - pctReserve)
+			pcall(itemList.tableBuilder.SetTableWidth, itemList.tableBuilder, tblW)
 			if itemList.tableBuilder.CalculateColumnSpacing then
 				pcall(itemList.tableBuilder.CalculateColumnSpacing, itemList.tableBuilder)
 			end
