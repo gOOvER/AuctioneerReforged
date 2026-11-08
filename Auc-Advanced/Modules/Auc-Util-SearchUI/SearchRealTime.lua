@@ -433,13 +433,25 @@ local function OnClick(self, button)
 end
 local function OnEnter(self)
 	local text
-	if private.IsScanning then
-		text = "Click to stop RealTime Search"
+	local isDe = (GetLocale and GetLocale() == "deDE")
+	if isDe then
+		if private.IsScanning then
+			text = "Echtzeitsuche (RTS): Aktiv\nLinksklick: Echtzeitsuche stoppen"
+		else
+			text = "Echtzeitsuche (RTS): Inaktiv\nLinksklick: Echtzeitsuche starten"
+		end
+		if self.hasRight then
+			text = text .. "\nRechtsklick: Auktionssuche (SearchUI) öffnen"
+		end
 	else
-		text = "Click to start RealTime Search"
-	end
-	if self.hasRight then
-		text = text .. "\nRight-Click to open SearchUI"
+		if private.IsScanning then
+			text = "Click to stop RealTime Search"
+		else
+			text = "Click to start RealTime Search"
+		end
+		if self.hasRight then
+			text = text .. "\nRight-Click to open SearchUI"
+		end
 	end
 	GameTooltip:SetOwner(self, "ANCHOR_TOPRIGHT")
 	GameTooltip:SetText(text)
@@ -481,6 +493,12 @@ function lib.CreateRTSButton(parent, norightclick)
 	local button = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
 	button:SetWidth(22)
 	button:SetHeight(18)
+	button._fixedWidth = 22
+	local Configator = LibStub and LibStub("Configator", true)
+	if Configator and Configator.UIStyle and Configator.UIStyle.StyleButton then
+		Configator.UIStyle.StyleButton(button, "default")
+		button:SetSize(22, 18)
+	end
 	if right then
 		button:RegisterForClicks("LeftButtonUp", "RightButtonUp")
 	else
@@ -570,11 +588,14 @@ function private.HookAH()
 		if not AuctionHouseFrame then return end
 		local BrowseRTSButton = lib.CreateRTSButton(AuctionHouseFrame)
 		BrowseRTSButton._aucKeepVisible = true
+		BrowseRTSButton._fixedWidth = 20
 		BrowseRTSButton:SetSize(20, 18)
 		BrowseRTSButton:SetFrameStrata("DIALOG")
 		BrowseRTSButton:SetFrameLevel(100)
-		if AucScanButtonBar then
-			BrowseRTSButton:SetPoint("LEFT", AucScanButtonBar, "RIGHT", 6, 0)
+		if AucScanButtonBar and AucScanButtonBar.count then
+			BrowseRTSButton:SetPoint("LEFT", AucScanButtonBar.count, "RIGHT", 8, 0)
+		elseif AucScanButtonBar then
+			BrowseRTSButton:SetPoint("LEFT", AucScanButtonBar, "RIGHT", 24, 0)
 		else
 			BrowseRTSButton:SetPoint("TOPLEFT", AuctionHouseFrame, "TOPLEFT", 180, -3)
 		end

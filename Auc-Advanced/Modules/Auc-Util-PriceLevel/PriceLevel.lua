@@ -320,14 +320,23 @@ end
 
 local function GetRowDataFromFrame(row, itemList)
 	if not row then return nil end
-	if type(row.rowData) == "table" then return row.rowData end
 	if row.GetElementData then
 		local ok, elData = pcall(row.GetElementData, row)
 		if ok and type(elData) == "table" then return elData end
-		if ok and type(elData) == "number" and itemList and itemList.tableBuilder and itemList.tableBuilder.GetDataProviderData then
-			local ok2, d2 = pcall(itemList.tableBuilder.GetDataProviderData, itemList.tableBuilder, elData)
-			if ok2 and type(d2) == "table" then return d2 end
+		if ok and type(elData) == "number" and itemList then
+			if type(itemList.dataProvider) == "function" then
+				local ok2, d2 = pcall(itemList.dataProvider, elData)
+				if ok2 and type(d2) == "table" then return d2 end
+			end
+			if itemList.tableBuilder and itemList.tableBuilder.GetDataProviderData then
+				local ok2, d2 = pcall(itemList.tableBuilder.GetDataProviderData, itemList.tableBuilder, elData)
+				if ok2 and type(d2) == "table" then return d2 end
+			end
 		end
+	end
+	if type(row.dataIndex) == "number" and itemList and type(itemList.dataProvider) == "function" then
+		local ok, d = pcall(itemList.dataProvider, row.dataIndex)
+		if ok and type(d) == "table" then return d end
 	end
 	if type(row.cells) == "table" then
 		for _, cell in ipairs(row.cells) do
@@ -336,6 +345,7 @@ local function GetRowDataFromFrame(row, itemList)
 			end
 		end
 	end
+	if type(row.rowData) == "table" then return row.rowData end
 	return nil
 end
 
@@ -733,6 +743,10 @@ local function UpdateHeaderSortArrows(itemList)
 	local isAsc = itemList._aucSortAscending
 
 	local headers = { itemList.HeaderContainer:GetChildren() }
+	local pctBtn = itemList._aucPctHeaderBtn or itemList.HeaderContainer._aucPctHeaderBtn
+	if pctBtn then
+		table.insert(headers, pctBtn)
+	end
 	for idx, hdr in ipairs(headers) do
 		if hdr then
 			if hdr.Arrow and hdr.Arrow.Hide then
@@ -756,7 +770,38 @@ local function ApplySortToItemList(itemList)
 	local colKey = itemList._aucSortColumn
 	local asc = itemList._aucSortAscending
 
-	-- 1. If this is BrowseResultsFrame.ItemList and browseResults is a table, sort browseResults directly in-place
+	-- 1. Build index permutation map via rawProvider (works for BrowseResultsFrame, ItemBuyFrame, CommoditiesBuyFrame, AuctionsFrame, etc.)
+	local rawProvider = itemList._aucRawDataProvider or itemList.dataProvider
+		or (itemList.tableBuilder and itemList.tableBuilder._aucRawDataProvider)
+		or (itemList.tableBuilder and itemList.tableBuilder.dataProvider)
+	local numEntries = 0
+	if type(itemList.getNumEntries) == "function" then
+		local ok, n = pcall(itemList.getNumEntries)
+		if ok and type(n) == "number" then numEntries = n end
+	elseif type(itemList.numEntries) == "number" then
+		numEntries = itemList.numEntries
+	end
+
+	if type(rawProvider) == "function" and numEntries > 1 then
+		local indices = {}
+		local keys = {}
+		for i = 1, numEntries do
+			indices[i] = i
+			local ok, entry = pcall(rawProvider, i)
+			keys[i] = GetRowSortValue(ok and type(entry) == "table" and entry or nil, colKey, itemList)
+		end
+		table.sort(indices, function(ia, ib)
+			local va, vb = keys[ia], keys[ib]
+			if va == vb then
+				return ia < ib
+			end
+			if asc then return va < vb else return va > vb end
+		end)
+		itemList._aucSortedMap = indices
+		return
+	end
+
+	-- 2. Fallback: if BrowseResultsFrame.browseResults is a table and rawProvider wasn't available, sort in-place
 	if AuctionHouseFrame and AuctionHouseFrame.BrowseResultsFrame
 	and itemList == AuctionHouseFrame.BrowseResultsFrame.ItemList
 	and type(AuctionHouseFrame.BrowseResultsFrame.browseResults) == "table" then
@@ -777,37 +822,7 @@ local function ApplySortToItemList(itemList)
 		return
 	end
 
-	-- 2. For C++ dataProvider lists (ItemBuyFrame, CommoditiesBuyFrame, AuctionsFrame, etc.), build index permutation map
-	local rawProvider = itemList._aucRawDataProvider or itemList.dataProvider
-		or (itemList.tableBuilder and itemList.tableBuilder._aucRawDataProvider)
-		or (itemList.tableBuilder and itemList.tableBuilder.dataProvider)
-	local numEntries = 0
-	if type(itemList.getNumEntries) == "function" then
-		local ok, n = pcall(itemList.getNumEntries)
-		if ok and type(n) == "number" then numEntries = n end
-	elseif type(itemList.numEntries) == "number" then
-		numEntries = itemList.numEntries
-	end
-
-	if type(rawProvider) == "function" and numEntries > 1 then
-		local indices = {}
-		local keys = {}
-		for i = 1, numEntries do
-			indices[i] = i
-			local ok, entry = pcall(rawProvider, i)
-			keys[i] = GetRowSortValue(ok and entry or nil, colKey, itemList)
-		end
-		table.sort(indices, function(ia, ib)
-			local va, vb = keys[ia], keys[ib]
-			if va == vb then
-				return ia < ib
-			end
-			if asc then return va < vb else return va > vb end
-		end)
-		itemList._aucSortedMap = indices
-	else
-		itemList._aucSortedMap = nil
-	end
+	itemList._aucSortedMap = nil
 end
 
 local function SortRetailItemListByColumn(itemList, colKey)
@@ -828,6 +843,12 @@ local function SortRetailItemListByColumn(itemList, colKey)
 	elseif itemList.UpdateTable then
 		pcall(itemList.UpdateTable, itemList)
 	end
+	if itemList.ScrollBox and itemList.ScrollBox.FullUpdate then
+		pcall(itemList.ScrollBox.FullUpdate, itemList.ScrollBox, true)
+	end
+	if itemList.tableBuilder and itemList.tableBuilder.Populate then
+		pcall(itemList.tableBuilder.Populate, itemList.tableBuilder)
+	end
 	private.UpdateRetailItemList(itemList)
 end
 
@@ -836,7 +857,11 @@ local function InstallSortableDataProvider(itemList)
 	itemList._aucDataProviderWrapped = true
 
 	local function WrapProvider(fn)
-		if type(fn) ~= "function" or fn == itemList._aucWrappedProviderFn then
+		if type(fn) ~= "function"
+		or fn == itemList._aucWrappedProviderFn
+		or fn == itemList.hasSearchStartedFunc
+		or fn == itemList.getNumEntries
+		or fn == itemList.hasFullResults then
 			return fn
 		end
 		itemList._aucRawDataProvider = fn
@@ -854,17 +879,38 @@ local function InstallSortableDataProvider(itemList)
 		itemList.tableBuilder.dataProvider = WrapProvider(itemList.tableBuilder.dataProvider)
 	end
 	if itemList.SetDataProvider then
-		hooksecurefunc(itemList, "SetDataProvider", function(self, newProvider)
-			local w = WrapProvider(newProvider)
-			self.dataProvider = w
-			if self.tableBuilder then
-				self.tableBuilder.dataProvider = w
+		-- Note: AuctionHouseItemListMixin:SetDataProvider(hasSearchStartedFunc, getEntry, getNumEntries, hasFullResults)
+		-- sets self.dataProvider = getEntry (2nd arg). Never wrap arg1 (hasSearchStartedFunc)!
+		hooksecurefunc(itemList, "SetDataProvider", function(self, _, getEntry)
+			local targetFn = (type(getEntry) == "function" and getEntry) or self.dataProvider
+			if type(targetFn) == "function" then
+				local w = WrapProvider(targetFn)
+				self.dataProvider = w
+				if self.tableBuilder then
+					self.tableBuilder.dataProvider = w
+				end
 			end
 		end)
 	end
 	if itemList.tableBuilder and itemList.tableBuilder.SetDataProvider then
 		hooksecurefunc(itemList.tableBuilder, "SetDataProvider", function(tb, newProvider)
-			tb.dataProvider = WrapProvider(newProvider)
+			if type(newProvider) == "function" then
+				tb.dataProvider = WrapProvider(newProvider)
+			end
+		end)
+	end
+	if itemList.tableBuilder and itemList.tableBuilder.SetTableWidth then
+		hooksecurefunc(itemList.tableBuilder, "SetTableWidth", function(tb, width)
+			if itemList._aucHasPctColumn and not tb._aucAdjustingWidth and type(width) == "number" then
+				local fullW = (itemList.ScrollBox and itemList.ScrollBox:GetWidth())
+					or (itemList.ScrollFrame and itemList.ScrollFrame:GetWidth())
+					or width
+				if fullW and fullW > 200 and width > (fullW - PCT_COL_WIDTH + 4) then
+					tb._aucAdjustingWidth = true
+					tb:SetTableWidth(fullW - PCT_COL_WIDTH)
+					tb._aucAdjustingWidth = false
+				end
+			end
 		end)
 	end
 end
@@ -872,6 +918,15 @@ end
 local function SetupHeaderButtonsSorting(itemList)
 	if not itemList or not itemList.HeaderContainer then return end
 	InstallSortableDataProvider(itemList)
+
+	if itemList._aucHasPctColumn then
+		local hcH = itemList.HeaderContainer:GetHeight()
+		if not hcH or hcH < 16 then hcH = 19 end
+		itemList.HeaderContainer:ClearAllPoints()
+		itemList.HeaderContainer:SetPoint("TOPLEFT", itemList, "TOPLEFT", 4, -4)
+		itemList.HeaderContainer:SetPoint("TOPRIGHT", itemList, "TOPRIGHT", -(22 + PCT_COL_WIDTH), -4)
+		itemList.HeaderContainer:SetHeight(hcH)
+	end
 
 	if AucAdvanced and AucAdvanced.StyleRetailHeaderContainer then
 		AucAdvanced.StyleRetailHeaderContainer(itemList)
@@ -882,13 +937,14 @@ local function SetupHeaderButtonsSorting(itemList)
 		if itemList.HeaderContainer._aucPctHeader then
 			itemList.HeaderContainer._aucPctHeader:Hide()
 		end
-		local pctBtn = itemList.HeaderContainer._aucPctHeaderBtn
+		local pctBtn = itemList._aucPctHeaderBtn or itemList.HeaderContainer._aucPctHeaderBtn
 		if not pctBtn then
-			pctBtn = CreateFrame("Button", nil, itemList.HeaderContainer)
+			pctBtn = CreateFrame("Button", nil, itemList)
 			pctBtn._aucColKey = "pct"
-			pctBtn:RegisterForClicks("LeftButtonUp")
+			pctBtn:EnableMouse(true)
+			pctBtn:RegisterForClicks("AnyUp")
 			local txt = pctBtn:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-			txt:SetPoint("CENTER", pctBtn, "CENTER", -2, 0)
+			txt:SetPoint("CENTER", pctBtn, "CENTER", -3, 0)
 			txt:SetText("%")
 			txt:SetTextColor(0.95, 0.82, 0.30, 1)
 			pctBtn.Text = txt
@@ -896,8 +952,14 @@ local function SetupHeaderButtonsSorting(itemList)
 			pctBtn:SetScript("OnClick", function()
 				SortRetailItemListByColumn(itemList, "pct")
 			end)
+			itemList._aucPctHeaderBtn = pctBtn
 			itemList.HeaderContainer._aucPctHeaderBtn = pctBtn
+		else
+			pctBtn:SetParent(itemList)
+			pctBtn:EnableMouse(true)
+			pctBtn:RegisterForClicks("AnyUp")
 		end
+		pctBtn:SetFrameLevel(math.max(20, (itemList.HeaderContainer:GetFrameLevel() or 10) + 12))
 		pctBtn:ClearAllPoints()
 		pctBtn:SetPoint("TOPLEFT", itemList.HeaderContainer, "TOPRIGHT", 1, 0)
 		pctBtn:SetPoint("BOTTOMLEFT", itemList.HeaderContainer, "BOTTOMRIGHT", 1, 0)
@@ -912,7 +974,7 @@ local function SetupHeaderButtonsSorting(itemList)
 	local children = { itemList.HeaderContainer:GetChildren() }
 	local colIdx = 0
 	for _, hdr in ipairs(children) do
-		if hdr and hdr ~= itemList.HeaderContainer._aucPctHeaderBtn and hdr:IsShown() then
+		if hdr and hdr ~= itemList._aucPctHeaderBtn and hdr ~= itemList.HeaderContainer._aucPctHeaderBtn and hdr:IsShown() then
 			colIdx = colIdx + 1
 			local colKey = DetectHeaderColumnKey(hdr, colIdx)
 			hdr._aucColKey = colKey
@@ -925,7 +987,7 @@ local function SetupHeaderButtonsSorting(itemList)
 			end
 			pcall(hdr.EnableMouse, hdr, true)
 			if hdr.IsObjectType and hdr:IsObjectType("Button") then
-				pcall(hdr.RegisterForClicks, hdr, "LeftButtonUp")
+				pcall(hdr.RegisterForClicks, hdr, "AnyUp")
 				hdr:SetScript("OnClick", function()
 					SortRetailItemListByColumn(itemList, colKey)
 				end)

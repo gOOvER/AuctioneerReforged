@@ -579,6 +579,128 @@ function private.CreateFrames()
 		end
 		frame.age:SetText(seentext)
 
+		-- Retail AH: ReplicateItems does not include seller names. Resolve seller names via owned auctions & live C_AuctionHouse search query.
+		private.retailSellerCache = private.retailSellerCache or {}
+		private.retailSellerQueryTime = private.retailSellerQueryTime or {}
+		if AucAdvanced.IsRetailAH and query.itemId and #results > 0 then
+			local targetItemID = tonumber(query.itemId)
+			local playerName = UnitName and UnitName("player") or nil
+
+			if not private.retailSellerEventFrame then
+				local sef = CreateFrame("Frame")
+				sef:RegisterEvent("COMMODITY_SEARCH_RESULTS_UPDATED")
+				sef:RegisterEvent("ITEM_SEARCH_RESULTS_UPDATED")
+				sef:SetScript("OnEvent", function(_, event, arg1)
+					local curID = private.pendingSellerItemID
+					if not curID or not C_AuctionHouse then return end
+					local pName = UnitName and UnitName("player") or ""
+					local cache = { byUnitPrice = {}, byExact = {}, anyOwner = nil }
+					if C_AuctionHouse.GetNumCommoditySearchResults and C_AuctionHouse.GetCommoditySearchResultInfo then
+						local okN, nComm = pcall(C_AuctionHouse.GetNumCommoditySearchResults, curID)
+						if okN and nComm and nComm > 0 then
+							for ci = 1, nComm do
+								local okR, cRes = pcall(C_AuctionHouse.GetCommoditySearchResultInfo, curID, ci)
+								if okR and cRes then
+									local owner = (cRes.owners and cRes.owners[1]) or (cRes.containsOwnerItem and pName) or nil
+									if owner and owner ~= "" then
+										local up = math.floor((cRes.unitPrice or 0) + 0.5)
+										local qty = cRes.quantity or 1
+										cache.byExact[qty .. ":" .. up] = owner
+										cache.byUnitPrice[up] = cache.byUnitPrice[up] or {}
+										table.insert(cache.byUnitPrice[up], owner)
+										cache.anyOwner = cache.anyOwner or owner
+									end
+								end
+							end
+						end
+					end
+					if C_AuctionHouse.MakeItemKey and C_AuctionHouse.GetNumItemSearchResults and C_AuctionHouse.GetItemSearchResultInfo then
+						local okK, iKey = pcall(C_AuctionHouse.MakeItemKey, curID)
+						if okK and iKey then
+							local okN, nItem = pcall(C_AuctionHouse.GetNumItemSearchResults, iKey)
+							if okN and nItem and nItem > 0 then
+								for ii = 1, nItem do
+									local okR, iRes = pcall(C_AuctionHouse.GetItemSearchResultInfo, iKey, ii)
+									if okR and iRes then
+										local owner = (iRes.owners and iRes.owners[1]) or (iRes.containsOwnerItem and pName) or nil
+										if owner and owner ~= "" then
+											local qty = (iRes.quantity and iRes.quantity > 0) and iRes.quantity or 1
+											local up = math.floor(((iRes.buyoutAmount or iRes.minBid or 0) / qty) + 0.5)
+											cache.byExact[qty .. ":" .. up] = owner
+											cache.byUnitPrice[up] = cache.byUnitPrice[up] or {}
+											table.insert(cache.byUnitPrice[up], owner)
+											cache.anyOwner = cache.anyOwner or owner
+										end
+									end
+								end
+							end
+						end
+					end
+					if cache.anyOwner then
+						private.retailSellerCache[curID] = cache
+						throttleImageNext = 0
+						frame.UpdateImage()
+					end
+				end)
+				private.retailSellerEventFrame = sef
+			end
+
+			local needRemoteLookup = false
+			local cache = targetItemID and private.retailSellerCache[targetItemID]
+			local usedUnitIdx = {}
+			for i = 1, #results do
+				local r = results[i]
+				local curSeller = r[Const.SELLER]
+				if not curSeller or curSeller == "" or curSeller == "?" then
+					local cnt = (r[Const.COUNT] and r[Const.COUNT] > 0) and r[Const.COUNT] or 1
+					local up = math.floor(((r[Const.BUYOUT] or r[Const.MINBID] or 0) / cnt) + 0.5)
+					local resolved = nil
+					if cache then
+						resolved = cache.byExact[cnt .. ":" .. up]
+						if not resolved and cache.byUnitPrice[up] then
+							local list = cache.byUnitPrice[up]
+							local idx = (usedUnitIdx[up] or 0) + 1
+							usedUnitIdx[up] = idx
+							resolved = list[idx] or list[1]
+						end
+					end
+					if not resolved and playerName and C_AuctionHouse and C_AuctionHouse.GetNumOwnedAuctions and C_AuctionHouse.GetOwnedAuctionInfo then
+						local okO, numOwned = pcall(C_AuctionHouse.GetNumOwnedAuctions)
+						if okO and numOwned and numOwned > 0 then
+							for oi = 1, numOwned do
+								local okI, oInfo = pcall(C_AuctionHouse.GetOwnedAuctionInfo, oi)
+								if okI and oInfo and oInfo.status == 0 and oInfo.itemKey and oInfo.itemKey.itemID == targetItemID then
+									local oQty = oInfo.quantity or 1
+									local oBuy = oInfo.buyoutAmount or 0
+									if oQty == cnt and (oBuy == r[Const.BUYOUT] or math.floor((oBuy / oQty) + 0.5) == up) then
+										resolved = playerName
+										break
+									end
+								end
+							end
+						end
+					end
+					if resolved and resolved ~= "" then
+						r[Const.SELLER] = resolved
+					else
+						needRemoteLookup = true
+					end
+				end
+			end
+
+			if needRemoteLookup and targetItemID and AuctionHouseFrame and AuctionHouseFrame:IsShown()
+			and C_AuctionHouse and C_AuctionHouse.MakeItemKey and C_AuctionHouse.SendSearchQuery then
+				local lastQ = private.retailSellerQueryTime[targetItemID] or 0
+				if (GetTime() - lastQ) > 10 then
+					private.retailSellerQueryTime[targetItemID] = GetTime()
+					private.pendingSellerItemID = targetItemID
+					local okK, itemKey = pcall(C_AuctionHouse.MakeItemKey, targetItemID)
+					if okK and itemKey then
+						pcall(C_AuctionHouse.SendSearchQuery, itemKey, {}, true)
+					end
+				end
+			end
+		end
 
 		local data = {}
 		local style = {}
@@ -586,9 +708,13 @@ function private.CreateFrames()
 			local result = results[i]
 			local tLeft = tleftlookup[result[Const.TLEFT]] or ""
 			local count = result[Const.COUNT]
+			local sellerName = result[Const.SELLER]
+			if not sellerName or sellerName == "" or sellerName == "?" then
+				sellerName = "—"
+			end
 			data[i] = {
 				--result[Const.NAME],
-				result[Const.SELLER],
+				sellerName,
 				tLeft,
 				count,
 				math.floor(0.5+result[Const.MINBID]/count),
@@ -1919,23 +2045,17 @@ function private.CreateFrames()
 				ShowDistInfoOnButton(distinfo, button, item)
 
 				local background = button.bg
-				local alpha = 0.2
-
-				if curAuction then
-					background:SetVertexColor(1, 0.7, 0.6) -- mid red
-					alpha = 0.3
-				else
-					background:SetVertexColor(1,1,1)
-				end
-
 				if (sig == frame.selected) then
-					alpha = 0.6
+					background:SetColorTexture(0.26, 0.21, 0.08, 0.90)
 				elseif curIgnore then
-					alpha = 0.1
-    			end
-
-				background:SetAlpha(alpha)
-				background:SetDesaturated(curIgnore)
+					background:SetColorTexture(0.10, 0.11, 0.14, 0.45)
+				elseif curAuction then
+					background:SetColorTexture(0.24, 0.14, 0.14, 0.70)
+				else
+					background:SetColorTexture(0.13, 0.15, 0.21, 0.65)
+				end
+				background:SetVertexColor(1, 1, 1, 1)
+				background:SetDesaturated(false)
 
 				button:Show()
 			else
@@ -2232,14 +2352,17 @@ function private.CreateFrames()
 		item.info:SetText("" )
 		UIStyle.ApplyFont(item.info, -2)
 
-		item.bg = item:CreateTexture(nil, "ARTWORK")
-		item.bg:SetTexture("Interface\\FriendsFrame\\UI-FriendsFrame-HighlightBar")
-		item.bg:SetPoint("TOPLEFT", item, "TOPLEFT", 0,0)
-		item.bg:SetPoint("BOTTOMRIGHT", item, "BOTTOMRIGHT", 0,0)
-		item.bg:SetAlpha(0.2)
-		item.bg:SetBlendMode('ADD')
+		item.bg = item:CreateTexture(nil, "BACKGROUND")
+		item.bg:SetColorTexture(0.13, 0.15, 0.21, 0.65)
+		item.bg:SetPoint("TOPLEFT", item, "TOPLEFT", 0, -1)
+		item.bg:SetPoint("BOTTOMRIGHT", item, "BOTTOMRIGHT", 0, 1)
+		item.bg:SetBlendMode("BLEND")
 
-		item:SetHighlightTexture("Interface\\FriendsFrame\\UI-FriendsFrame-HighlightBar")
+		local hl = item:CreateTexture(nil, "HIGHLIGHT")
+		hl:SetPoint("TOPLEFT", item, "TOPLEFT", 0, -1)
+		hl:SetPoint("BOTTOMRIGHT", item, "BOTTOMRIGHT", 0, 1)
+		hl:SetColorTexture(1, 0.85, 0.25, 0.14)
+		item:SetHighlightTexture(hl)
 	end
 	local scroller = CreateFrame("Slider", "AucAppraiserItemScroll", frame.itembox, BackdropTemplateMixin and "BackdropTemplate")
 	scroller:SetPoint("TOPRIGHT", frame.itembox, "TOPRIGHT", -1,-3)

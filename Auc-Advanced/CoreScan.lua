@@ -521,12 +521,16 @@ function private.StartRetailBrowseScan(name, minUseLevel, maxUseLevel, isUsable,
 			bf:UnregisterAllEvents()
 			if not private.isScanning or not private.curQuery or private.isGetAll then return end
 
+			local activeQuery = private.curQuery
 			local results = (not aborted and C_AuctionHouse.GetBrowseResults and C_AuctionHouse.GetBrowseResults()) or {}
 			local curScan = {}
-			local qName = query.qryinfo.name and query.qryinfo.name:lower() or nil
-			local isExact = query.qryinfo.exactMatch
+			local qName = activeQuery.qryinfo.name and activeQuery.qryinfo.name:lower() or nil
+			local isExact = activeQuery.qryinfo.exactMatch
+			local playerName = UnitName and UnitName("player") or ""
+
 			for _, r in ipairs(results) do
-				local itemID = r.itemKey and r.itemKey.itemID
+				local itemKey = r.itemKey
+				local itemID = itemKey and itemKey.itemID
 				local minPrice = r.minPrice or 0
 				local totalQty = r.totalQuantity or 0
 				if itemID and minPrice > 0 and totalQty > 0 then
@@ -536,26 +540,114 @@ function private.StartRetailBrowseScan(name, minUseLevel, maxUseLevel, isUsable,
 					end
 					if itemLink then
 						if not isExact or not qName or qName == "" or (itemName and itemName:lower() == qName) then
-							local info = {
-								itemName or query.qryinfo.name or "",
-								nil,
-								1,
-								itemRarity or 1,
-								true,
-								nil,
-								nil,
-								minPrice,
-								0,
-								minPrice,
-								0,
-								false,
-								nil,
-								"?",
-								"?",
-								nil,
-								itemID,
-							}
-							tinsert(curScan, RetailBuildItemData(info, itemLink, 4))
+							local addedDetailed = false
+							-- Check if detailed item or commodity search results are available with real seller names
+							if C_AuctionHouse.GetNumCommoditySearchResults and C_AuctionHouse.GetCommoditySearchResultInfo then
+								local okN, numComm = pcall(C_AuctionHouse.GetNumCommoditySearchResults, itemID)
+								if okN and numComm and numComm > 0 then
+									for ci = 1, numComm do
+										local okR, cRes = pcall(C_AuctionHouse.GetCommoditySearchResultInfo, itemID, ci)
+										if okR and cRes and (cRes.unitPrice or 0) > 0 and (cRes.quantity or 0) > 0 then
+											local qty = cRes.quantity or 1
+											local buyTotal = (cRes.unitPrice or 0) * qty
+											local owner = (cRes.owners and cRes.owners[1])
+												or (cRes.containsOwnerItem and playerName)
+												or ""
+											local tl = 4
+											if cRes.timeLeftSeconds then
+												if cRes.timeLeftSeconds <= 1800 then tl = 1
+												elseif cRes.timeLeftSeconds <= 7200 then tl = 2
+												elseif cRes.timeLeftSeconds <= 43200 then tl = 3
+												else tl = 4 end
+											end
+											local info = {
+												itemName or activeQuery.qryinfo.name or "",
+												nil,
+												qty,
+												itemRarity or 1,
+												true,
+												nil,
+												nil,
+												buyTotal,
+												0,
+												buyTotal,
+												0,
+												false,
+												nil,
+												owner,
+												owner,
+												nil,
+												itemID,
+											}
+											tinsert(curScan, RetailBuildItemData(info, itemLink, tl))
+											addedDetailed = true
+										end
+									end
+								end
+							end
+							if not addedDetailed and itemKey and C_AuctionHouse.GetNumItemSearchResults and C_AuctionHouse.GetItemSearchResultInfo then
+								local okN, numItem = pcall(C_AuctionHouse.GetNumItemSearchResults, itemKey)
+								if okN and numItem and numItem > 0 then
+									for ii = 1, numItem do
+										local okR, iRes = pcall(C_AuctionHouse.GetItemSearchResultInfo, itemKey, ii)
+										if okR and iRes then
+											local qty = (iRes.quantity and iRes.quantity > 0) and iRes.quantity or 1
+											local buyAmt = iRes.buyoutAmount or 0
+											local bidAmt = iRes.bidAmount or 0
+											local minBidAmt = iRes.minBid or (bidAmt > 0 and bidAmt or buyAmt)
+											if minBidAmt > 0 or buyAmt > 0 then
+												local owner = (iRes.owners and iRes.owners[1])
+													or (iRes.containsOwnerItem and playerName)
+													or ""
+												local tl = (type(iRes.timeLeft) == "number" and (iRes.timeLeft + 1)) or 4
+												local info = {
+													itemName or activeQuery.qryinfo.name or "",
+													nil,
+													qty,
+													itemRarity or 1,
+													true,
+													nil,
+													nil,
+													minBidAmt,
+													0,
+													buyAmt,
+													bidAmt,
+													false,
+													nil,
+													owner,
+													owner,
+													nil,
+													itemID,
+												}
+												tinsert(curScan, RetailBuildItemData(info, iRes.itemLink or itemLink, tl))
+												addedDetailed = true
+											end
+										end
+									end
+								end
+							end
+							if not addedDetailed then
+								local info = {
+									itemName or activeQuery.qryinfo.name or "",
+									nil,
+									1,
+									itemRarity or 1,
+									true,
+									nil,
+									nil,
+									minPrice,
+									0,
+									minPrice,
+									0,
+									false,
+									nil,
+									"",
+									"",
+									nil,
+									itemID,
+								}
+								tinsert(curScan, RetailBuildItemData(info, itemLink, 4))
+							end
 						end
 					end
 				end
@@ -570,14 +662,26 @@ function private.StartRetailBrowseScan(name, minUseLevel, maxUseLevel, isUsable,
 		bf:SetScript("OnEvent", function(self, event)
 			if event == "AUCTION_HOUSE_CLOSED" then
 				FinishBrowseScan(true)
+			elseif event == "ITEM_SEARCH_RESULTS_UPDATED" or event == "COMMODITY_SEARCH_RESULTS_UPDATED" then
+				self.gotDetailEvent = true
+				self.lastEvent = GetTime()
 			elseif event == "AUCTION_HOUSE_BROWSE_RESULTS_UPDATED" or event == "AUCTION_HOUSE_BROWSE_RESULTS_ADDED" then
 				self.gotEvent = true
 				self.lastEvent = GetTime()
 				local results = C_AuctionHouse.GetBrowseResults and C_AuctionHouse.GetBrowseResults() or {}
+				local activeQuery = private.curQuery
+				local qName = activeQuery and activeQuery.qryinfo and activeQuery.qryinfo.name and activeQuery.qryinfo.name:lower() or nil
 				for _, r in ipairs(results) do
 					local itemID = r.itemKey and r.itemKey.itemID
 					if itemID and C_Item and C_Item.RequestLoadItemDataByID then
 						pcall(C_Item.RequestLoadItemDataByID, itemID)
+					end
+					if not self.detailQuerySent and r.itemKey and C_AuctionHouse.SendSearchQuery and ((qName and qName ~= "") or #results <= 3) then
+						local itemName = itemID and GetItemInfo(itemID)
+						if not qName or qName == "" or not itemName or itemName:lower() == qName or #results == 1 then
+							self.detailQuerySent = true
+							pcall(C_AuctionHouse.SendSearchQuery, r.itemKey, {}, true)
+						end
 					end
 				end
 				if C_AuctionHouse.HasFullBrowseResults and not C_AuctionHouse.HasFullBrowseResults() then
@@ -592,7 +696,8 @@ function private.StartRetailBrowseScan(name, minUseLevel, maxUseLevel, isUsable,
 			self.elapsed = (self.elapsed or 0) + elapsed
 			if self.gotEvent then
 				local full = not C_AuctionHouse.HasFullBrowseResults or C_AuctionHouse.HasFullBrowseResults() or (self.pagesRequested or 0) >= 12
-				local settle = (GetTime() - (self.lastEvent or 0)) >= (full and 0.25 or 0.8)
+				local waitDetail = self.detailQuerySent and not self.gotDetailEvent and self.elapsed < 1.5
+				local settle = not waitDetail and ((GetTime() - (self.lastEvent or 0)) >= (full and 0.25 or 0.8))
 				if settle then
 					FinishBrowseScan(false)
 					return
@@ -607,10 +712,14 @@ function private.StartRetailBrowseScan(name, minUseLevel, maxUseLevel, isUsable,
 	local bf = private.retailBrowseScanFrame
 	bf.elapsed = 0
 	bf.gotEvent = false
+	bf.gotDetailEvent = false
+	bf.detailQuerySent = false
 	bf.lastEvent = GetTime()
 	bf.pagesRequested = 0
 	bf:RegisterEvent("AUCTION_HOUSE_BROWSE_RESULTS_UPDATED")
 	bf:RegisterEvent("AUCTION_HOUSE_BROWSE_RESULTS_ADDED")
+	bf:RegisterEvent("ITEM_SEARCH_RESULTS_UPDATED")
+	bf:RegisterEvent("COMMODITY_SEARCH_RESULTS_UPDATED")
 	bf:RegisterEvent("AUCTION_HOUSE_CLOSED")
 	bf:Show()
 

@@ -800,8 +800,9 @@ local function StyleRetailHeaderContainer(itemList)
 	for _, child in ipairs({ itemList.HeaderContainer:GetChildren() }) do
 		StyleRetailHeaderButton(child)
 	end
-	if itemList.HeaderContainer._aucPctHeaderBtn then
-		StyleRetailHeaderButton(itemList.HeaderContainer._aucPctHeaderBtn)
+	local pctBtn = itemList._aucPctHeaderBtn or itemList.HeaderContainer._aucPctHeaderBtn
+	if pctBtn then
+		StyleRetailHeaderButton(pctBtn)
 	end
 end
 
@@ -823,7 +824,12 @@ local function ReflowSingleRetailItemList(itemList)
 	local pctReserve = itemList._aucHasPctColumn and 56 or 0
 
 	if itemList.HeaderContainer then
-		itemList.HeaderContainer:SetPoint("RIGHT", itemList, "RIGHT", -(22 + pctReserve), 0)
+		local hcH = itemList.HeaderContainer:GetHeight()
+		if not hcH or hcH < 16 then hcH = 19 end
+		itemList.HeaderContainer:ClearAllPoints()
+		itemList.HeaderContainer:SetPoint("TOPLEFT", itemList, "TOPLEFT", 4, -4)
+		itemList.HeaderContainer:SetPoint("TOPRIGHT", itemList, "TOPRIGHT", -(22 + pctReserve), -4)
+		itemList.HeaderContainer:SetHeight(hcH)
 	end
 
 	if itemList.ScrollFrame then
