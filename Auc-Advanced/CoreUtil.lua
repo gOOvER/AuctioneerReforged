@@ -1235,10 +1235,8 @@ local function StyleModernRetailAHChrome(ahFrame, UIStyle)
 					if st then
 						ResizeRetailTab(st)
 						SetRetailTabChecked(st, idx == sel)
-						st:ClearAllPoints()
-						if idx == 1 then
-							st:SetPoint("BOTTOMLEFT", af.SummaryList or af, "TOPLEFT", 0, 2)
-						else
+						if idx > 1 and subTabs[idx - 1] then
+							st:ClearAllPoints()
 							st:SetPoint("LEFT", subTabs[idx - 1], "RIGHT", 4, 0)
 						end
 					end
